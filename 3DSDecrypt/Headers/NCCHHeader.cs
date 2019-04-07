@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using ThreeDS.Data;
 
@@ -13,6 +12,9 @@ namespace ThreeDS.Headers
         public uint ContentSizeInMediaUnits;
         public uint ContentSizeInBytes { get { return ContentSizeInMediaUnits * 0x200; } }
         public byte[] PartitionId = new byte[8];
+        public byte[] PlainIV { get { return PartitionId.Concat(Constants.PlainCounter).ToArray(); } }
+        public byte[] ExeFSIV { get { return PartitionId.Concat(Constants.ExefsCounter).ToArray(); } }
+        public byte[] RomFSIV { get { return PartitionId.Concat(Constants.RomfsCounter).ToArray(); } }
         public byte[] MakerCode = new byte[2];
         public byte[] Version = new byte[2];
         public byte[] VerificationHash = new byte[4];
