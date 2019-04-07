@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{2E30006A-3C60-4576-A262-937B21C83C06}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>_3DSDecrypt</RootNamespace>
     <AssemblyName>3DSDecrypt</AssemblyName>
@@ -29,9 +29,16 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.4.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.4\lib\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -40,8 +47,29 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Data\Constants.cs" />
+    <Compile Include="Headers\NCCHHeaderFlags.cs" />
+    <Compile Include="ThreeDSTool.cs" />
+    <Compile Include="Data\Enums.cs" />
+    <Compile Include="Headers\AccessControlInfo.cs" />
+    <Compile Include="Headers\ARM11KernelCapabilities.cs" />
+    <Compile Include="Headers\ARM11LocalSystemCapabilities.cs" />
+    <Compile Include="Headers\ARM9AccessControl.cs" />
+    <Compile Include="Headers\CodeSetInfo.cs" />
+    <Compile Include="Headers\CXIExtendedHeader.cs" />
+    <Compile Include="Headers\ExeFSFileHeader.cs" />
+    <Compile Include="Headers\ExeFSHeader.cs" />
+    <Compile Include="Headers\NCCHHeader.cs" />
+    <Compile Include="Headers\NCSDHeader.cs" />
+    <Compile Include="Headers\PartitionTableEntry.cs" />
+    <Compile Include="Headers\StorageInfo.cs" />
+    <Compile Include="Headers\SystemControlInfo.cs" />
+    <Compile Include="Headers\SystemInfo.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
