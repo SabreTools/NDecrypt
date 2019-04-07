@@ -122,7 +122,7 @@ namespace ThreeDS
 
                         var str = BitConverter.ToString(plainIV).Replace("-", "");
 
-                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                         exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), plainIV));
 
                         Console.WriteLine("Partition {0} ExeFS: Decrypting: ExHeader", p);
@@ -137,7 +137,7 @@ namespace ThreeDS
                         f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
                         g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
 
-                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                         exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIV));
 
                         g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes((int)header.SectorSize)));
@@ -162,10 +162,10 @@ namespace ThreeDS
 
                                     byte[] exefsIVWithOffsetForHeader = AddToByteArray(exefsIV, (int)ctroffset);
 
-                                    var exefsctrmode = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                                    var exefsctrmode = CipherUtilities.GetCipher("AES/CTR");
                                     exefsctrmode.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), exefsIVWithOffsetForHeader));
 
-                                    exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                                    exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                                     exefsctrmode2C.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffsetForHeader));
 
                                     f.BaseStream.Seek((((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -199,7 +199,7 @@ namespace ThreeDS
 
                         byte[] exefsIVWithOffset = AddToByteArray(exefsIV, ctroffsetE);
 
-                        exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                         exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffset));
 
                         f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
@@ -215,7 +215,7 @@ namespace ThreeDS
                         }
                         if (exefsSizeB > 0)
                         {
-                            g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes(exefsSizeB)));
+                            g.Write(exefsctrmode2C.DoFinal(f.ReadBytes(exefsSizeB)));
                             g.Flush();
                         }
 
@@ -231,7 +231,7 @@ namespace ThreeDS
                         int romfsSizeM = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) / (1024 * 1024);
                         int romfsSizeB = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) % (1024 * 1024);
 
-                        var romfsctrmode = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        var romfsctrmode = CipherUtilities.GetCipher("AES/CTR");
                         romfsctrmode.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), romfsIV));
 
                         f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
@@ -247,7 +247,7 @@ namespace ThreeDS
                         }
                         if (romfsSizeB > 0)
                         {
-                            g.Write(romfsctrmode.ProcessBytes(f.ReadBytes(romfsSizeB)));
+                            g.Write(romfsctrmode.DoFinal(f.ReadBytes(romfsSizeB)));
                             g.Flush();
                         }
 
@@ -277,9 +277,6 @@ namespace ThreeDS
             }
         }
 
-        /// <summary>
-        /// Writes wrong header values
-        /// </summary>
         public void Encrypt()
         {
             if (!File.Exists(filename))
@@ -386,7 +383,7 @@ namespace ThreeDS
 
                         var str = BitConverter.ToString(plainIV).Replace("-", "");
 
-                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                         exefsctrmode2C.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), plainIV));
 
                         Console.WriteLine("Partition {0} ExeFS: Encrypting: ExHeader", p);
@@ -401,7 +398,7 @@ namespace ThreeDS
                         f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
                         g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
 
-                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                         exefsctrmode2C.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIV));
 
                         g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes((int)header.SectorSize)));
@@ -426,10 +423,10 @@ namespace ThreeDS
 
                                     byte[] exefsIVWithOffsetForHeader = AddToByteArray(exefsIV, (int)ctroffset);
 
-                                    var exefsctrmode = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                                    var exefsctrmode = CipherUtilities.GetCipher("AES/CTR");
                                     exefsctrmode.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), exefsIVWithOffsetForHeader));
 
-                                    exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                                    exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                                     exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffsetForHeader));
 
                                     f.BaseStream.Seek((((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -447,7 +444,7 @@ namespace ThreeDS
 
                                     if (datalenB > 0)
                                     {
-                                        g.Write(exefsctrmode2C.ProcessBytes(exefsctrmode.ProcessBytes(f.ReadBytes((int)datalenB))));
+                                        g.Write(exefsctrmode2C.DoFinal(exefsctrmode.DoFinal(f.ReadBytes((int)datalenB))));
                                         g.Flush();
                                     }
 
@@ -463,7 +460,7 @@ namespace ThreeDS
 
                         byte[] exefsIVWithOffset = AddToByteArray(exefsIV, ctroffsetE);
 
-                        exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
                         exefsctrmode2C.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffset));
 
                         f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
@@ -479,7 +476,7 @@ namespace ThreeDS
                         }
                         if (exefsSizeB > 0)
                         {
-                            g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes(exefsSizeB)));
+                            g.Write(exefsctrmode2C.DoFinal(f.ReadBytes(exefsSizeB)));
                             g.Flush();
                         }
 
@@ -510,7 +507,7 @@ namespace ThreeDS
                             }
                         }
 
-                        var romfsctrmode = CipherUtilities.GetCipher("AES/CTR"); // ("AES/CTR/NoPadding")
+                        var romfsctrmode = CipherUtilities.GetCipher("AES/CTR");
                         romfsctrmode.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), romfsIV));
 
                         f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
@@ -526,7 +523,7 @@ namespace ThreeDS
                         }
                         if (romfsSizeB > 0)
                         {
-                            g.Write(romfsctrmode.ProcessBytes(f.ReadBytes(romfsSizeB)));
+                            g.Write(romfsctrmode.DoFinal(f.ReadBytes(romfsSizeB)));
                             g.Flush();
                         }
 
