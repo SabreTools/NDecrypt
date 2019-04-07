@@ -571,13 +571,11 @@ namespace ThreeDS
 
         private static string ToBytes(int num)
         {
-            string numstr = "";
-            int tmp = num;
-
+            string numstr = string.Empty;
             while (numstr.Length < 16)
             {
-                numstr += (char)(tmp & 0xFF);
-                tmp >>= 8;
+                numstr += (char)(num & 0xFF);
+                num >>= 8;
             }
 
             return numstr;
