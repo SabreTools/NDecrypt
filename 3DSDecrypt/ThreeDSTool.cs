@@ -183,7 +183,7 @@ namespace ThreeDS
 
                                     if (datalenB > 0)
                                     {
-                                        g.Write(exefsctrmode2C.ProcessBytes(exefsctrmode.ProcessBytes(f.ReadBytes((int)datalenB))));
+                                        g.Write(exefsctrmode2C.DoFinal(exefsctrmode.DoFinal(f.ReadBytes((int)datalenB))));
                                         g.Flush();
                                     }
 
