@@ -322,5 +322,73 @@ namespace ThreeDS.Headers
                 return null;
             }
         }
+
+        /// <summary>
+        /// Process all partitions in the partition table
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
+        /// <param name="development">True if development keys should be used, false otherwise</param>
+        /// <returns></returns>
+        public bool ProcessAllPartitions(BinaryReader reader, BinaryWriter writer, bool encrypt, bool development)
+        {
+            // Iterate over all 8 NCCH partitions
+            for (int p = 0; p < 8; p++)
+            {
+                NCCHHeader partitionHeader = GetPartitionHeader(reader, p);
+                if (partitionHeader == null)
+                    continue;
+
+                // Check if the 'NoCrypto' bit is set
+                if (partitionHeader.Flags.PossblyDecrypted ^ encrypt)
+                {
+                    Console.WriteLine($"Partition {p}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
+                    continue;
+                }
+
+                // Determine the Keys to be used
+                partitionHeader.SetEncryptionKeys(BackupHeader.Flags, encrypt, development);
+
+                // Process each of the pieces if they exist
+                partitionHeader.ProcessExtendedHeader(reader, writer, MediaUnitSize, encrypt);
+                partitionHeader.ProcessExeFS(reader, writer, MediaUnitSize, encrypt);
+                partitionHeader.ProcessRomFS(reader, writer, MediaUnitSize, BackupHeader.Flags, encrypt, development);
+
+                // Write out new CryptoMethod and BitMask flags
+                partitionHeader.UpdateCryptoAndMasks(reader, writer, this, encrypt);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Get a specific partition header from the partition table
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="partitionNumber">Partition number to attempt to retrieve</param>
+        /// <returns>NCCH header for the partition requested, null on error</returns>
+        public NCCHHeader GetPartitionHeader(BinaryReader reader, int partitionNumber)
+        {
+            if (!PartitionsTable[partitionNumber].IsValid())
+            {
+                Console.WriteLine($"Partition {partitionNumber} Not found... Skipping...");
+                return null;
+            }
+
+            // Seek to the beginning of the NCCH partition
+            reader.BaseStream.Seek((PartitionsTable[partitionNumber].Offset * MediaUnitSize), SeekOrigin.Begin);
+
+            NCCHHeader partitionHeader = NCCHHeader.Read(reader, true);
+            if (partitionHeader == null)
+            {
+                Console.WriteLine($"Partition {partitionNumber} Unable to read NCCH header");
+                return null;
+            }
+
+            partitionHeader.PartitionNumber = partitionNumber;
+            partitionHeader.Entry = PartitionsTable[partitionNumber];
+            return partitionHeader;
+        }
     }
 }

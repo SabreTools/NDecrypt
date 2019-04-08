@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
+using System.Numerics;
 using ThreeDS.Data;
 
 namespace ThreeDS.Headers
@@ -9,9 +11,19 @@ namespace ThreeDS.Headers
         private const string NCCHMagicNumber = "NCCH";
 
         /// <summary>
+        /// Partition number for the current partition
+        /// </summary>
+        public int PartitionNumber { get; set; }
+
+        /// <summary>
+        /// Partition table entry for the current partition
+        /// </summary>
+        public PartitionTableEntry Entry { get; set; }
+
+        /// <summary>
         /// RSA-2048 signature of the NCCH header, using SHA-256.
         /// </summary>
-        public byte[] RSA2048Signature = new byte[0x100];
+        public byte[] RSA2048Signature { get; private set; }
 
         /// <summary>
         /// Content size, in media units (1 media unit = 0x200 bytes)
@@ -25,6 +37,31 @@ namespace ThreeDS.Headers
         public byte[] PlainIV { get { return PartitionId.Concat(Constants.PlainCounter).ToArray(); } }
         public byte[] ExeFSIV { get { return PartitionId.Concat(Constants.ExefsCounter).ToArray(); } }
         public byte[] RomFSIV { get { return PartitionId.Concat(Constants.RomfsCounter).ToArray(); } }
+
+        /// <summary>
+        /// Boot rom key
+        /// </summary>
+        private BigInteger KeyX;
+
+        /// <summary>
+        /// NCCH boot rom key
+        /// </summary>
+        private BigInteger KeyX2C;
+
+        /// <summary>
+        /// Kernel9/Process9 key
+        /// </summary>
+        private BigInteger KeyY;
+
+        /// <summary>
+        /// Normal AES key
+        /// </summary>
+        private BigInteger NormalKey;
+
+        /// <summary>
+        /// NCCH AES key
+        /// </summary>
+        private BigInteger NormalKey2C;
 
         /// <summary>
         /// Maker code
@@ -208,6 +245,328 @@ namespace ThreeDS.Headers
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Determine the set of keys to be used for encryption or decryption
+        /// </summary>
+        /// <param name="backupFlags">File backup flags for encryption</param>
+        /// <param name="encrypt">True if we're encrypting the file, false otherwise</param>
+        /// <param name="development">True if development keys should be used, false otherwise</param>
+        public void SetEncryptionKeys(NCCHHeaderFlags backupFlags, bool encrypt, bool development)
+        {
+            KeyX = 0;
+            KeyX2C = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+
+            // Backup headers can't have a KeyY value set
+            if (RSA2048Signature != null)
+                KeyY = new BigInteger(RSA2048Signature.Take(16).Reverse().ToArray());
+            else
+                KeyY = new BigInteger(0);
+
+            NormalKey = 0;
+            NormalKey2C = Helper.RotateLeft((Helper.RotateLeft(KeyX2C, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+
+            // Set the header to use based on mode
+            BitMasks masks = 0;
+            CryptoMethod method = 0;
+            if (encrypt)
+            {
+                masks = backupFlags.BitMasks;
+                method = backupFlags.CryptoMethod;
+            }
+            else
+            {
+                masks = Flags.BitMasks;
+                method = Flags.CryptoMethod;
+            }
+
+            if ((masks & BitMasks.FixedCryptoKey) != 0)
+            {
+                NormalKey = 0x00;
+                NormalKey2C = 0x00;
+                Console.WriteLine("Encryption Method: Zero Key");
+            }
+            else
+            {
+                if (method == CryptoMethod.Original)
+                {
+                    KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                    Console.WriteLine("Encryption Method: Key 0x2C");
+                }
+                else if (method == CryptoMethod.Seven)
+                {
+                    KeyX = (development ? Constants.KeyX0x25 : Constants.KeyX0x25);
+                    Console.WriteLine("Encryption Method: Key 0x25");
+                }
+                else if (method == CryptoMethod.NineThree)
+                {
+                    KeyX = (development ? Constants.DevKeyX0x18 : Constants.KeyX0x18);
+                    Console.WriteLine("Encryption Method: Key 0x18");
+                }
+                else if (method == CryptoMethod.NineSix)
+                {
+                    KeyX = (development ? Constants.DevKeyX0x1B : Constants.KeyX0x1B);
+                    Console.WriteLine("Encryption Method: Key 0x1B");
+                }
+
+                NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+            }
+        }
+
+        /// <summary>
+        /// Process the extended header, if it exists
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="mediaUnitSize">Number of bytes per media unit</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        public bool ProcessExtendedHeader(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
+        {
+            if (ExtendedHeaderSizeInBytes > 0)
+            {
+                reader.BaseStream.Seek((Entry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
+                writer.BaseStream.Seek((Entry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
+
+                Console.WriteLine($"Partition {PartitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
+
+                var cipher = Helper.CreateAESCipher(NormalKey2C, PlainIV, encrypt);
+                writer.Write(cipher.ProcessBytes(reader.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
+                writer.Flush();
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"Partition {PartitionNumber} ExeFS: No Extended Header... Skipping...");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Process the ExeFS, if it exists
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="mediaUnitSize">Number of bytes per media unit</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        public void ProcessExeFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
+        {
+            if (ExeFSSizeInMediaUnits > 0)
+            {
+                // If we're decrypting, we need to decrypt the filename table first
+                if (!encrypt)
+                    ProcessExeFSFilenameTable(reader, writer, mediaUnitSize, encrypt);
+
+                // For all but the original crypto method, process each of the files in the table
+                if (Flags.CryptoMethod != CryptoMethod.Original)
+                {
+                    reader.BaseStream.Seek((Entry.Offset + ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+                    ExeFSHeader exefsHeader = ExeFSHeader.Read(reader);
+                    if (exefsHeader != null)
+                    {
+                        foreach (ExeFSFileHeader fileHeader in exefsHeader.FileHeaders)
+                        {
+                            // Only decrypt a file if it's a code binary
+                            if (!fileHeader.IsCodeBinary)
+                                continue;
+
+                            uint datalenM = ((fileHeader.FileSize) / (1024 * 1024));
+                            uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
+                            uint ctroffset = ((fileHeader.FileOffset + mediaUnitSize) / 0x10);
+
+                            byte[] exefsIVWithOffsetForHeader = Helper.AddToByteArray(ExeFSIV, (int)ctroffset);
+
+                            var firstCipher = Helper.CreateAESCipher(NormalKey, exefsIVWithOffsetForHeader, encrypt);
+                            var secondCipher = Helper.CreateAESCipher(NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
+
+                            reader.BaseStream.Seek((((Entry.Offset + ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+                            writer.BaseStream.Seek((((Entry.Offset + ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+
+                            if (datalenM > 0)
+                            {
+                                for (int i = 0; i < datalenM; i++)
+                                {
+                                    writer.Write(secondCipher.ProcessBytes(firstCipher.ProcessBytes(reader.ReadBytes(1024 * 1024))));
+                                    writer.Flush();
+                                    Console.Write($"\rPartition {PartitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.ReadableFileName}... {i} / {datalenM + 1} mb...");
+                                }
+                            }
+
+                            if (datalenB > 0)
+                            {
+                                writer.Write(secondCipher.DoFinal(firstCipher.DoFinal(reader.ReadBytes((int)datalenB))));
+                                writer.Flush();
+                            }
+
+                            Console.Write($"\rPartition {PartitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.ReadableFileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
+                        }
+                    }
+                }
+
+                // If we're encrypting, we need to encrypt the filename table now
+                if (encrypt)
+                    ProcessExeFSFilenameTable(reader, writer, mediaUnitSize, encrypt);
+
+                // Process the ExeFS
+                int exefsSizeM = (int)((ExeFSSizeInMediaUnits - 1) * mediaUnitSize) / (1024 * 1024);
+                int exefsSizeB = (int)((ExeFSSizeInMediaUnits - 1) * mediaUnitSize) % (1024 * 1024);
+                int ctroffsetE = (int)(mediaUnitSize / 0x10);
+
+                byte[] exefsIVWithOffset = Helper.AddToByteArray(ExeFSIV, ctroffsetE);
+
+                var exeFS = Helper.CreateAESCipher(NormalKey2C, exefsIVWithOffset, encrypt);
+
+                reader.BaseStream.Seek((Entry.Offset + ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
+                writer.BaseStream.Seek((Entry.Offset + ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
+                if (exefsSizeM > 0)
+                {
+                    for (int i = 0; i < exefsSizeM; i++)
+                    {
+                        writer.Write(exeFS.ProcessBytes(reader.ReadBytes(1024 * 1024)));
+                        writer.Flush();
+                        Console.Write($"\rPartition {PartitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
+                    }
+                }
+                if (exefsSizeB > 0)
+                {
+                    writer.Write(exeFS.DoFinal(reader.ReadBytes(exefsSizeB)));
+                    writer.Flush();
+                }
+
+                Console.Write($"\rPartition {PartitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
+            }
+            else
+            {
+                Console.WriteLine($"Partition {PartitionNumber} ExeFS: No Data... Skipping...");
+            }
+        }
+
+        /// <summary>
+        /// Process the ExeFS Filename Table
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="mediaUnitSize">Number of bytes per media unit</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        private void ProcessExeFSFilenameTable(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
+        {
+            reader.BaseStream.Seek((Entry.Offset + ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            writer.BaseStream.Seek((Entry.Offset + ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+
+            Console.WriteLine($"Partition {PartitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
+
+            var exeFSFilenameTable = Helper.CreateAESCipher(NormalKey2C, ExeFSIV, encrypt);
+            writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)mediaUnitSize)));
+            writer.Flush();
+        }
+
+        /// <summary>
+        /// Process the RomFS, if it exists
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="mediaUnitSize">Number of bytes per media unit</param>
+        /// <param name="backupFlags">File backup flags for encryption</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        /// <param name="development">True if development keys should be used, false otherwise</param>
+        public void ProcessRomFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, NCCHHeaderFlags backupFlags, bool encrypt, bool development)
+        {
+            if (RomFSOffsetInMediaUnits != 0)
+            {
+                int romfsSizeM = (int)(RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024);
+                int romfsSizeB = (int)(RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024);
+
+                // Encrypting RomFS for partitions 1 and up always use Key0x2C
+                if (encrypt && PartitionNumber > 0)
+                {
+                    // If the backup flags aren't provided and we're encrypting, assume defaults
+                    if (backupFlags == null)
+                    {
+                        KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                        NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+                    }
+
+                    if ((backupFlags.BitMasks & BitMasks.FixedCryptoKey) != 0) // except if using zero-key
+                    {
+                        NormalKey = 0x00;
+                    }
+                    else
+                    {
+                        KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                        NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+                    }
+                }
+
+                var cipher = Helper.CreateAESCipher(NormalKey, RomFSIV, encrypt);
+
+                reader.BaseStream.Seek((Entry.Offset + RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+                writer.BaseStream.Seek((Entry.Offset + RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+                if (romfsSizeM > 0)
+                {
+                    for (int i = 0; i < romfsSizeM; i++)
+                    {
+                        writer.Write(cipher.ProcessBytes(reader.ReadBytes(1024 * 1024)));
+                        writer.Flush();
+                        Console.Write($"\rPartition {PartitionNumber} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
+                    }
+                }
+                if (romfsSizeB > 0)
+                {
+                    writer.Write(cipher.DoFinal(reader.ReadBytes(romfsSizeB)));
+                    writer.Flush();
+                }
+
+                Console.Write($"\rPartition {PartitionNumber} RomFS: Decrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
+            }
+            else
+            {
+                Console.WriteLine($"Partition {PartitionNumber} RomFS: No Data... Skipping...");
+            }
+        }
+
+        /// <summary>
+        /// Update the CryptoMethod and BitMasks for the partition
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="header">NCSD header for the 3DS file</param>
+        /// <param name="encrypt">True if we're writing encrypted values, false otherwise</param>
+        public void UpdateCryptoAndMasks(BinaryReader reader, BinaryWriter writer, NCSDHeader header, bool encrypt)
+        {
+            // Write the new CryptoMethod
+            writer.BaseStream.Seek((Entry.Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
+            if (encrypt)
+            {
+                // For partitions 1 and up, set crypto-method to 0x00
+                if (PartitionNumber > 0)
+                    writer.Write((byte)CryptoMethod.Original);
+
+                // If partition 0, restore crypto-method from backup flags
+                else
+                    writer.Write((byte)header.BackupHeader.Flags.CryptoMethod);
+            }
+            else
+            {
+                writer.Write((byte)CryptoMethod.Original);
+            }
+            writer.Flush();
+
+            // Write the new BitMasks flag
+            writer.BaseStream.Seek((Entry.Offset * header.MediaUnitSize) + 0x18F, SeekOrigin.Begin);
+            BitMasks flag = Flags.BitMasks;
+            if (encrypt)
+            {
+                flag = (flag & ((BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF));
+                flag = (flag | (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & header.BackupHeader.Flags.BitMasks);
+            }
+            else
+            {
+                flag = flag & (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
+                flag = (flag | BitMasks.NoCrypto);
+            }
+
+            writer.Write((byte)flag);
+            writer.Flush();
         }
     }
 }
