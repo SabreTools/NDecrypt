@@ -50,6 +50,11 @@ namespace ThreeDS.Headers
         public BitMasks BitMasks { get; private set; }
 
         /// <summary>
+        /// Get if the NoCrypto bit is set
+        /// </summary>
+        public bool PossblyDecrypted { get { return (BitMasks & BitMasks.NoCrypto) != 0; } }
+
+        /// <summary>
         /// Read from a stream and get an NCCH header flags, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
