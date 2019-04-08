@@ -108,7 +108,7 @@ namespace ThreeDS
                     }
 
                     // Determine the Keys to be used
-                    SetEncryptionKeys(partitionHeader.RSA2048Signature, partitionHeader.Flags.BitMasks, partitionHeader.Flags.CryptoMethod, p);
+                    SetEncryptionKeys(header, p, partitionHeader, encrypt);
 
                     // Process each of the pieces if they exist
                     ProcessExtendedHeader(reader, writer, header, p, partitionHeader, encrypt);
@@ -138,18 +138,32 @@ namespace ThreeDS
         /// <summary>
         /// Determine the set of keys to be used for encryption or decryption
         /// </summary>
-        /// <param name="rsaSignature">RSA-2048 signature from a partition header</param>
-        /// <param name="masks">BitMasks value for a partition header or backup header</param>
-        /// <param name="method">CryptoMethod used for the partition</param>
+        /// <param name="header">File header for backup information</param>
         /// <param name="partitionNumber">Partition number, only used for logging</param>
-        private void SetEncryptionKeys(byte[] rsaSignature, BitMasks masks, CryptoMethod method, int partitionNumber)
+        /// <param name="partitionHeader">Current partition header</param>
+        /// <param name="encrypt">True if we're encrypting the file, false otherwise</param>
+        private void SetEncryptionKeys(NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
         {
             KeyX = 0;
             KeyX2C = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
-            KeyY = new BigInteger(rsaSignature.Take(16).Reverse().ToArray()); // KeyY is the first 16 bytes of the partition RSA-2048 SHA-256 signature
+            KeyY = new BigInteger(partitionHeader.RSA2048Signature.Take(16).Reverse().ToArray()); // KeyY is the first 16 bytes of the partition RSA-2048 SHA-256 signature
 
             NormalKey = 0;
             NormalKey2C = RotateLeft((RotateLeft(KeyX2C, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+
+            // Set the header to use based on mode
+            BitMasks masks = 0;
+            CryptoMethod method = 0;
+            if (encrypt)
+            {
+                masks = header.BackupHeader.Flags.BitMasks;
+                method = header.BackupHeader.Flags.CryptoMethod;
+            }
+            else
+            {
+                masks = partitionHeader.Flags.BitMasks;
+                method = partitionHeader.Flags.CryptoMethod;
+            }
 
             if ((masks & BitMasks.FixedCryptoKey) != 0)
             {
