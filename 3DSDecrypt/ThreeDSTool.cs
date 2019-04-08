@@ -66,7 +66,7 @@ namespace ThreeDS
             using (BinaryReader f = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             using (BinaryWriter g = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
             {
-                NCSDHeader header = NCSDHeader.Read(f);
+                NCSDHeader header = NCSDHeader.Read(f, development);
                 if (header == null)
                 {
                     Console.WriteLine("Error: Not a 3DS Rom!");
@@ -83,9 +83,9 @@ namespace ThreeDS
                     }
 
                     // Seek to the beginning of the NCCH partition
-                    f.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize), SeekOrigin.Begin);
+                    f.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize), SeekOrigin.Begin);
 
-                    NCCHHeader partitionHeader = NCCHHeader.Read(f);
+                    NCCHHeader partitionHeader = NCCHHeader.Read(f, true);
                     if (partitionHeader == null)
                     {
                         Console.WriteLine($"Partition {p} Unable to read NCCH header");
@@ -108,12 +108,12 @@ namespace ThreeDS
                     ProcessRomFS(f, g, header, p, partitionHeader, false);
 
                     // Write the new CryptoMethod
-                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x18B, SeekOrigin.Begin);
+                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
                     g.Write((byte)CryptoMethod.Original);
                     g.Flush();
 
                     // Write the new BitMasks flag
-                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x18F, SeekOrigin.Begin);
+                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18F, SeekOrigin.Begin);
                     BitMasks flag = partitionHeader.Flags.BitMasks;
                     flag = flag & (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
                     flag = (flag | BitMasks.NoCrypto);
@@ -139,16 +139,12 @@ namespace ThreeDS
             using (BinaryReader f = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             using (BinaryWriter g = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
             {
-                NCSDHeader header = NCSDHeader.Read(f);
+                NCSDHeader header = NCSDHeader.Read(f, development);
                 if (header == null)
                 {
                     Console.WriteLine("Error: Not a 3DS Rom!");
                     return;
                 }
-
-                // Get the backup flags
-                f.BaseStream.Seek(0x1188, SeekOrigin.Begin);
-                NCCHHeaderFlags backupFlags = NCCHHeaderFlags.Read(f);
 
                 // Iterate over all 8 NCCH partitions
                 for (int p = 0; p < 8; p++)
@@ -160,9 +156,9 @@ namespace ThreeDS
                     }
 
                     // Seek to the beginning of the NCCH partition
-                    f.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize), SeekOrigin.Begin);
+                    f.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize), SeekOrigin.Begin);
 
-                    NCCHHeader partitionHeader = NCCHHeader.Read(f);
+                    NCCHHeader partitionHeader = NCCHHeader.Read(f, true);
                     if (partitionHeader == null)
                     {
                         Console.WriteLine($"Partition {p} Unable to read NCCH header");
@@ -177,15 +173,15 @@ namespace ThreeDS
                     }
 
                     // Determine the Keys to be used
-                    SetEncryptionKeys(partitionHeader.RSA2048Signature, backupFlags.BitMasks, backupFlags.CryptoMethod, p);
+                    SetEncryptionKeys(partitionHeader.RSA2048Signature, header.BackupHeader.Flags.BitMasks, header.BackupHeader.Flags.CryptoMethod, p);
 
                     // Encrypt each of the pieces if they exist
                     ProcessExtendedHeader(f, g, header, p, partitionHeader, true);
                     ProcessExeFS(f, g, header, p, partitionHeader, true);
-                    ProcessRomFS(f, g, header, p, partitionHeader, true, backupFlags);
+                    ProcessRomFS(f, g, header, p, partitionHeader, true, header.BackupHeader.Flags);
 
                     // Write the new CryptoMethod
-                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x18B, SeekOrigin.Begin);
+                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
                     if (p > 0)
                     {
                         g.Write((byte)CryptoMethod.Original); // For partitions 1 and up, set crypto-method to 0x00
@@ -193,15 +189,15 @@ namespace ThreeDS
                     }
                     else
                     {
-                        g.Write((byte)backupFlags.CryptoMethod); // If partition 0, restore crypto-method from backup flags
+                        g.Write((byte)header.BackupHeader.Flags.CryptoMethod); // If partition 0, restore crypto-method from backup flags
                         g.Flush();
                     }
                     
                     // Write the new BitMasks flag
-                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x18F, SeekOrigin.Begin);
+                    g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18F, SeekOrigin.Begin);
                     BitMasks flag = partitionHeader.Flags.BitMasks;
                     flag = (flag & ((BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF));
-                    flag = (flag | (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & backupFlags.BitMasks);
+                    flag = (flag | (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & header.BackupHeader.Flags.BitMasks);
                     g.Write((byte)flag);
                     g.Flush();
                 }
@@ -352,8 +348,8 @@ namespace ThreeDS
         {
             if (partitionHeader.ExtendedHeaderSizeInBytes > 0)
             {
-                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
-                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
+                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.MediaUnitSize) + 0x200, SeekOrigin.Begin);
+                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.MediaUnitSize) + 0x200, SeekOrigin.Begin);
 
                 Console.WriteLine($"Partition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
@@ -387,7 +383,7 @@ namespace ThreeDS
                 // For all but the original crypto method, process each of the files in the table
                 if (partitionHeader.Flags.CryptoMethod != CryptoMethod.Original)
                 {
-                    reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+                    reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.MediaUnitSize, SeekOrigin.Begin);
                     ExeFSHeader exefsHeader = ExeFSHeader.Read(reader);
                     if (exefsHeader != null)
                     {
@@ -399,15 +395,15 @@ namespace ThreeDS
 
                             uint datalenM = ((fileHeader.FileSize) / (1024 * 1024));
                             uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
-                            uint ctroffset = ((fileHeader.FileOffset + header.SectorSize) / 0x10);
+                            uint ctroffset = ((fileHeader.FileOffset + header.MediaUnitSize) / 0x10);
 
                             byte[] exefsIVWithOffsetForHeader = AddToByteArray(partitionHeader.ExeFSIV, (int)ctroffset);
 
                             var firstCipher = CreateAESCipher(NormalKey, exefsIVWithOffsetForHeader, encrypt);
                             var secondCipher = CreateAESCipher(NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
 
-                            reader.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-                            writer.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+                            reader.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.MediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+                            writer.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.MediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
 
                             if (datalenM > 0)
                             {
@@ -435,16 +431,16 @@ namespace ThreeDS
                     ProcessExeFSFilenameTable(reader, writer, header, partitionNumber, partitionHeader, encrypt);
 
                 // Process the ExeFS
-                int exefsSizeM = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) / (1024 * 1024);
-                int exefsSizeB = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) % (1024 * 1024);
-                int ctroffsetE = (int)(header.SectorSize / 0x10);
+                int exefsSizeM = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.MediaUnitSize) / (1024 * 1024);
+                int exefsSizeB = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.MediaUnitSize) % (1024 * 1024);
+                int ctroffsetE = (int)(header.MediaUnitSize / 0x10);
 
                 byte[] exefsIVWithOffset = AddToByteArray(partitionHeader.ExeFSIV, ctroffsetE);
 
                 var exeFS = CreateAESCipher(NormalKey2C, exefsIVWithOffset, encrypt);
 
-                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
-                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
+                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.MediaUnitSize, SeekOrigin.Begin);
+                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.MediaUnitSize, SeekOrigin.Begin);
                 if (exefsSizeM > 0)
                 {
                     for (int i = 0; i < exefsSizeM; i++)
@@ -479,13 +475,13 @@ namespace ThreeDS
         /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
         private void ProcessExeFSFilenameTable(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
         {
-            reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-            writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+            reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.MediaUnitSize, SeekOrigin.Begin);
+            writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.MediaUnitSize, SeekOrigin.Begin);
 
             Console.WriteLine($"Partition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
             var exeFSFilenameTable = CreateAESCipher(NormalKey2C, partitionHeader.ExeFSIV, encrypt);
-            writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)header.SectorSize)));
+            writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)header.MediaUnitSize)));
             writer.Flush();
         }
 
@@ -503,8 +499,8 @@ namespace ThreeDS
         {
             if (partitionHeader.RomFSOffsetInMediaUnits != 0)
             {
-                int romfsSizeM = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) / (1024 * 1024);
-                int romfsSizeB = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) % (1024 * 1024);
+                int romfsSizeM = (int)(partitionHeader.RomFSSizeInMediaUnits * header.MediaUnitSize) / (1024 * 1024);
+                int romfsSizeB = (int)(partitionHeader.RomFSSizeInMediaUnits * header.MediaUnitSize) % (1024 * 1024);
 
                 // Encrypting RomFS for partitions 1 and up always use Key0x2C
                 if (encrypt && partitionNumber > 0) 
@@ -529,8 +525,8 @@ namespace ThreeDS
 
                 var cipher = CreateAESCipher(NormalKey, partitionHeader.RomFSIV, encrypt);
 
-                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.MediaUnitSize, SeekOrigin.Begin);
+                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.MediaUnitSize, SeekOrigin.Begin);
                 if (romfsSizeM > 0)
                 {
                     for (int i = 0; i < romfsSizeM; i++)

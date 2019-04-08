@@ -160,14 +160,16 @@ namespace ThreeDS.Headers
         /// Read from a stream and get an NCCH header, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="readSignature">True if the RSA signature is read, false otherwise</param>
         /// <returns>NCCH header object, null on error</returns>
-        public static NCCHHeader Read(BinaryReader reader)
+        public static NCCHHeader Read(BinaryReader reader, bool readSignature)
         {
             NCCHHeader header = new NCCHHeader();
 
             try
             {
-                header.RSA2048Signature = reader.ReadBytes(0x100);
+                if (readSignature)
+                    header.RSA2048Signature = reader.ReadBytes(0x100);
 
                 if (new string(reader.ReadChars(4)) != NCCHMagicNumber)
                     return null;
