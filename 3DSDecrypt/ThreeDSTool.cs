@@ -23,6 +23,11 @@ namespace ThreeDS
         private readonly bool development;
 
         /// <summary>
+        /// Flag to determine if encrypting or decrypting
+        /// </summary>
+        private readonly bool encrypt;
+
+        /// <summary>
         /// Boot rom key
         /// </summary>
         private BigInteger KeyX;
@@ -47,22 +52,25 @@ namespace ThreeDS
         /// </summary>
         private BigInteger NormalKey2C;
 
-        public ThreeDSTool(string filename, bool development)
+        public ThreeDSTool(string filename, bool development, bool encrypt)
         {
             this.filename = filename;
             this.development = development;
+            this.encrypt = encrypt;
+
         }
 
         /// <summary>
-        /// Attempt to decrypt a 3DS file
+        /// Process an input file given the input values
         /// </summary>
-        public void Decrypt()
+        public bool ProcessFile()
         {
-            if (!File.Exists(filename))
-                return;
-
+            // Make sure we have a file to process first
             Console.WriteLine(filename);
+            if (!File.Exists(filename))
+                return false;
 
+            // Open the read and write on the same file for inplace processing
             using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
             {
@@ -70,7 +78,7 @@ namespace ThreeDS
                 if (header == null)
                 {
                     Console.WriteLine("Error: Not a 3DS Rom!");
-                    return;
+                    return false;
                 }
 
                 // Iterate over all 8 NCCH partitions
@@ -93,118 +101,26 @@ namespace ThreeDS
                     }
 
                     // Check if the 'NoCrypto' bit is set
-                    if (partitionHeader.Flags.PossblyDecrypted)
+                    if (partitionHeader.Flags.PossblyDecrypted ^ encrypt)
                     {
-                        Console.WriteLine($"Partition {p}: Already Decrypted?...");
+                        Console.WriteLine($"Partition {p}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
                         continue;
                     }
 
                     // Determine the Keys to be used
                     SetEncryptionKeys(partitionHeader.RSA2048Signature, partitionHeader.Flags.BitMasks, partitionHeader.Flags.CryptoMethod, p);
 
-                    // Decrypt each of the pieces if they exist
-                    ProcessExtendedHeader(reader, writer, header, p, partitionHeader, false);
-                    ProcessExeFS(reader, writer, header, p, partitionHeader, false);
-                    ProcessRomFS(reader, writer, header, p, partitionHeader, false);
+                    // Process each of the pieces if they exist
+                    ProcessExtendedHeader(reader, writer, header, p, partitionHeader, encrypt);
+                    ProcessExeFS(reader, writer, header, p, partitionHeader, encrypt);
+                    ProcessRomFS(reader, writer, header, p, partitionHeader, encrypt);
 
-                    // Write the new CryptoMethod
-                    writer.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
-                    writer.Write((byte)CryptoMethod.Original);
-                    writer.Flush();
-
-                    // Write the new BitMasks flag
-                    writer.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18F, SeekOrigin.Begin);
-                    BitMasks flag = partitionHeader.Flags.BitMasks;
-                    flag = flag & (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
-                    flag = (flag | BitMasks.NoCrypto);
-                    writer.Write((byte)flag);
-                    writer.Flush();
+                    // Write out new CryptoMethod and BitMask flags
+                    UpdateCryptoAndMasks(reader, writer, header, p, partitionHeader, encrypt);
                 }
-
-                Console.WriteLine("Press Enter to Exit...");
-                Console.Read();
             }
-        }
 
-        /// <summary>
-        /// Attempt to encrypt a 3DS file
-        /// </summary>
-        public void Encrypt()
-        {
-            if (!File.Exists(filename))
-                return;
-
-            Console.WriteLine(filename);
-
-            using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
-            using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
-            {
-                NCSDHeader header = NCSDHeader.Read(reader, development);
-                if (header == null)
-                {
-                    Console.WriteLine("Error: Not a 3DS Rom!");
-                    return;
-                }
-
-                // Iterate over all 8 NCCH partitions
-                for (int p = 0; p < 8; p++)
-                {
-                    if (!header.PartitionsTable[p].IsValid())
-                    {
-                        Console.WriteLine($"Partition {p} Not found... Skipping...");
-                        continue;
-                    }
-
-                    // Seek to the beginning of the NCCH partition
-                    reader.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize), SeekOrigin.Begin);
-
-                    NCCHHeader partitionHeader = NCCHHeader.Read(reader, true);
-                    if (partitionHeader == null)
-                    {
-                        Console.WriteLine($"Partition {p} Unable to read NCCH header");
-                        continue;
-                    }
-
-                    // Check if the 'NoCrypto' bit is not set
-                    if (!partitionHeader.Flags.PossblyDecrypted)
-                    {
-                        Console.WriteLine($"Partition {p}: Already Encrypted?...");
-                        continue;
-                    }
-
-                    // Determine the Keys to be used
-                    SetEncryptionKeys(partitionHeader.RSA2048Signature, header.BackupHeader.Flags.BitMasks, header.BackupHeader.Flags.CryptoMethod, p);
-
-                    // Encrypt each of the pieces if they exist
-                    ProcessExtendedHeader(reader, writer, header, p, partitionHeader, true);
-                    ProcessExeFS(reader, writer, header, p, partitionHeader, true);
-                    ProcessRomFS(reader, writer, header, p, partitionHeader, true, header.BackupHeader.Flags);
-
-                    // Write the new CryptoMethod
-                    writer.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
-                    if (p > 0)
-                    {
-                        writer.Write((byte)CryptoMethod.Original); // For partitions 1 and up, set crypto-method to 0x00
-                        writer.Flush();
-                    }
-                    else
-                    {
-                        writer.Write((byte)header.BackupHeader.Flags.CryptoMethod); // If partition 0, restore crypto-method from backup flags
-                        writer.Flush();
-                    }
-                    
-                    // Write the new BitMasks flag
-                    writer.BaseStream.Seek((header.PartitionsTable[p].Offset * header.MediaUnitSize) + 0x18F, SeekOrigin.Begin);
-                    BitMasks flag = partitionHeader.Flags.BitMasks;
-                    flag = (flag & ((BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF));
-                    flag = (flag | (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & header.BackupHeader.Flags.BitMasks);
-                    writer.Write((byte)flag);
-                    writer.Flush();
-                }
-
-                Console.WriteLine("Press Enter to Exit...");
-                Console.Read();
-            }
+            return true;
         }
 
         /// <summary>
@@ -494,8 +410,7 @@ namespace ThreeDS
         /// <param name="partitionNumber">Partition number for logging</param>
         /// <param name="partitionHeader">Partition header</param>
         /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
-        /// <param name="backupFlags">Optional backup flags, only used for encrypt</param>
-        private void ProcessRomFS(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt, NCCHHeaderFlags backupFlags = null)
+        private void ProcessRomFS(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
         {
             if (partitionHeader.RomFSOffsetInMediaUnits != 0)
             {
@@ -506,13 +421,13 @@ namespace ThreeDS
                 if (encrypt && partitionNumber > 0) 
                 {
                     // If the backup flags aren't provided and we're encrypting, assume defaults
-                    if (backupFlags == null)
+                    if (header.BackupHeader.Flags == null)
                     {
                         KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
                         NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
                     }
 
-                    if ((backupFlags.BitMasks & BitMasks.FixedCryptoKey) != 0) // except if using zero-key
+                    if ((header.BackupHeader.Flags.BitMasks & BitMasks.FixedCryptoKey) != 0) // except if using zero-key
                     {
                         NormalKey = 0x00;
                     }
@@ -548,6 +463,53 @@ namespace ThreeDS
             {
                 Console.WriteLine($"Partition {partitionNumber} RomFS: No Data... Skipping...");
             }
+        }
+
+        /// <summary>
+        /// Attempt to decrypt a 3DS file
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="header">NCSD header for the 3DS file</param>
+        /// <param name="partitionNumber">Partition number for seeking in the table</param>
+        /// <param name="partitionHeader">Current partition header value</param>
+        /// <param name="encrypt">True if we're writing encrypted values, false otherwise</param>
+        private void UpdateCryptoAndMasks(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
+        {
+            // Write the new CryptoMethod
+            writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
+            if (encrypt)
+            {
+                // For partitions 1 and up, set crypto-method to 0x00
+                if (partitionNumber > 0)
+                    writer.Write((byte)CryptoMethod.Original);
+
+                // If partition 0, restore crypto-method from backup flags
+                else
+                    writer.Write((byte)header.BackupHeader.Flags.CryptoMethod);
+            }
+            else
+            {
+                writer.Write((byte)CryptoMethod.Original);
+            }
+            writer.Flush();
+
+            // Write the new BitMasks flag
+            writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.MediaUnitSize) + 0x18F, SeekOrigin.Begin);
+            BitMasks flag = partitionHeader.Flags.BitMasks;
+            if (encrypt)
+            {
+                flag = (flag & ((BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF));
+                flag = (flag | (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & header.BackupHeader.Flags.BitMasks);
+            }
+            else
+            {
+                flag = flag & (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
+                flag = (flag | BitMasks.NoCrypto);
+            }
+
+            writer.Write((byte)flag);
+            writer.Flush();
         }
     }
 }

@@ -7,9 +7,24 @@ namespace ThreeDS
     {
         public static void Main(string[] args)
         {
-            if (args.Length < 2 || (args[0] != "encrypt" && args[0] != "decrypt"))
+            if (args.Length < 2)
             {
-                Console.WriteLine("Usage: 3dsdecrypt.exe (decrypt|encrypt) [-dev] <file|dir> ...");
+                DisplayHelp("Not enough arguments");
+                return;
+            }
+
+            bool? encrypt = null;
+            if (args[0] == "decrypt")
+            {
+                encrypt = false;
+            }
+            else if (args[0] == "encrypt")
+            {
+                encrypt = true;
+            }
+            else
+            {
+                DisplayHelp($"Invalid operation: {args[0]}");
                 return;
             }
 
@@ -25,25 +40,31 @@ namespace ThreeDS
             {
                 if (File.Exists(args[i]))
                 {
-                    ThreeDSTool tool = new ThreeDSTool(args[i], development);
-                    if (args[0] == "decrypt")
-                        tool.Decrypt();
-                    else if (args[0] == "encrypt")
-                        tool.Encrypt();
+                    ThreeDSTool tool = new ThreeDSTool(args[i], development, encrypt.Value);
+                    if (!tool.ProcessFile())
+                        Console.WriteLine("Processing failed!");
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ThreeDSTool tool = new ThreeDSTool(file, development);
-                        if (args[0] == "decrypt")
-                            tool.Decrypt();
-                        else if (args[0] == "encrypt")
-                            tool.Encrypt();
-
+                        ThreeDSTool tool = new ThreeDSTool(file, development, encrypt.Value);
+                        if (!tool.ProcessFile())
+                            Console.WriteLine("Processing failed!");
                     }
                 }
             }
+
+            Console.WriteLine("Press Enter to Exit...");
+            Console.Read();
+        }
+
+        private static void DisplayHelp(string err = null)
+        {
+            if (!string.IsNullOrWhiteSpace(err))
+                Console.WriteLine($"Error: {err}");
+
+            Console.WriteLine("Usage: 3dsdecrypt.exe (decrypt|encrypt) [-dev] <file|dir> ...");
         }
     }
 }
