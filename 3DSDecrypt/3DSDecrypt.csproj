@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Data\Constants.cs" />
     <Compile Include="Headers\NCCHHeaderFlags.cs" />
+    <Compile Include="Headers\RomFSHeader.cs" />
     <Compile Include="ThreeDSTool.cs" />
     <Compile Include="Data\Enums.cs" />
     <Compile Include="Headers\AccessControlInfo.cs" />

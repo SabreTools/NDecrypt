@@ -6,16 +6,54 @@ namespace ThreeDS.Headers
 {
     public class NCCHHeaderFlags
     {
-        public byte Reserved0;
-        public byte Reserved1;
-        public byte Reserved2;
-        public CryptoMethod CryptoMethod;
-        public ContentPlatform ContentPlatform;
-        public ContentType MediaPlatformIndex;
-        public byte ContentUnitSize;
-        public uint ContentUnitSizeInBytes { get { return (uint)(0x200 * Math.Pow(2, this.ContentUnitSize)); } }
-        public BitMasks BitMasks;
+        /// <summary>
+        /// Reserved
+        /// </summary>
+        public byte Reserved0 { get; private set; }
 
+        /// <summary>
+        /// Reserved
+        /// </summary>
+        public byte Reserved1 { get; private set; }
+
+        /// <summary>
+        /// Reserved
+        /// </summary>
+        public byte Reserved2 { get; private set; }
+
+        /// <summary>
+        /// Crypto Method: When this is non-zero, a NCCH crypto method using two keyslots is used.
+        /// </summary>
+        public CryptoMethod CryptoMethod { get; private set; }
+
+        /// <summary>
+        /// Content Platform: 1 = CTR, 2 = snake (New 3DS).
+        /// </summary>
+        public ContentPlatform ContentPlatform { get; private set; }
+
+        /// <summary>
+        /// Content Type Bit-masks: Data = 0x1, Executable = 0x2, SystemUpdate = 0x4, Manual = 0x8,
+        /// Child = (0x4|0x8), Trial = 0x10. When 'Data' is set, but not 'Executable', NCCH is a CFA.
+        /// Otherwise when 'Executable' is set, NCCH is a CXI.
+        /// </summary>
+        public ContentType MediaPlatformIndex { get; private set; }
+
+        /// <summary>
+        /// Content Unit Size i.e. u32 ContentUnitSize = 0x200*2^flags[6];
+        /// </summary>
+        public byte ContentUnitSize { get; private set; }
+
+        /// <summary>
+        /// Bit-masks: FixedCryptoKey = 0x1, NoMountRomFs = 0x2, NoCrypto = 0x4, using a new keyY
+        /// generator = 0x20(starting with FIRM 9.6.0-X).
+        /// </summary>
+        public BitMasks BitMasks { get; private set; }
+
+        /// <summary>
+        /// Read from a stream and get an NCCH header flags, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>NCCH header flags object, null on error</returns>
         public static NCCHHeaderFlags Read(BinaryReader reader)
         {
             NCCHHeaderFlags flags = new NCCHHeaderFlags();
@@ -38,6 +76,10 @@ namespace ThreeDS.Headers
             }
         }
 
+        /// <summary>
+        /// Write NCCH header flags to stream, if possible
+        /// </summary>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
         public void Write(BinaryWriter writer)
         {
             try

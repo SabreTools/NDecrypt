@@ -378,7 +378,7 @@ namespace ThreeDS
         /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
         private void ProcessExeFS(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
         {
-            if (partitionHeader.ExeFSSizeInBytes > 0)
+            if (partitionHeader.ExeFSSizeInMediaUnits > 0)
             {
                 // If we're decrypting, we need to decrypt the filename table first
                 if (!encrypt)

@@ -1,15 +1,40 @@
 ﻿using System.IO;
+using ThreeDS.Data;
 
 namespace ThreeDS.Headers
 {
     public class StorageInfo
     {
-        public byte[] ExtdataID = new byte[8];
-        public byte[] SystemSavedataIDs = new byte[8];
-        public byte[] StorageAccessibleUniqueIDs = new byte[8];
-        public byte[] FilesystemAccessInfo = new byte[7];
-        public byte OtherAttributes;
+        /// <summary>
+        /// Extdata ID
+        /// </summary>
+        public byte[] ExtdataID { get; private set; }
 
+        /// <summary>
+        /// System savedata IDs
+        /// </summary>
+        public byte[] SystemSavedataIDs { get; private set; }
+
+        /// <summary>
+        /// Storage accessible unique IDs
+        /// </summary>
+        public byte[] StorageAccessibleUniqueIDs { get; private set; }
+
+        /// <summary>
+        /// Filesystem access info
+        /// </summary>
+        public byte[] FilesystemAccessInfo { get; private set; }
+
+        /// <summary>
+        /// Other attributes
+        /// </summary>
+        public StorageInfoOtherAttributes OtherAttributes { get; private set; }
+
+        /// <summary>
+        /// Read from a stream and get storage info, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>Storage info object, null on error</returns>
         public static StorageInfo Read(BinaryReader reader)
         {
             StorageInfo si = new StorageInfo();
@@ -20,7 +45,7 @@ namespace ThreeDS.Headers
                 si.SystemSavedataIDs = reader.ReadBytes(8);
                 si.StorageAccessibleUniqueIDs = reader.ReadBytes(8);
                 si.FilesystemAccessInfo = reader.ReadBytes(7);
-                si.OtherAttributes = reader.ReadByte();
+                si.OtherAttributes = (StorageInfoOtherAttributes)reader.ReadByte();
                 return si;
             }
             catch

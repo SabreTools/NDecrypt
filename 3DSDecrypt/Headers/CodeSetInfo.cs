@@ -4,10 +4,26 @@ namespace ThreeDS.Headers
 {
     public class CodeSetInfo
     {
-        public byte[] Address = new byte[0x04];
-        public uint PhysicalRegionSizeInPages;
-        public uint SizeInBytes;
+        /// <summary>
+        /// Address
+        /// </summary>
+        public byte[] Address { get; private set; }
 
+        /// <summary>
+        /// Physical region size (in page-multiples)
+        /// </summary>
+        public uint PhysicalRegionSizeInPages { get; private set; }
+
+        /// <summary>
+        /// Size (in bytes)
+        /// </summary>
+        public uint SizeInBytes { get; private set; }
+
+        /// <summary>
+        /// Read from a stream and get code set info, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>Code set info object, null on error</returns>
         public static CodeSetInfo Read(BinaryReader reader)
         {
             CodeSetInfo csi = new CodeSetInfo();
