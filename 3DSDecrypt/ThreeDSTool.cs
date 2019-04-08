@@ -2,9 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Security;
 using ThreeDS.Data;
 using ThreeDS.Headers;
 
@@ -124,18 +121,6 @@ namespace ThreeDS
         }
 
         /// <summary>
-        /// Perform a rotate left on a BigInteger
-        /// </summary>
-        /// <param name="val">BigInteger value to rotate</param>
-        /// <param name="r_bits">Number of bits to rotate</param>
-        /// <param name="max_bits">Maximum number of bits to rotate on</param>
-        /// <returns>Rotated BigInteger value</returns>
-        private BigInteger RotateLeft(BigInteger val, int r_bits, int max_bits)
-        {
-            return (val << r_bits % max_bits) & (BigInteger.Pow(2, max_bits) - 1) | ((val & (BigInteger.Pow(2, max_bits) - 1)) >> (max_bits - (r_bits % max_bits)));
-        }
-
-        /// <summary>
         /// Determine the set of keys to be used for encryption or decryption
         /// </summary>
         /// <param name="header">File header for backup information</param>
@@ -149,7 +134,7 @@ namespace ThreeDS
             KeyY = new BigInteger(partitionHeader.RSA2048Signature.Take(16).Reverse().ToArray()); // KeyY is the first 16 bytes of the partition RSA-2048 SHA-256 signature
 
             NormalKey = 0;
-            NormalKey2C = RotateLeft((RotateLeft(KeyX2C, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+            NormalKey2C = Helper.RotateLeft((Helper.RotateLeft(KeyX2C, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
 
             // Set the header to use based on mode
             BitMasks masks = 0;
@@ -199,71 +184,9 @@ namespace ThreeDS
                         Console.WriteLine("Encryption Method: Key 0x1B");
                 }
 
-                NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+                NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
             }
-        }
-
-        /// <summary>
-        /// Add an integer value to a number represented by a byte array
-        /// </summary>
-        /// <param name="input">Byte array to add to</param>
-        /// <param name="add">Amount to add</param>
-        /// <returns>Byte array representing the new value</returns>
-        private byte[] AddToByteArray(byte[] input, int add)
-        {
-            int len = input.Length;
-            var bigint = new BigInteger(input.Reverse().ToArray());
-            bigint += add;
-            var arr = bigint.ToByteArray().Reverse().ToArray();
-
-            if (arr.Length < len)
-            {
-                byte[] temp = new byte[len];
-                for (int i = 0; i < (len - arr.Length); i++)
-                    temp[i] = 0x00;
-
-                Array.Copy(arr, 0, temp, len - arr.Length, arr.Length);
-                arr = temp;
-            }
-
-            return arr;
-        }
-
-        /// <summary>
-        /// Create AES cipher and intialize
-        /// </summary>
-        /// <param name="key">BigInteger representation of 128-bit encryption key</param>
-        /// <param name="iv">AES initial value for counter</param>
-        /// <param name="encrypt">True if cipher is created for encryption, false otherwise</param>
-        /// <returns>Initialized AES cipher</returns>
-        private IBufferedCipher CreateAESCipher(BigInteger key, byte[] iv, bool encrypt)
-        {
-            var cipher = CipherUtilities.GetCipher("AES/CTR");
-            cipher.Init(encrypt, new ParametersWithIV(new KeyParameter(TakeSixteen(key)), iv));
-            return cipher;
-        }
-
-        /// <summary>
-        /// Get a 16-byte array representation of a BigInteger
-        /// </summary>
-        /// <param name="input">BigInteger value to convert</param>
-        /// <returns>16-byte array representing the BigInteger</returns>
-        private byte[] TakeSixteen(BigInteger input)
-        {
-            var arr = input.ToByteArray().Take(16).Reverse().ToArray();
-
-            if (arr.Length < 16)
-            {
-                byte[] temp = new byte[16];
-                for (int i = 0; i < (16 - arr.Length); i++)
-                    temp[i] = 0x00;
-
-                Array.Copy(arr, 0, temp, 16 - arr.Length, arr.Length);
-                arr = temp;
-            }
-
-            return arr;
-        }
+        }        
 
         /// <summary>
         /// Process the extended header, if it exists
@@ -283,7 +206,7 @@ namespace ThreeDS
 
                 Console.WriteLine($"Partition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
-                var cipher = CreateAESCipher(NormalKey2C, partitionHeader.PlainIV, encrypt);
+                var cipher = Helper.CreateAESCipher(NormalKey2C, partitionHeader.PlainIV, encrypt);
                 writer.Write(cipher.ProcessBytes(reader.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
                 writer.Flush();
             }
@@ -327,10 +250,10 @@ namespace ThreeDS
                             uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
                             uint ctroffset = ((fileHeader.FileOffset + header.MediaUnitSize) / 0x10);
 
-                            byte[] exefsIVWithOffsetForHeader = AddToByteArray(partitionHeader.ExeFSIV, (int)ctroffset);
+                            byte[] exefsIVWithOffsetForHeader = Helper.AddToByteArray(partitionHeader.ExeFSIV, (int)ctroffset);
 
-                            var firstCipher = CreateAESCipher(NormalKey, exefsIVWithOffsetForHeader, encrypt);
-                            var secondCipher = CreateAESCipher(NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
+                            var firstCipher = Helper.CreateAESCipher(NormalKey, exefsIVWithOffsetForHeader, encrypt);
+                            var secondCipher = Helper.CreateAESCipher(NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
 
                             reader.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.MediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
                             writer.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.MediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -365,9 +288,9 @@ namespace ThreeDS
                 int exefsSizeB = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.MediaUnitSize) % (1024 * 1024);
                 int ctroffsetE = (int)(header.MediaUnitSize / 0x10);
 
-                byte[] exefsIVWithOffset = AddToByteArray(partitionHeader.ExeFSIV, ctroffsetE);
+                byte[] exefsIVWithOffset = Helper.AddToByteArray(partitionHeader.ExeFSIV, ctroffsetE);
 
-                var exeFS = CreateAESCipher(NormalKey2C, exefsIVWithOffset, encrypt);
+                var exeFS = Helper.CreateAESCipher(NormalKey2C, exefsIVWithOffset, encrypt);
 
                 reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.MediaUnitSize, SeekOrigin.Begin);
                 writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.MediaUnitSize, SeekOrigin.Begin);
@@ -410,7 +333,7 @@ namespace ThreeDS
 
             Console.WriteLine($"Partition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
-            var exeFSFilenameTable = CreateAESCipher(NormalKey2C, partitionHeader.ExeFSIV, encrypt);
+            var exeFSFilenameTable = Helper.CreateAESCipher(NormalKey2C, partitionHeader.ExeFSIV, encrypt);
             writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)header.MediaUnitSize)));
             writer.Flush();
         }
@@ -438,7 +361,7 @@ namespace ThreeDS
                     if (header.BackupHeader.Flags == null)
                     {
                         KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
-                        NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+                        NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
                     }
 
                     if ((header.BackupHeader.Flags.BitMasks & BitMasks.FixedCryptoKey) != 0) // except if using zero-key
@@ -448,11 +371,11 @@ namespace ThreeDS
                     else
                     {
                         KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
-                        NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+                        NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
                     }
                 }
 
-                var cipher = CreateAESCipher(NormalKey, partitionHeader.RomFSIV, encrypt);
+                var cipher = Helper.CreateAESCipher(NormalKey, partitionHeader.RomFSIV, encrypt);
 
                 reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.MediaUnitSize, SeekOrigin.Begin);
                 writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.MediaUnitSize, SeekOrigin.Begin);
