@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 using ThreeDS.Data;
@@ -20,6 +21,31 @@ namespace ThreeDS
         /// Flag to detrmine if development keys should be used
         /// </summary>
         private readonly bool development;
+
+        /// <summary>
+        /// Boot rom key
+        /// </summary>
+        private BigInteger KeyX;
+
+        /// <summary>
+        /// NCCH boot rom key
+        /// </summary>
+        private BigInteger KeyX2C;
+
+        /// <summary>
+        /// Kernel9/Process9 key
+        /// </summary>
+        private BigInteger KeyY;
+
+        /// <summary>
+        /// Normal AES key
+        /// </summary>
+        private BigInteger NormalKey;
+
+        /// <summary>
+        /// NCCH AES key
+        /// </summary>
+        private BigInteger NormalKey2C;
 
         public ThreeDSTool(string filename, bool development)
         {
@@ -74,151 +100,12 @@ namespace ThreeDS
                     }
 
                     // Determine the Keys to be used
-                    GetEncryptionKeys(partitionHeader.RSA2048Signature, partitionHeader.Flags.BitMasks, partitionHeader.Flags.CryptoMethod, p,
-                        out BigInteger KeyX, out BigInteger KeyX2C, out BigInteger KeyY, out BigInteger NormalKey, out BigInteger NormalKey2C);
+                    SetEncryptionKeys(partitionHeader.RSA2048Signature, partitionHeader.Flags.BitMasks, partitionHeader.Flags.CryptoMethod, p);
 
-                    // Decrypted extended header, if it exists
-                    if (partitionHeader.ExtendedHeaderSizeInBytes > 0)
-                    {
-                        // Seek to the partition start and skip first part of the header
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
-
-                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
-                        exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), partitionHeader.PlainIV));
-
-                        Console.WriteLine($"Partition {p} ExeFS: Decrypting: ExHeader");
-
-                        g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
-                        g.Flush();
-                    }
-
-                    // Decrypt the ExeFS, if it exists
-                    if (partitionHeader.ExeFSSizeInBytes > 0)
-                    {
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-
-                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
-                        exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), partitionHeader.ExeFSIV));
-
-                        g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes((int)header.SectorSize)));
-                        g.Flush();
-
-                        Console.WriteLine($"Partition {p} ExeFS: Decrypting: ExeFS Filename Table");
-
-                        if (partitionHeader.Flags.CryptoMethod != CryptoMethod.Original)
-                        {
-                            f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                            ExeFSHeader exefsHeader = ExeFSHeader.Read(f);
-                            if (exefsHeader != null)
-                            {
-                                foreach (ExeFSFileHeader fileHeader in exefsHeader.FileHeaders)
-                                {
-                                    if (!fileHeader.IsCodeBinary)
-                                        continue;
-
-                                    uint datalenM = ((fileHeader.FileSize) / (1024 * 1024));
-                                    uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
-                                    uint ctroffset = ((fileHeader.FileOffset + header.SectorSize) / 0x10);
-
-                                    byte[] exefsIVWithOffsetForHeader = AddToByteArray(partitionHeader.ExeFSIV, (int)ctroffset);
-
-                                    var exefsctrmode = CipherUtilities.GetCipher("AES/CTR");
-                                    exefsctrmode.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), exefsIVWithOffsetForHeader));
-
-                                    exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
-                                    exefsctrmode2C.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffsetForHeader));
-
-                                    f.BaseStream.Seek((((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-                                    g.BaseStream.Seek((((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-
-                                    if (datalenM > 0)
-                                    {
-                                        for (int i = 0; i < datalenM; i++)
-                                        {
-                                            g.Write(exefsctrmode2C.ProcessBytes(exefsctrmode.ProcessBytes(f.ReadBytes(1024 * 1024))));
-                                            g.Flush();
-                                            Console.Write($"\rPartition {p} ExeFS: Decrypting: {fileHeader.ReadableFileName}... {i} / {datalenM + 1} mb...");
-                                        }
-                                    }
-
-                                    if (datalenB > 0)
-                                    {
-                                        g.Write(exefsctrmode2C.DoFinal(exefsctrmode.DoFinal(f.ReadBytes((int)datalenB))));
-                                        g.Flush();
-                                    }
-
-                                    Console.Write($"\rPartition {p} ExeFS: Decrypting: {fileHeader.ReadableFileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
-                                }
-                            }
-                        }
-
-                        // decrypt exefs
-                        int exefsSizeM = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) / (1024 * 1024);
-                        int exefsSizeB = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) % (1024 * 1024);
-                        int ctroffsetE = (int)(header.SectorSize / 0x10);
-
-                        byte[] exefsIVWithOffset = AddToByteArray(partitionHeader.ExeFSIV, ctroffsetE);
-
-                        exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
-                        exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffset));
-
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
-                        if (exefsSizeM > 0)
-                        {
-                            for (int i = 0; i < exefsSizeM; i++)
-                            {
-                                g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes(1024 * 1024)));
-                                g.Flush();
-                                Console.Write($"\rPartition {p} ExeFS: Decrypting: {i} / {exefsSizeM + 1} mb");
-                            }
-                        }
-                        if (exefsSizeB > 0)
-                        {
-                            g.Write(exefsctrmode2C.DoFinal(f.ReadBytes(exefsSizeB)));
-                            g.Flush();
-                        }
-
-                        Console.Write($"\rPartition {p} ExeFS: Decrypting: {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Partition {p} ExeFS: No Data... Skipping...");
-                    }
-
-                    if (partitionHeader.RomFSOffsetInMediaUnits != 0)
-                    {
-                        int romfsSizeM = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) / (1024 * 1024);
-                        int romfsSizeB = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) % (1024 * 1024);
-
-                        var romfsctrmode = CipherUtilities.GetCipher("AES/CTR");
-                        romfsctrmode.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), partitionHeader.RomFSIV));
-
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                        if (romfsSizeM > 0)
-                        {
-                            for (int i = 0; i < romfsSizeM; i++)
-                            {
-                                g.Write(romfsctrmode.ProcessBytes(f.ReadBytes(1024 * 1024)));
-                                g.Flush();
-                                Console.Write($"\rPartition {p} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
-                            }
-                        }
-                        if (romfsSizeB > 0)
-                        {
-                            g.Write(romfsctrmode.DoFinal(f.ReadBytes(romfsSizeB)));
-                            g.Flush();
-                        }
-
-                        Console.Write($"\rPartition {p} RomFS: Decrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Partition {p} RomFS: No Data... Skipping...");
-                    }
+                    // Decrypt each of the pieces if they exist
+                    ProcessExtendedHeader(f, g, header, p, partitionHeader, false);
+                    ProcessExeFS(f, g, header, p, partitionHeader, false);
+                    ProcessRomFS(f, g, header, p, partitionHeader, false);
 
                     // Write the new CryptoMethod
                     g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x18B, SeekOrigin.Begin);
@@ -290,167 +177,12 @@ namespace ThreeDS
                     }
 
                     // Determine the Keys to be used
-                    GetEncryptionKeys(partitionHeader.RSA2048Signature, backupFlags.BitMasks, backupFlags.CryptoMethod, p,
-                        out BigInteger KeyX, out BigInteger KeyX2C, out BigInteger KeyY, out BigInteger NormalKey, out BigInteger NormalKey2C);
+                    SetEncryptionKeys(partitionHeader.RSA2048Signature, backupFlags.BitMasks, backupFlags.CryptoMethod, p);
 
-                    // Encrypt extended header, if it exists
-                    if (partitionHeader.ExtendedHeaderSizeInBytes > 0)
-                    {
-                        // Seek to the partition start and skip first part of the header
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
-
-                        var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
-                        exefsctrmode2C.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), partitionHeader.PlainIV));
-
-                        Console.WriteLine($"Partition {p} ExeFS: Encrypting: ExHeader");
-
-                        g.Write(exefsctrmode2C.ProcessBytes(f.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
-                        g.Flush();
-                    }
-
-                    // Encrypt the ExeFS, if it exists
-                    if (partitionHeader.ExeFSSizeInBytes > 0)
-                    {
-                        if (backupFlags.CryptoMethod != CryptoMethod.Original)
-                        {
-                            f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                            ExeFSHeader exefsHeader = ExeFSHeader.Read(f);
-                            if (exefsHeader != null)
-                            {
-                                foreach (ExeFSFileHeader fileHeader in exefsHeader.FileHeaders)
-                                {
-                                    if (!fileHeader.IsCodeBinary)
-                                        continue;
-
-                                    uint datalenM = ((fileHeader.FileSize) / (1024 * 1024));
-                                    uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
-                                    uint ctroffset = ((fileHeader.FileOffset + header.SectorSize) / 0x10);
-
-                                    byte[] exefsIVWithOffsetForHeader = AddToByteArray(partitionHeader.ExeFSIV, (int)ctroffset);
-
-                                    var exefsctrmode = CipherUtilities.GetCipher("AES/CTR");
-                                    exefsctrmode.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), exefsIVWithOffsetForHeader));
-
-                                    var exefsctrmode2C = CipherUtilities.GetCipher("AES/CTR");
-                                    exefsctrmode2C.Init(false, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffsetForHeader));
-
-                                    f.BaseStream.Seek((((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-                                    g.BaseStream.Seek((((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-
-                                    if (datalenM > 0)
-                                    {
-                                        for (int i = 0; i < datalenM; i++)
-                                        {
-                                            g.Write(exefsctrmode2C.ProcessBytes(exefsctrmode.ProcessBytes(f.ReadBytes(1024 * 1024))));
-                                            g.Flush();
-                                            Console.Write($"\rPartition {p} ExeFS: Encrypting: {fileHeader.ReadableFileName}... {i} / {datalenM + 1} mb...");
-                                        }
-                                    }
-
-                                    if (datalenB > 0)
-                                    {
-                                        g.Write(exefsctrmode2C.DoFinal(exefsctrmode.DoFinal(f.ReadBytes((int)datalenB))));
-                                        g.Flush();
-                                    }
-
-                                    Console.Write($"\rPartition {p} ExeFS: Encrypting: {fileHeader.ReadableFileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
-                                }
-                            }
-                        }
-
-                        // encrypt exefs filename table
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-
-                        var exefsctrmode2C_2 = CipherUtilities.GetCipher("AES/CTR");
-                        exefsctrmode2C_2.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), partitionHeader.ExeFSIV));
-
-                        g.Write(exefsctrmode2C_2.ProcessBytes(f.ReadBytes((int)header.SectorSize)));
-                        g.Flush();
-
-                        Console.WriteLine($"Partition {p} ExeFS: Encrypting: ExeFS Filename Table");
-
-                        // encrypt exefs
-                        int exefsSizeM = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) / (1024 * 1024);
-                        int exefsSizeB = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) % (1024 * 1024);
-                        int ctroffsetE = (int)(header.SectorSize / 0x10);
-
-                        byte[] exefsIVWithOffset = AddToByteArray(partitionHeader.ExeFSIV, ctroffsetE);
-
-                        exefsctrmode2C_2 = CipherUtilities.GetCipher("AES/CTR");
-                        exefsctrmode2C_2.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey2C)), exefsIVWithOffset));
-
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
-                        if (exefsSizeM > 0)
-                        {
-                            for (int i = 0; i < exefsSizeM; i++)
-                            {
-                                g.Write(exefsctrmode2C_2.ProcessBytes(f.ReadBytes(1024 * 1024)));
-                                g.Flush();
-                                Console.Write($"\rPartition {p} ExeFS: Encrypting: {i} / {exefsSizeM + 1} mb");
-                            }
-                        }
-                        if (exefsSizeB > 0)
-                        {
-                            g.Write(exefsctrmode2C_2.DoFinal(f.ReadBytes(exefsSizeB)));
-                            g.Flush();
-                        }
-
-                        Console.Write($"\rPartition {p} ExeFS: Encrypting: {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Partition {p} ExeFS: No Data... Skipping...");
-                    }
-
-                    if (partitionHeader.RomFSOffsetInMediaUnits != 0)
-                    {
-                        int romfsBlockSize = 16; // block size in mb
-                        int romfsSizeM = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) / (romfsBlockSize * (1024 * 1024));
-                        int romfsSizeB = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) % (romfsBlockSize * (1024 * 1024));
-                        int romfsSizeTotalMb = (int)((partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) / (1024 * 1024) + 1);
-
-                        if (p > 0) // RomFS for partitions 1 and up always use Key0x2C
-                        {
-                            if ((backupFlags.BitMasks & BitMasks.FixedCryptoKey) != 0) // except if using zero-key
-                            {
-                                NormalKey = 0x00;
-                            }
-                            else
-                            {
-                                KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
-                                NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
-                            }
-                        }
-
-                        var romfsctrmode = CipherUtilities.GetCipher("AES/CTR");
-                        romfsctrmode.Init(true, new ParametersWithIV(new KeyParameter(TakeSixteen(NormalKey)), partitionHeader.RomFSIV));
-
-                        f.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                        g.BaseStream.Seek((header.PartitionsTable[p].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
-                        if (romfsSizeM > 0)
-                        {
-                            for (int i = 0; i < romfsSizeM; i++)
-                            {
-                                g.Write(romfsctrmode.ProcessBytes(f.ReadBytes(romfsBlockSize * 1024 * 1024)));
-                                g.Flush();
-                                Console.Write($"\rPartition {p} RomFS: Encrypting: {i * romfsBlockSize} / {romfsSizeTotalMb} mb");
-                            }
-                        }
-                        if (romfsSizeB > 0)
-                        {
-                            g.Write(romfsctrmode.DoFinal(f.ReadBytes(romfsSizeB)));
-                            g.Flush();
-                        }
-
-                        Console.Write($"\rPartition {p} RomFS: Encrypting: {romfsSizeTotalMb} / {romfsSizeTotalMb} mb... Done!\r\n");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Partition {p} RomFS: No Data... Skipping...");
-                    }
+                    // Encrypt each of the pieces if they exist
+                    ProcessExtendedHeader(f, g, header, p, partitionHeader, true);
+                    ProcessExeFS(f, g, header, p, partitionHeader, true);
+                    ProcessRomFS(f, g, header, p, partitionHeader, true, backupFlags);
 
                     // Write the new CryptoMethod
                     g.BaseStream.Seek((header.PartitionsTable[p].Offset * header.SectorSize) + 0x18B, SeekOrigin.Begin);
@@ -498,13 +230,7 @@ namespace ThreeDS
         /// <param name="masks">BitMasks value for a partition header or backup header</param>
         /// <param name="method">CryptoMethod used for the partition</param>
         /// <param name="partitionNumber">Partition number, only used for logging</param>
-        /// <param name="KeyX">3DS KeyX value to use</param>
-        /// <param name="KeyX2C">3DS KeyX2C value to use</param>
-        /// <param name="KeyY">3DS KeyY value to use</param>
-        /// <param name="NormalKey">3DS NormalKey value to use</param>
-        /// <param name="NormalKey2C">3DS NormalKey2C value to use</param>
-        private void GetEncryptionKeys(byte[] rsaSignature, BitMasks masks, CryptoMethod method, int partitionNumber,
-            out BigInteger KeyX, out BigInteger KeyX2C, out BigInteger KeyY, out BigInteger NormalKey, out BigInteger NormalKey2C)
+        private void SetEncryptionKeys(byte[] rsaSignature, BitMasks masks, CryptoMethod method, int partitionNumber)
         {
             KeyX = 0;
             KeyX2C = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
@@ -578,6 +304,20 @@ namespace ThreeDS
         }
 
         /// <summary>
+        /// Create AES cipher and intialize
+        /// </summary>
+        /// <param name="key">BigInteger representation of 128-bit encryption key</param>
+        /// <param name="iv">AES initial value for counter</param>
+        /// <param name="encrypt">True if cipher is created for encryption, false otherwise</param>
+        /// <returns>Initialized AES cipher</returns>
+        private IBufferedCipher CreateAESCipher(BigInteger key, byte[] iv, bool encrypt)
+        {
+            var cipher = CipherUtilities.GetCipher("AES/CTR");
+            cipher.Init(encrypt, new ParametersWithIV(new KeyParameter(TakeSixteen(key)), iv));
+            return cipher;
+        }
+
+        /// <summary>
         /// Get a 16-byte array representation of a BigInteger
         /// </summary>
         /// <param name="input">BigInteger value to convert</param>
@@ -597,6 +337,221 @@ namespace ThreeDS
             }
 
             return arr;
+        }
+
+        /// <summary>
+        /// Process the extended header, if it exists
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="header">File header</param>
+        /// <param name="partitionNumber">Partition number for logging</param>
+        /// <param name="partitionHeader">Partition header</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        private void ProcessExtendedHeader(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
+        {
+            if (partitionHeader.ExtendedHeaderSizeInBytes > 0)
+            {
+                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
+                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset * header.SectorSize) + 0x200, SeekOrigin.Begin);
+
+                Console.WriteLine($"Partition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
+
+                var cipher = CreateAESCipher(NormalKey2C, partitionHeader.PlainIV, encrypt);
+                writer.Write(cipher.ProcessBytes(reader.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
+                writer.Flush();
+            }
+            else
+            {
+                Console.WriteLine($"Partition {partitionNumber} ExeFS: No Extended Header... Skipping...");
+            }
+        }
+
+        /// <summary>
+        /// Process the ExeFS, if it exists
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="header">File header</param>
+        /// <param name="partitionNumber">Partition number for logging</param>
+        /// <param name="partitionHeader">Partition header</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        private void ProcessExeFS(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
+        {
+            if (partitionHeader.ExeFSSizeInBytes > 0)
+            {
+                // If we're decrypting, we need to decrypt the filename table first
+                if (!encrypt)
+                    ProcessExeFSFilenameTable(reader, writer, header, partitionNumber, partitionHeader, encrypt);
+
+                // For all but the original crypto method, process each of the files in the table
+                if (partitionHeader.Flags.CryptoMethod != CryptoMethod.Original)
+                {
+                    reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+                    ExeFSHeader exefsHeader = ExeFSHeader.Read(reader);
+                    if (exefsHeader != null)
+                    {
+                        foreach (ExeFSFileHeader fileHeader in exefsHeader.FileHeaders)
+                        {
+                            // Only decrypt a file if it's a code binary
+                            if (!fileHeader.IsCodeBinary)
+                                continue;
+
+                            uint datalenM = ((fileHeader.FileSize) / (1024 * 1024));
+                            uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
+                            uint ctroffset = ((fileHeader.FileOffset + header.SectorSize) / 0x10);
+
+                            byte[] exefsIVWithOffsetForHeader = AddToByteArray(partitionHeader.ExeFSIV, (int)ctroffset);
+
+                            var firstCipher = CreateAESCipher(NormalKey, exefsIVWithOffsetForHeader, encrypt);
+                            var secondCipher = CreateAESCipher(NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
+
+                            reader.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+                            writer.BaseStream.Seek((((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) + 1) * header.SectorSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+
+                            if (datalenM > 0)
+                            {
+                                for (int i = 0; i < datalenM; i++)
+                                {
+                                    writer.Write(secondCipher.ProcessBytes(firstCipher.ProcessBytes(reader.ReadBytes(1024 * 1024))));
+                                    writer.Flush();
+                                    Console.Write($"\rPartition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.ReadableFileName}... {i} / {datalenM + 1} mb...");
+                                }
+                            }
+
+                            if (datalenB > 0)
+                            {
+                                writer.Write(secondCipher.DoFinal(firstCipher.DoFinal(reader.ReadBytes((int)datalenB))));
+                                writer.Flush();
+                            }
+
+                            Console.Write($"\rPartition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.ReadableFileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
+                        }
+                    }
+                }
+
+                // If we're encrypting, we need to encrypt the filename table now
+                if (encrypt)
+                    ProcessExeFSFilenameTable(reader, writer, header, partitionNumber, partitionHeader, encrypt);
+
+                // Process the ExeFS
+                int exefsSizeM = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) / (1024 * 1024);
+                int exefsSizeB = (int)((partitionHeader.ExeFSSizeInMediaUnits - 1) * header.SectorSize) % (1024 * 1024);
+                int ctroffsetE = (int)(header.SectorSize / 0x10);
+
+                byte[] exefsIVWithOffset = AddToByteArray(partitionHeader.ExeFSIV, ctroffsetE);
+
+                var exeFS = CreateAESCipher(NormalKey2C, exefsIVWithOffset, encrypt);
+
+                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
+                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits + 1) * header.SectorSize, SeekOrigin.Begin);
+                if (exefsSizeM > 0)
+                {
+                    for (int i = 0; i < exefsSizeM; i++)
+                    {
+                        writer.Write(exeFS.ProcessBytes(reader.ReadBytes(1024 * 1024)));
+                        writer.Flush();
+                        Console.Write($"\rPartition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
+                    }
+                }
+                if (exefsSizeB > 0)
+                {
+                    writer.Write(exeFS.DoFinal(reader.ReadBytes(exefsSizeB)));
+                    writer.Flush();
+                }
+
+                Console.Write($"\rPartition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
+            }
+            else
+            {
+                Console.WriteLine($"Partition {partitionNumber} ExeFS: No Data... Skipping...");
+            }
+        }
+
+        /// <summary>
+        /// Process the ExeFS Filename Table
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="header">File header</param>
+        /// <param name="partitionNumber">Partition number for logging</param>
+        /// <param name="partitionHeader">Partition header</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        private void ProcessExeFSFilenameTable(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt)
+        {
+            reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+            writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.ExeFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+
+            Console.WriteLine($"Partition {partitionNumber} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
+
+            var exeFSFilenameTable = CreateAESCipher(NormalKey2C, partitionHeader.ExeFSIV, encrypt);
+            writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)header.SectorSize)));
+            writer.Flush();
+        }
+
+        /// <summary>
+        /// Process the RomFS, if it exists
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="header">File header</param>
+        /// <param name="partitionNumber">Partition number for logging</param>
+        /// <param name="partitionHeader">Partition header</param>
+        /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
+        /// <param name="backupFlags">Optional backup flags, only used for encrypt</param>
+        private void ProcessRomFS(BinaryReader reader, BinaryWriter writer, NCSDHeader header, int partitionNumber, NCCHHeader partitionHeader, bool encrypt, NCCHHeaderFlags backupFlags = null)
+        {
+            if (partitionHeader.RomFSOffsetInMediaUnits != 0)
+            {
+                int romfsSizeM = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) / (1024 * 1024);
+                int romfsSizeB = (int)(partitionHeader.RomFSSizeInMediaUnits * header.SectorSize) % (1024 * 1024);
+
+                // Encrypting RomFS for partitions 1 and up always use Key0x2C
+                if (encrypt && partitionNumber > 0) 
+                {
+                    // If the backup flags aren't provided and we're encrypting, assume defaults
+                    if (backupFlags == null)
+                    {
+                        KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                        NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+                    }
+
+                    if ((backupFlags.BitMasks & BitMasks.FixedCryptoKey) != 0) // except if using zero-key
+                    {
+                        NormalKey = 0x00;
+                    }
+                    else
+                    {
+                        KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                        NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
+                    }
+                }
+
+                var cipher = CreateAESCipher(NormalKey, partitionHeader.RomFSIV, encrypt);
+
+                reader.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+                writer.BaseStream.Seek((header.PartitionsTable[partitionNumber].Offset + partitionHeader.RomFSOffsetInMediaUnits) * header.SectorSize, SeekOrigin.Begin);
+                if (romfsSizeM > 0)
+                {
+                    for (int i = 0; i < romfsSizeM; i++)
+                    {
+                        writer.Write(cipher.ProcessBytes(reader.ReadBytes(1024 * 1024)));
+                        writer.Flush();
+                        Console.Write($"\rPartition {partitionNumber} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
+                    }
+                }
+                if (romfsSizeB > 0)
+                {
+                    writer.Write(cipher.DoFinal(reader.ReadBytes(romfsSizeB)));
+                    writer.Flush();
+                }
+
+                Console.Write($"\rPartition {partitionNumber} RomFS: Decrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
+            }
+            else
+            {
+                Console.WriteLine($"Partition {partitionNumber} RomFS: No Data... Skipping...");
+            }
         }
     }
 }
