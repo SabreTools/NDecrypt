@@ -294,11 +294,11 @@ namespace ThreeDS.Headers
                     header.Reserved3 = reader.ReadBytes(0x108);
                     header.TitleVersion = reader.ReadUInt16();
                     header.CardRevision = reader.ReadUInt16();
-                    header.Reserved4 = reader.ReadBytes(0xCEE);
+                    header.Reserved4 = reader.ReadBytes(0xCEC); // Incorrectly documented as 0xCEE
                     header.CardSeedKeyY = reader.ReadBytes(0x10);
                     header.EncryptedCardSeed = reader.ReadBytes(0x10);
                     header.CardSeedAESMAC = reader.ReadBytes(0x10);
-                    header.CardSeedNonce = reader.ReadBytes(0x10);
+                    header.CardSeedNonce = reader.ReadBytes(0xC);
                     header.Reserved5 = reader.ReadBytes(0xC4);
                     header.BackupHeader = NCCHHeader.Read(reader, false);
 
