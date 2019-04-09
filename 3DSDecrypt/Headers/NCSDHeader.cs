@@ -330,8 +330,7 @@ namespace ThreeDS.Headers
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
         /// <param name="development">True if development keys should be used, false otherwise</param>
-        /// <returns></returns>
-        public bool ProcessAllPartitions(BinaryReader reader, BinaryWriter writer, bool encrypt, bool development)
+        public void ProcessAllPartitions(BinaryReader reader, BinaryWriter writer, bool encrypt, bool development)
         {
             // Iterate over all 8 NCCH partitions
             for (int p = 0; p < 8; p++)
@@ -340,26 +339,8 @@ namespace ThreeDS.Headers
                 if (partitionHeader == null)
                     continue;
 
-                // Check if the 'NoCrypto' bit is set
-                if (partitionHeader.Flags.PossblyDecrypted ^ encrypt)
-                {
-                    Console.WriteLine($"Partition {p}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
-                    continue;
-                }
-
-                // Determine the Keys to be used
-                partitionHeader.SetEncryptionKeys(BackupHeader.Flags, encrypt, development);
-
-                // Process each of the pieces if they exist
-                partitionHeader.ProcessExtendedHeader(reader, writer, MediaUnitSize, encrypt);
-                partitionHeader.ProcessExeFS(reader, writer, MediaUnitSize, encrypt);
-                partitionHeader.ProcessRomFS(reader, writer, MediaUnitSize, BackupHeader.Flags, encrypt, development);
-
-                // Write out new CryptoMethod and BitMask flags
-                partitionHeader.UpdateCryptoAndMasks(reader, writer, this, encrypt);
+                partitionHeader.ProcessPartition(reader, writer, this, encrypt, development);
             }
-
-            return true;
         }
 
         /// <summary>

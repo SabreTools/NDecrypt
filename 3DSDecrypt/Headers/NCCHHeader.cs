@@ -248,12 +248,41 @@ namespace ThreeDS.Headers
         }
 
         /// <summary>
+        /// Process a single partition
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="header">NCSD header representing the 3DS file</param>
+        /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
+        /// <param name="development">True if development keys should be used, false otherwise</param>
+        public void ProcessPartition(BinaryReader reader, BinaryWriter writer, NCSDHeader header, bool encrypt, bool development)
+        {
+            // Check if the 'NoCrypto' bit is set
+            if (Flags.PossblyDecrypted ^ encrypt)
+            {
+                Console.WriteLine($"Partition {PartitionNumber}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
+                return;
+            }
+
+            // Determine the Keys to be used
+            SetEncryptionKeys(header.BackupHeader.Flags, encrypt, development);
+
+            // Process each of the pieces if they exist
+            ProcessExtendedHeader(reader, writer, header.MediaUnitSize, encrypt);
+            ProcessExeFS(reader, writer, header.MediaUnitSize, encrypt);
+            ProcessRomFS(reader, writer, header.MediaUnitSize, header.BackupHeader.Flags, encrypt, development);
+
+            // Write out new CryptoMethod and BitMask flags
+            UpdateCryptoAndMasks(reader, writer, header, encrypt);
+        }
+
+        /// <summary>
         /// Determine the set of keys to be used for encryption or decryption
         /// </summary>
         /// <param name="backupFlags">File backup flags for encryption</param>
         /// <param name="encrypt">True if we're encrypting the file, false otherwise</param>
         /// <param name="development">True if development keys should be used, false otherwise</param>
-        public void SetEncryptionKeys(NCCHHeaderFlags backupFlags, bool encrypt, bool development)
+        private void SetEncryptionKeys(NCCHHeaderFlags backupFlags, bool encrypt, bool development)
         {
             KeyX = 0;
             KeyX2C = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
@@ -321,7 +350,7 @@ namespace ThreeDS.Headers
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="mediaUnitSize">Number of bytes per media unit</param>
         /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
-        public bool ProcessExtendedHeader(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
+        private bool ProcessExtendedHeader(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
         {
             if (ExtendedHeaderSizeInBytes > 0)
             {
@@ -349,7 +378,7 @@ namespace ThreeDS.Headers
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="mediaUnitSize">Number of bytes per media unit</param>
         /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
-        public void ProcessExeFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
+        private void ProcessExeFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
         {
             if (ExeFSSizeInMediaUnits > 0)
             {
@@ -469,7 +498,7 @@ namespace ThreeDS.Headers
         /// <param name="backupFlags">File backup flags for encryption</param>
         /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
         /// <param name="development">True if development keys should be used, false otherwise</param>
-        public void ProcessRomFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, NCCHHeaderFlags backupFlags, bool encrypt, bool development)
+        private void ProcessRomFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, NCCHHeaderFlags backupFlags, bool encrypt, bool development)
         {
             if (RomFSOffsetInMediaUnits != 0)
             {
@@ -531,7 +560,7 @@ namespace ThreeDS.Headers
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="header">NCSD header for the 3DS file</param>
         /// <param name="encrypt">True if we're writing encrypted values, false otherwise</param>
-        public void UpdateCryptoAndMasks(BinaryReader reader, BinaryWriter writer, NCSDHeader header, bool encrypt)
+        private void UpdateCryptoAndMasks(BinaryReader reader, BinaryWriter writer, NCSDHeader header, bool encrypt)
         {
             // Write the new CryptoMethod
             writer.BaseStream.Seek((Entry.Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
