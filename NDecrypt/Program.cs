@@ -64,7 +64,7 @@ namespace NDecrypt
             if (!string.IsNullOrWhiteSpace(err))
                 Console.WriteLine($"Error: {err}");
 
-            Console.WriteLine("Usage: 3dsdecrypt.exe (decrypt|encrypt) [-dev] <file|dir> ...");
+            Console.WriteLine("Usage: NDecrypt.exe (decrypt|encrypt) [-dev] <file|dir> ...");
         }
 
         private enum RomType
