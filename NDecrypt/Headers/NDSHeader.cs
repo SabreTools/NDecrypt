@@ -12,10 +12,6 @@ namespace NDecrypt.Headers
         private uint[] cardHash = new uint[0x412];
         private uint[] arg2 = new uint[3];
 
-        // ARM9 decryption check values
-        private const uint MAGIC30 = 0x72636E65;
-        private const uint MAGIC34 = 0x6A624F79;
-
         #endregion
 
         #region Common to all NDS files
@@ -674,7 +670,7 @@ namespace NDecrypt.Headers
             if (!encrypt)
             {
                 Decrypt(ref p1, ref p0);
-                if (p0 == MAGIC30 && p1 == MAGIC34)
+                if (p0 == Constants.MAGIC30 && p1 == Constants.MAGIC34)
                 {
                     p0 = 0xE7FFDEFF;
                     p1 = 0xE7FFDEFF;
@@ -717,8 +713,8 @@ namespace NDecrypt.Headers
 
                 if (p0 == 0xE7FFDEFF && p1 == 0xE7FFDEFF)
                 {
-                    p0 = MAGIC30;
-                    p1 = MAGIC34;
+                    p0 = Constants.MAGIC30;
+                    p1 = Constants.MAGIC34;
                 }
 
                 Encrypt(ref p1, ref p0);

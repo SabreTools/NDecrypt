@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using NDecrypt.Data;
 
 namespace NDecrypt
 {
@@ -34,6 +35,14 @@ namespace NDecrypt
             {
                 development = true;
                 start = 2;
+            }
+
+            // Ensure the constants are all set
+            new Constants();
+            if (!Constants.IsReady)
+            {
+                Console.WriteLine("Could not read keys from keys.bin. Please make sure the file exists and try again");
+                return;
             }
 
             for (int i = start; i < args.Length; i++)
