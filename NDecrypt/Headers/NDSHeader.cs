@@ -612,8 +612,8 @@ namespace NDecrypt.Headers
         /// <summary>
         /// Determine if the current file is already decrypted or not
         /// </summary>
-        /// <param name="reader"></param>
-        /// <returns></returns>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>True if the file has known values for a decrypted file, false otherwise</returns>
         private bool CheckIfDecrypted(BinaryReader reader)
         {
             reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
@@ -621,7 +621,8 @@ namespace NDecrypt.Headers
             uint secondValue = reader.ReadUInt32();
 
             return ((firstValue == 0xE7FFDEFF) && (secondValue == 0xE7FFDEFF))
-                || ((firstValue == 0xD0D48B67) && (secondValue == 0x39392F23)); // Edge case for a couple of items
+                || ((firstValue == 0xD0D48B67) && (secondValue == 0x39392F23))  // Incorrectly mastered value
+                || ((firstValue == 0x00000000) && (secondValue == 0x00000000)); // Empty secure area
         }
 
         /// <summary>
@@ -737,8 +738,8 @@ namespace NDecrypt.Headers
         /// <summary>
         /// Perform a decryption step
         /// </summary>
-        /// <param name="arg1"></param>
-        /// <param name="arg2"></param>
+        /// <param name="arg1">First unsigned value to use in decryption</param>
+        /// <param name="arg2">Second unsigned value to use in decryption</param>
         private void Decrypt(ref uint arg1, ref uint arg2)
         {
             uint a = arg1;
@@ -757,8 +758,8 @@ namespace NDecrypt.Headers
         /// <summary>
         /// Perform an encryption step
         /// </summary>
-        /// <param name="arg1"></param>
-        /// <param name="arg2"></param>
+        /// <param name="arg1">First unsigned value to use in encryption</param>
+        /// <param name="arg2">Second unsigned value to use in encryption</param>
         private void Encrypt(ref uint arg1, ref uint arg2)
         {
             uint a = arg1;
@@ -797,7 +798,7 @@ namespace NDecrypt.Headers
         /// <summary>
         /// Update the hashtable
         /// </summary>
-        /// <param name="arg1"></param>
+        /// <param name="arg1">Value to update the hashtable with</param>
         private void UpdateHashtable(byte[] arg1)
         {
             for (int j = 0; j < 18; j++)
