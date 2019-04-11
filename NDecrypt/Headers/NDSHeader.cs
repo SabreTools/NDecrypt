@@ -630,11 +630,13 @@ namespace NDecrypt.Headers
                 return null;
 
             // Improperly decrypted empty secure area (decrypt empty with woodsec)
-            else if (firstValue == 0xE386C397 && secondValue == 0x82775B7E)
+            else if ((firstValue == 0xE386C397 && secondValue == 0x82775B7E)
+                  || (firstValue == 0xF98415B8 && secondValue == 0x698068FC))
                 return true;
 
             // Improperly encrypted empty secure area (encrypt empty with woodsec)
-            else if (firstValue == 0x4BCE88BE && secondValue == 0xD3662DD1)
+            else if ((firstValue == 0x4BCE88BE && secondValue == 0xD3662DD1)
+                  || (firstValue == 0x2543C534 && secondValue == 0xCC4BE38E))
                 return false;
 
             // Properly decrypted nonstandard value (mastering issue)
