@@ -620,7 +620,8 @@ namespace NDecrypt.Headers
             uint firstValue = reader.ReadUInt32();
             uint secondValue = reader.ReadUInt32();
 
-            return (firstValue == 0xE7FFDEFF) && (secondValue == 0xE7FFDEFF);
+            return ((firstValue == 0xE7FFDEFF) && (secondValue == 0xE7FFDEFF))
+                || ((firstValue == 0xD0D48B67) && (secondValue == 0x39392F23)); // Edge case for a couple of items
         }
 
         /// <summary>
