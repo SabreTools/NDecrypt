@@ -77,7 +77,8 @@ namespace NDecrypt
 
         private static RomType DetermineRomType(string filename)
         {
-            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase))
+            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)
+                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase))
                 return RomType.NDS;
 
             else if (filename.EndsWith(".dsi", StringComparison.OrdinalIgnoreCase))
