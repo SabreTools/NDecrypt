@@ -1,11 +1,23 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using NDecrypt.Data;
 
 namespace NDecrypt.Headers
 {
     public class NDSHeader
     {
+        #region Encryption process variables
+
+        private uint[] cardHash = new uint[0x412];
+        private uint[] arg2 = new uint[3];
+
+        // ARM9 decryption check values
+        private const uint MAGIC30 = 0x72636E65;
+        private const uint MAGIC34 = 0x6A624F79;
+
+        #endregion
+
         #region Common to all NDS files
 
         /// <summary>
@@ -592,10 +604,7 @@ namespace NDecrypt.Headers
                 return;
             }
 
-            if (encrypt)
-                EncryptARM9(reader, writer);
-            else
-                DecryptARM9(reader, writer);
+            ProcessARM9(reader, writer, encrypt);
 
             Console.WriteLine("File has been " + (encrypt ? "encrypted" : "decrypted"));
         }
@@ -614,47 +623,114 @@ namespace NDecrypt.Headers
             return (firstValue == 0xE7FFDEFF) && (secondValue == 0xE7FFDEFF);
         }
 
-        private uint[] card_hash = new uint[0x412];
-
         /// <summary>
-        /// Lookup the value from the magic table
+        /// Process the secure ARM9 region of the file, if possible
         /// </summary>
-        /// <param name="magic"></param>
-        /// <param name="v"></param>
-        /// <returns></returns>
-        private uint Lookup(ref uint[] magic, uint v)
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
+        private void ProcessARM9(BinaryReader reader, BinaryWriter writer, bool encrypt)
         {
-            uint a = (v >> 24) & 0xFF;
-            uint b = (v >> 16) & 0xFF;
-            uint c = (v >> 8) & 0xFF;
-            uint d = (v >> 0) & 0xFF;
+            // Seek to the beginning of the secure area
+            reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
+            writer.BaseStream.Seek(0x4000, SeekOrigin.Begin);
 
-            a = magic[a + 18 + 0];
-            b = magic[b + 18 + 256];
-            c = magic[c + 18 + 512];
-            d = magic[d + 18 + 768];
+            // Grab the first two blocks
+            uint p0 = reader.ReadUInt32();
+            uint p1 = reader.ReadUInt32();
 
-            return d + (c ^ (b + a));
+            // Perform the initialization steps
+            Init1();
+            if (!encrypt) Decrypt(ref p1, ref p0);
+            arg2[1] <<= 1;
+            arg2[2] >>= 1;
+            Init2();
+
+            // If we're decrypting, set the proper flags
+            if (!encrypt)
+            {
+                Decrypt(ref p1, ref p0);
+                if (p0 == MAGIC30 && p1 == MAGIC34)
+                {
+                    p0 = 0xE7FFDEFF;
+                    p1 = 0xE7FFDEFF;
+                }
+
+                writer.Write(p0);
+                writer.Write(p1);
+            }
+
+            // Ensure alignment
+            reader.BaseStream.Seek(0x4008, SeekOrigin.Begin);
+            writer.BaseStream.Seek(0x4008, SeekOrigin.Begin);
+
+            // Loop throgh the main encryption step
+            uint size = 0x800 - 8;
+            while (size > 0)
+            {
+                p0 = reader.ReadUInt32();
+                p1 = reader.ReadUInt32();
+
+                if (encrypt)
+                    Encrypt(ref p1, ref p0);
+                else
+                    Decrypt(ref p1, ref p0);
+
+                writer.Write(p0);
+                writer.Write(p1);
+
+                size -= 8;
+            }
+
+            // Replace the header explicitly if we're encrypting
+            if (encrypt)
+            {
+                reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
+                writer.BaseStream.Seek(0x4000, SeekOrigin.Begin);
+
+                p0 = reader.ReadUInt32();
+                p1 = reader.ReadUInt32();
+
+                if (p0 == 0xE7FFDEFF && p1 == 0xE7FFDEFF)
+                {
+                    p0 = MAGIC30;
+                    p1 = MAGIC34;
+                }
+
+                Encrypt(ref p1, ref p0);
+                Init1();
+                Encrypt(ref p1, ref p0);
+
+                writer.Write(p0);
+                writer.Write(p1);
+            }
         }
 
         /// <summary>
-        /// Perform an encryption step
+        /// First common initialization step
         /// </summary>
-        /// <param name="arg1"></param>
-        /// <param name="arg2"></param>
-        private void Encrypt(ref uint arg1, ref uint arg2)
+        private void Init1()
         {
-            uint a = arg1;
-            uint b = arg2;
-            for (int i = 0; i < 16; i++)
-            {
-                uint c = card_hash[i] ^ a;
-                a = b ^ Lookup(ref card_hash, c);
-                b = c;
-            }
-             
-            arg2 = a ^ card_hash[16];
-            arg1 = b ^ card_hash[17];
+            Buffer.BlockCopy(Constants.NDSEncryptionData, 0, cardHash, 0, 4 * (1024 + 18));
+            arg2 = new uint[] { Gamecode, Gamecode >> 1, Gamecode << 1 };
+            Init2();
+            Init2();
+        }
+
+        /// <summary>
+        /// Second common initialization step
+        /// </summary>
+        private void Init2()
+        {
+            Encrypt(ref arg2[2], ref arg2[1]);
+            Encrypt(ref arg2[1], ref arg2[0]);
+
+            byte[] allBytes = BitConverter.GetBytes(arg2[0])
+                .Concat(BitConverter.GetBytes(arg2[1]))
+                .Concat(BitConverter.GetBytes(arg2[2]))
+                .ToArray();
+
+            UpdateHashtable(allBytes);
         }
 
         /// <summary>
@@ -668,17 +744,57 @@ namespace NDecrypt.Headers
             uint b = arg2;
             for (int i = 17; i > 1; i--)
             {
-                uint c = card_hash[i] ^ a;
-                a = b ^ Lookup(ref card_hash, c);
+                uint c = cardHash[i] ^ a;
+                a = b ^ Lookup(c);
                 b = c;
             }
 
-            arg1 = b ^ card_hash[0];
-            arg2 = a ^ card_hash[1];
+            arg1 = b ^ cardHash[0];
+            arg2 = a ^ cardHash[1];
         }
 
         /// <summary>
-        /// Update the magic hashtable
+        /// Perform an encryption step
+        /// </summary>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
+        private void Encrypt(ref uint arg1, ref uint arg2)
+        {
+            uint a = arg1;
+            uint b = arg2;
+            for (int i = 0; i < 16; i++)
+            {
+                uint c = cardHash[i] ^ a;
+                a = b ^ Lookup(c);
+                b = c;
+            }
+
+            arg2 = a ^ cardHash[16];
+            arg1 = b ^ cardHash[17];
+        }
+
+        /// <summary>
+        /// Lookup the value from the hashtable
+        /// </summary>
+        /// <param name="v">Value to lookup in the hashtable</param>
+        /// <returns>Processed value through the hashtable</returns>
+        private uint Lookup(uint v)
+        {
+            uint a = (v >> 24) & 0xFF;
+            uint b = (v >> 16) & 0xFF;
+            uint c = (v >> 8) & 0xFF;
+            uint d = (v >> 0) & 0xFF;
+
+            a = cardHash[a + 18 + 0];
+            b = cardHash[b + 18 + 256];
+            c = cardHash[c + 18 + 512];
+            d = cardHash[d + 18 + 768];
+
+            return d + (c ^ (b + a));
+        }
+
+        /// <summary>
+        /// Update the hashtable
         /// </summary>
         /// <param name="arg1"></param>
         private void UpdateHashtable(byte[] arg1)
@@ -692,7 +808,7 @@ namespace NDecrypt.Headers
                     r3 |= arg1[(j * 4 + i) & 7];
                 }
 
-                card_hash[j] ^= r3;
+                cardHash[j] ^= r3;
             }
 
             uint tmp1 = 0;
@@ -700,147 +816,15 @@ namespace NDecrypt.Headers
             for (int i = 0; i < 18; i += 2)
             {
                 Encrypt(ref tmp1, ref tmp2);
-                card_hash[i + 0] = tmp1;
-                card_hash[i + 1] = tmp2;
+                cardHash[i + 0] = tmp1;
+                cardHash[i + 1] = tmp2;
             }
             for (int i = 0; i < 0x400; i += 2)
             {
                 Encrypt(ref tmp1, ref tmp2);
-                card_hash[i + 18 + 0] = tmp1;
-                card_hash[i + 18 + 1] = tmp2;
+                cardHash[i + 18 + 0] = tmp1;
+                cardHash[i + 18 + 1] = tmp2;
             }
         }
-
-        private uint[] arg2 = new uint[3];
-
-        private void Init2(uint[] a)
-        {
-            Encrypt(ref a[2], ref a[1]);
-            Encrypt(ref a[1], ref a[0]);
-
-            byte[] a0bytes = BitConverter.GetBytes(a[0]);
-            byte[] a1bytes = BitConverter.GetBytes(a[1]);
-            byte[] a2bytes = BitConverter.GetBytes(a[2]);
-            byte[] allbytes = new byte[3 * sizeof(uint)];
-            a0bytes.CopyTo(allbytes, 0);
-            a1bytes.CopyTo(allbytes, 4);
-            a2bytes.CopyTo(allbytes, 8);
-
-            UpdateHashtable(allbytes);
-        }
-
-        private void Init1()
-        {
-            Buffer.BlockCopy(Constants.NDSEncryptionData, 0, card_hash, 0, 4 * (1024 + 18));
-            arg2[0] = Gamecode;
-            arg2[1] = Gamecode >> 1;
-            arg2[2] = Gamecode << 1;
-            Init2(arg2);
-            Init2(arg2);
-        }
-
-        // ARM9 decryption check values
-        private const uint MAGIC30 = 0x72636E65;
-        private const uint MAGIC34 = 0x6A624F79;
-
-        /// <summary>
-        /// Decrypt the secure ARM9 area of the file, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
-        private void DecryptARM9(BinaryReader reader, BinaryWriter writer)
-        {
-            // Seek to the beginning of the secure area
-            reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
-            writer.BaseStream.Seek(0x4000, SeekOrigin.Begin);
-
-            uint p0 = reader.ReadUInt32();
-            uint p1 = reader.ReadUInt32();
-
-            Init1();
-            Decrypt(ref p1, ref p0);
-            arg2[1] <<= 1;
-            arg2[2] >>= 1;
-            Init2(arg2);
-            Decrypt(ref p1, ref p0);
-
-            if (p0 == MAGIC30 && p1 == MAGIC34)
-            {
-                p0 = 0xE7FFDEFF;
-                p1 = 0xE7FFDEFF;
-            }
-
-            writer.Write(p0);
-            writer.Write(p1);
-
-            uint size = 0x800 - 8;
-            while (size > 0)
-            {
-                p0 = reader.ReadUInt32();
-                p1 = reader.ReadUInt32();
-
-                Decrypt(ref p1, ref p0);
-
-                writer.Write(p0);
-                writer.Write(p1);
-
-                size -= 8;
-            }
-        }
-
-        /// <summary>
-        /// Encrypt the secure ARM9 area of the file, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
-        private void EncryptARM9(BinaryReader reader, BinaryWriter writer)
-        {
-            // Seek to the beginning of the secure area (skip first 2 UInt32s)
-            reader.BaseStream.Seek(0x4008, SeekOrigin.Begin);
-            writer.BaseStream.Seek(0x4008, SeekOrigin.Begin);
-
-            Init1();
-
-            arg2[1] <<= 1;
-            arg2[2] >>= 1;
-
-            Init2(arg2);
-
-            uint p0, p1;
-            uint size = 0x800 - 8;
-            while (size > 0)
-            {
-                p0 = reader.ReadUInt32();
-                p1 = reader.ReadUInt32();
-
-                Encrypt(ref p1, ref p0);
-
-                writer.Write(p0);
-                writer.Write(p1);
-
-                size -= 8;
-            }
-
-            // place header
-            reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
-            writer.BaseStream.Seek(0x4000, SeekOrigin.Begin);
-
-            p0 = reader.ReadUInt32();
-            p1 = reader.ReadUInt32();
-
-            if (p0 == 0xE7FFDEFF && p1 == 0xE7FFDEFF)
-            {
-                p0 = MAGIC30;
-                p1 = MAGIC34;
-            }
-
-            Encrypt(ref p1, ref p0);
-            Init1();
-            Encrypt(ref p1, ref p0);
-
-            writer.Write(p0);
-            writer.Write(p1);
-        }
-
     }
 }
