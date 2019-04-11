@@ -597,8 +597,13 @@ namespace NDecrypt.Headers
         /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
         public void ProcessSecureArea(BinaryReader reader, BinaryWriter writer, bool encrypt)
         {
-            bool isDecrypted = CheckIfDecrypted(reader);
-            if (encrypt ^ isDecrypted)
+            bool? isDecrypted = CheckIfDecrypted(reader);
+            if (isDecrypted == null)
+            {
+                Console.WriteLine("File has an empty secure area, cannot proceed");
+                return;
+            }
+            else if (encrypt ^ isDecrypted.Value)
             {
                 Console.WriteLine("File is already " + (encrypt ? "encrypted" : "decrypted"));
                 return;
@@ -610,19 +615,34 @@ namespace NDecrypt.Headers
         }
 
         /// <summary>
-        /// Determine if the current file is already decrypted or not
+        /// Determine if the current file is already decrypted or not (or has an empty secure area)
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>True if the file has known values for a decrypted file, false otherwise</returns>
-        private bool CheckIfDecrypted(BinaryReader reader)
+        /// <returns>True if the file has known values for a decrypted file, null if it's empty, false otherwise</returns>
+        private bool? CheckIfDecrypted(BinaryReader reader)
         {
             reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
             uint firstValue = reader.ReadUInt32();
             uint secondValue = reader.ReadUInt32();
 
-            return ((firstValue == 0xE7FFDEFF) && (secondValue == 0xE7FFDEFF))
-                || ((firstValue == 0xD0D48B67) && (secondValue == 0x39392F23))  // Incorrectly mastered value
-                || ((firstValue == 0x00000000) && (secondValue == 0x00000000)); // Empty secure area
+            // Empty secure area standard
+            if (firstValue == 0 && secondValue == 0)
+                return null;
+
+            // Improperly decrypted empty secure area
+            else if (firstValue == 0xE386C397 && secondValue == 0x82775B7E)
+                return true;
+
+            // Improperly encrypted empty secure area
+            else if (firstValue == 0x4BCE88BE && secondValue == 0xD3662DD1)
+                return false;
+
+            // Properly decrypte nonstandard value
+            else if (firstValue == 0xD0D48B67 && secondValue == 0x39392F23)
+                return true;
+
+            // Standard decryption values
+            return (firstValue == 0xE7FFDEFF && secondValue == 0xE7FFDEFF);
         }
 
         /// <summary>
