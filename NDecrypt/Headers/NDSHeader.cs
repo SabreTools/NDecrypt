@@ -626,18 +626,18 @@ namespace NDecrypt.Headers
             uint secondValue = reader.ReadUInt32();
 
             // Empty secure area standard
-            if (firstValue == 0 && secondValue == 0)
+            if (firstValue == 0x00000000 && secondValue == 0x00000000)
                 return null;
 
-            // Improperly decrypted empty secure area
+            // Improperly decrypted empty secure area (decrypt empty with woodsec)
             else if (firstValue == 0xE386C397 && secondValue == 0x82775B7E)
                 return true;
 
-            // Improperly encrypted empty secure area
+            // Improperly encrypted empty secure area (encrypt empty with woodsec)
             else if (firstValue == 0x4BCE88BE && secondValue == 0xD3662DD1)
                 return false;
 
-            // Properly decrypte nonstandard value
+            // Properly decrypted nonstandard value (mastering issue)
             else if (firstValue == 0xD0D48B67 && secondValue == 0x39392F23)
                 return true;
 
