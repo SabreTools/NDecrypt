@@ -14,11 +14,11 @@ namespace NDecrypt
             }
 
             bool? encrypt = null;
-            if (args[0] == "decrypt")
+            if (args[0] == "decrypt" || args[0] == "d")
             {
                 encrypt = false;
             }
-            else if (args[0] == "encrypt")
+            else if (args[0] == "encrypt" || args[0] == "e")
             {
                 encrypt = true;
             }
@@ -59,6 +59,10 @@ namespace NDecrypt
             Console.Read();
         }
 
+        /// <summary>
+        /// Display a basic help text
+        /// </summary>
+        /// <param name="err">Additional error text to display, can be null to ignore</param>
         private static void DisplayHelp(string err = null)
         {
             if (!string.IsNullOrWhiteSpace(err))
@@ -75,6 +79,35 @@ namespace NDecrypt
             N3DS,
         }
 
+        /// <summary>
+        /// Derive the encryption tool to be used for the given file
+        /// </summary>
+        /// <param name="filename">Filename to derive the tool from</param>
+        /// <param name="encrypt">True if we are encrypting the file, false otherwise</param>
+        /// <param name="development">rue if we are using development keys, false otherwise</param>
+        /// <returns></returns>
+        private static ITool DeriveTool(string filename, bool encrypt, bool development)
+        {
+            RomType type = DetermineRomType(filename);
+            switch(type)
+            {
+                case RomType.NDS:
+                case RomType.NDSi:
+                    return new DSTool(filename, encrypt);
+                case RomType.N3DS:
+                    return new ThreeDSTool(filename, development, encrypt);
+                case RomType.NULL:
+                default:
+                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Determine the rom type from the filename extension
+        /// </summary>
+        /// <param name="filename">Filename to derive the type from</param>
+        /// <returns>RomType value, if possible</returns>
         private static RomType DetermineRomType(string filename)
         {
             if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)
@@ -88,23 +121,6 @@ namespace NDecrypt
                 return RomType.N3DS;
 
             return RomType.NULL;
-        }
-
-        private static ITool DeriveTool(string filename, bool encrypt, bool development)
-        {
-            RomType type = DetermineRomType(filename);
-            switch(type)
-            {
-                case RomType.NDS:
-                case RomType.NDSi:
-                    return new DSTool(filename, encrypt);
-                case RomType.N3DS:
-                    return new ThreeDSTool(filename, development, encrypt);
-                case RomType.NULL:
-                default:
-                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.dsi, *.3ds");
-                    return null;
-            }
         }
     }
 }
