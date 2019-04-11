@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ThreeDS.Data
+namespace NDecrypt.Data
 {
     [Flags]
     public enum ARM9AccessControlDescriptors : byte
@@ -163,6 +163,13 @@ namespace ThreeDS.Data
         MediaTypeIndex = 0x05,
         MediaUnitSize = 0x06,
         MediaCardDevice2X = 0x07,
+    }
+
+    public enum NDSUnitcode : byte
+    {
+        NDS = 0x00,
+        NDSPlusDSi = 0x02,
+        DSi = 0x03,
     }
 
     public enum ResourceLimitCategory

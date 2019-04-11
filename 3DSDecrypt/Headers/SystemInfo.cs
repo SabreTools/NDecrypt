@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace ThreeDS.Headers
+namespace NDecrypt.Headers
 {
     public class SystemInfo
     {

@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using ThreeDS.Data;
+using NDecrypt.Data;
 
-namespace ThreeDS.Headers
+namespace NDecrypt.Headers
 {
     public class ARM11LocalSystemCapabilities
     {

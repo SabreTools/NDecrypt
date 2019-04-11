@@ -5,7 +5,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 
-namespace ThreeDS
+namespace NDecrypt
 {
     public static class Helper
     {

@@ -4,27 +4,21 @@ using NDecrypt.Headers;
 
 namespace NDecrypt
 {
-    public class ThreeDSTool : ITool
+    public class DSTool : ITool
     {
         /// <summary>
-        /// Name of the input 3DS file
+        /// Name of the input DS/DSi file
         /// </summary>
         private readonly string filename;
-
-        /// <summary>
-        /// Flag to detrmine if development keys should be used
-        /// </summary>
-        private readonly bool development;
 
         /// <summary>
         /// Flag to determine if encrypting or decrypting
         /// </summary>
         private readonly bool encrypt;
 
-        public ThreeDSTool(string filename, bool development, bool encrypt)
+        public DSTool(string filename, bool encrypt)
         {
             this.filename = filename;
-            this.development = development;
             this.encrypt = encrypt;
         }
 
@@ -42,18 +36,18 @@ namespace NDecrypt
             using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
             {
-                NCSDHeader header = NCSDHeader.Read(reader, development);
+                NDSHeader header = NDSHeader.Read(reader);
                 if (header == null)
                 {
-                    Console.WriteLine("Error: Not a 3DS Rom!");
+                    Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
                 }
 
-                // Process all 8 NCCH partitions
-                header.ProcessAllPartitions(reader, writer, encrypt, development);
+                // Process the secure area
+                header.ProcessSecureArea(reader, writer, encrypt);
             }
 
             return true;
-        }        
+        }
     }
 }

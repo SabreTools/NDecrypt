@@ -2,9 +2,9 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using ThreeDS.Data;
+using NDecrypt.Data;
 
-namespace ThreeDS.Headers
+namespace NDecrypt.Headers
 {
     public class NCCHHeader
     {

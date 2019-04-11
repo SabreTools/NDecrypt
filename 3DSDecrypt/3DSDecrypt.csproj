@@ -7,7 +7,7 @@
     <ProjectGuid>{2E30006A-3C60-4576-A262-937B21C83C06}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>_3DSDecrypt</RootNamespace>
+    <RootNamespace>NDecrypt</RootNamespace>
     <AssemblyName>3DSDecrypt</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -48,9 +48,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Constants.cs" />
+    <Compile Include="DSTool.cs" />
     <Compile Include="Headers\NCCHHeaderFlags.cs" />
+    <Compile Include="Headers\NDSHeader.cs" />
     <Compile Include="Headers\RomFSHeader.cs" />
     <Compile Include="Helper.cs" />
+    <Compile Include="ITool.cs" />
     <Compile Include="ThreeDSTool.cs" />
     <Compile Include="Data\Enums.cs" />
     <Compile Include="Headers\AccessControlInfo.cs" />

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace ThreeDS
+namespace NDecrypt
 {
     class Program
     {
@@ -40,16 +40,16 @@ namespace ThreeDS
             {
                 if (File.Exists(args[i]))
                 {
-                    ThreeDSTool tool = new ThreeDSTool(args[i], development, encrypt.Value);
-                    if (!tool.ProcessFile())
+                    ITool tool = DeriveTool(args[i], encrypt.Value, development);
+                    if (tool?.ProcessFile() != true)
                         Console.WriteLine("Processing failed!");
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ThreeDSTool tool = new ThreeDSTool(file, development, encrypt.Value);
-                        if (!tool.ProcessFile())
+                        ITool tool = DeriveTool(file, encrypt.Value, development);
+                        if (tool?.ProcessFile() != true)
                             Console.WriteLine("Processing failed!");
                     }
                 }
@@ -65,6 +65,45 @@ namespace ThreeDS
                 Console.WriteLine($"Error: {err}");
 
             Console.WriteLine("Usage: 3dsdecrypt.exe (decrypt|encrypt) [-dev] <file|dir> ...");
+        }
+
+        private enum RomType
+        {
+            NULL,
+            NDS,
+            NDSi,
+            N3DS,
+        }
+
+        private static RomType DetermineRomType(string filename)
+        {
+            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase))
+                return RomType.NDS;
+
+            else if (filename.EndsWith(".dsi", StringComparison.OrdinalIgnoreCase))
+                return RomType.NDSi;
+
+            else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase))
+                return RomType.N3DS;
+
+            return RomType.NULL;
+        }
+
+        private static ITool DeriveTool(string filename, bool encrypt, bool development)
+        {
+            RomType type = DetermineRomType(filename);
+            switch(type)
+            {
+                case RomType.NDS:
+                case RomType.NDSi:
+                    return new DSTool(filename, encrypt);
+                case RomType.N3DS:
+                    return new ThreeDSTool(filename, development, encrypt);
+                case RomType.NULL:
+                default:
+                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.dsi, *.3ds");
+                    return null;
+            }
         }
     }
 }
