@@ -323,6 +323,11 @@ namespace NDecrypt.Data
 
         public const int CXTExtendedDataHeaderLength = 0x800;
 
+        #endregion
+
+        /// <summary>
+        /// Represents if all of the keys have been initialized properly
+        /// </summary>
         public static bool IsReady { get; private set; }
 
         /// <summary>
@@ -369,7 +374,5 @@ namespace NDecrypt.Data
 
             IsReady = true;
         }
-
-        #endregion
     }
 }
