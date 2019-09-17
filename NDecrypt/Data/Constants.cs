@@ -300,7 +300,7 @@ namespace NDecrypt.Data
         // KeyX 0x25 (> 7.x)
         public static BigInteger KeyX0x25 { get; private set; }
 
-        // Dev KeyX 0x2C (< 6.x)
+        // KeyX 0x2C (< 6.x)
         public static BigInteger KeyX0x2C { get; private set; }
 
         #endregion
