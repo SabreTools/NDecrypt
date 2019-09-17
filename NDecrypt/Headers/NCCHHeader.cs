@@ -437,8 +437,8 @@ namespace NDecrypt.Headers
                     ProcessExeFSFilenameTable(reader, writer, mediaUnitSize, encrypt);
 
                 // Process the ExeFS
-                int exefsSizeM = (int)((ExeFSSizeInMediaUnits - 1) * mediaUnitSize) / (1024 * 1024);
-                int exefsSizeB = (int)((ExeFSSizeInMediaUnits - 1) * mediaUnitSize) % (1024 * 1024);
+                int exefsSizeM = (int)((long)((ExeFSSizeInMediaUnits - 1) * mediaUnitSize) / (1024 * 1024));
+                int exefsSizeB = (int)((long)((ExeFSSizeInMediaUnits - 1) * mediaUnitSize) % (1024 * 1024));
                 int ctroffsetE = (int)(mediaUnitSize / 0x10);
 
                 byte[] exefsIVWithOffset = Helper.AddToByteArray(ExeFSIV, ctroffsetE);
@@ -502,8 +502,8 @@ namespace NDecrypt.Headers
         {
             if (RomFSOffsetInMediaUnits != 0)
             {
-                int romfsSizeM = (int)(RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024);
-                int romfsSizeB = (int)(RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024);
+                long romfsSizeM = (int)((long)(RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024));
+                int romfsSizeB = (int)((long)(RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024));
 
                 // Encrypting RomFS for partitions 1 and up always use Key0x2C
                 if (encrypt && PartitionNumber > 0)
