@@ -633,21 +633,47 @@ namespace NDecrypt.Headers
 
             // Empty secure area standard
             if (firstValue == 0x00000000 && secondValue == 0x00000000)
+            {
+                Console.WriteLine("Empty secure area found. Cannot be encrypted or decrypted.");
                 return null;
+            }
 
             // Improperly decrypted empty secure area (decrypt empty with woodsec)
             else if ((firstValue == 0xE386C397 && secondValue == 0x82775B7E)
                   || (firstValue == 0xF98415B8 && secondValue == 0x698068FC))
+            {
+                Console.WriteLine("Improperly decrypted empty secure area found. Should be encrypted to get proper value.");
                 return true;
+            }
 
             // Improperly encrypted empty secure area (encrypt empty with woodsec)
             else if ((firstValue == 0x4BCE88BE && secondValue == 0xD3662DD1)
                   || (firstValue == 0x2543C534 && secondValue == 0xCC4BE38E))
+            {
+                Console.WriteLine("Improperly encrypted empty secure area found. Should be decrypted to get proper value.");
                 return false;
+            }
 
             // Properly decrypted nonstandard value (mastering issue)
             else if (firstValue == 0xD0D48B67 && secondValue == 0x39392F23)
+            {
+                Console.WriteLine("Decrypted secure area for known, nonstandard value found.");
                 return true;
+            }
+
+            // Properly decrypted prototype value
+            else if (firstValue == 0xBA35F813 && secondValue == 0xB691AAE8)
+            {
+                Console.WriteLine("Decrypted secure area for prototype found.");
+                return true;
+            }
+
+            // Properly encrypted prototype value
+            else if (firstValue == 0xA71329EE && secondValue == 0x2A1D4C38)
+            {
+                Console.WriteLine("Encrypted secure area for prototype found.");
+                return false;
+            }
 
             // Standard decryption values
             return (firstValue == 0xE7FFDEFF && secondValue == 0xE7FFDEFF);
