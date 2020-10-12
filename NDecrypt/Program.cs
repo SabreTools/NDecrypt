@@ -29,12 +29,18 @@ namespace NDecrypt
                 return;
             }
 
-            bool development = false;
+            bool development = false, force = false;
             int start = 1;
-            if (args[1] == "-dev")
+            for ( ; start < args.Length; start++)
             {
-                development = true;
-                start = 2;
+                if (args[start] == "-dev" || args[start] == "--development")
+                    development = true;
+
+                else if (args[start] == "-f" || args[start] == "--force")
+                    force = true;
+
+                else
+                    break;
             }
 
             // Ensure the constants are all set
@@ -49,7 +55,7 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
-                    ITool tool = DeriveTool(args[i], encrypt.Value, development);
+                    ITool tool = DeriveTool(args[i], encrypt.Value, development, force);
                     if (tool?.ProcessFile() != true)
                         Console.WriteLine("Processing failed!");
                 }
@@ -57,7 +63,7 @@ namespace NDecrypt
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ITool tool = DeriveTool(file, encrypt.Value, development);
+                        ITool tool = DeriveTool(file, encrypt.Value, development, force);
                         if (tool?.ProcessFile() != true)
                             Console.WriteLine("Processing failed!");
                     }
@@ -77,7 +83,7 @@ namespace NDecrypt
             if (!string.IsNullOrWhiteSpace(err))
                 Console.WriteLine($"Error: {err}");
 
-            Console.WriteLine("Usage: NDecrypt.exe (decrypt|encrypt) [-dev] <file|dir> ...");
+            Console.WriteLine("Usage: NDecrypt.exe (decrypt|encrypt) [-dev] [-f] <file|dir> ...");
         }
 
         private enum RomType
@@ -93,18 +99,19 @@ namespace NDecrypt
         /// </summary>
         /// <param name="filename">Filename to derive the tool from</param>
         /// <param name="encrypt">True if we are encrypting the file, false otherwise</param>
-        /// <param name="development">rue if we are using development keys, false otherwise</param>
+        /// <param name="development">True if we are using development keys, false otherwise</param>
+        /// <param name="force">True if operations should be forced, false otherwise</param>
         /// <returns></returns>
-        private static ITool DeriveTool(string filename, bool encrypt, bool development)
+        private static ITool DeriveTool(string filename, bool encrypt, bool development, bool force)
         {
             RomType type = DetermineRomType(filename);
             switch(type)
             {
                 case RomType.NDS:
                 case RomType.NDSi:
-                    return new DSTool(filename, encrypt);
+                    return new DSTool(filename, encrypt, force);
                 case RomType.N3DS:
-                    return new ThreeDSTool(filename, development, encrypt);
+                    return new ThreeDSTool(filename, development, encrypt, force);
                 case RomType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");

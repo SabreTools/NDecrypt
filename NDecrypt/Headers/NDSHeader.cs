@@ -591,18 +591,28 @@ namespace NDecrypt.Headers
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
-        public void ProcessSecureArea(BinaryReader reader, BinaryWriter writer, bool encrypt)
+        /// <param name="force">True if we want to force the operation, false otherwise</param>
+        public void ProcessSecureArea(BinaryReader reader, BinaryWriter writer, bool encrypt, bool force)
         {
-            bool? isDecrypted = CheckIfDecrypted(reader);
-            if (isDecrypted == null)
+            // If we're forcing the operation, tell the user
+            if (force)
             {
-                Console.WriteLine("File has an empty secure area, cannot proceed");
-                return;
+                Console.WriteLine("File is not verified due to force flag being set.");
             }
-            else if (encrypt ^ isDecrypted.Value)
+            // If we're not forcing the operation, check to see if we should be proceeding
+            else
             {
-                Console.WriteLine("File is already " + (encrypt ? "encrypted" : "decrypted"));
-                return;
+                bool? isDecrypted = CheckIfDecrypted(reader);
+                if (isDecrypted == null)
+                {
+                    Console.WriteLine("File has an empty secure area, cannot proceed");
+                    return;
+                }
+                else if (encrypt ^ isDecrypted.Value)
+                {
+                    Console.WriteLine("File is already " + (encrypt ? "encrypted" : "decrypted"));
+                    return;
+                }
             }
 
             ProcessARM9(reader, writer, encrypt);

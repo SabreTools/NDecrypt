@@ -21,11 +21,17 @@ namespace NDecrypt
         /// </summary>
         private readonly bool encrypt;
 
-        public ThreeDSTool(string filename, bool development, bool encrypt)
+        /// <summary>
+        /// Flag to determine if forcing operations
+        /// </summary>
+        private readonly bool force;
+
+        public ThreeDSTool(string filename, bool development, bool encrypt, bool force)
         {
             this.filename = filename;
             this.development = development;
             this.encrypt = encrypt;
+            this.force = force;
         }
 
         /// <summary>
@@ -50,7 +56,7 @@ namespace NDecrypt
                 }
 
                 // Process all 8 NCCH partitions
-                header.ProcessAllPartitions(reader, writer, encrypt, development);
+                header.ProcessAllPartitions(reader, writer, encrypt, development, force);
             }
 
             return true;

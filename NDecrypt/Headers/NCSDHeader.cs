@@ -330,7 +330,8 @@ namespace NDecrypt.Headers
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
         /// <param name="development">True if development keys should be used, false otherwise</param>
-        public void ProcessAllPartitions(BinaryReader reader, BinaryWriter writer, bool encrypt, bool development)
+        /// <param name="force">True if we want to force the operation, false otherwise</param>
+        public void ProcessAllPartitions(BinaryReader reader, BinaryWriter writer, bool encrypt, bool development, bool force)
         {
             // Iterate over all 8 NCCH partitions
             for (int p = 0; p < 8; p++)
@@ -339,7 +340,7 @@ namespace NDecrypt.Headers
                 if (partitionHeader == null)
                     continue;
 
-                partitionHeader.ProcessPartition(reader, writer, this, encrypt, development);
+                partitionHeader.ProcessPartition(reader, writer, this, encrypt, development, force);
             }
         }
 

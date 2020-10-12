@@ -255,10 +255,16 @@ namespace NDecrypt.Headers
         /// <param name="header">NCSD header representing the 3DS file</param>
         /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
         /// <param name="development">True if development keys should be used, false otherwise</param>
-        public void ProcessPartition(BinaryReader reader, BinaryWriter writer, NCSDHeader header, bool encrypt, bool development)
+        /// <param name="force">True if we want to force the operation, false otherwise</param>
+        public void ProcessPartition(BinaryReader reader, BinaryWriter writer, NCSDHeader header, bool encrypt, bool development, bool force)
         {
-            // Check if the 'NoCrypto' bit is set
-            if (Flags.PossblyDecrypted ^ encrypt)
+            // If we're forcing the operation, tell the user
+            if (force)
+            {
+                Console.WriteLine($"Partition {PartitionNumber} is not verified due to force flag being set.");
+            }
+            // If we're not forcing the operation, check if the 'NoCrypto' bit is set
+            else if (Flags.PossblyDecrypted ^ encrypt)
             {
                 Console.WriteLine($"Partition {PartitionNumber}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
                 return;

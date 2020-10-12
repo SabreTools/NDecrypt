@@ -16,10 +16,16 @@ namespace NDecrypt
         /// </summary>
         private readonly bool encrypt;
 
-        public DSTool(string filename, bool encrypt)
+        /// <summary>
+        /// Flag to determine if forcing operations
+        /// </summary>
+        private readonly bool force;
+
+        public DSTool(string filename, bool encrypt, bool force)
         {
             this.filename = filename;
             this.encrypt = encrypt;
+            this.force = force;
         }
 
         /// <summary>
@@ -44,7 +50,7 @@ namespace NDecrypt
                 }
 
                 // Process the secure area
-                header.ProcessSecureArea(reader, writer, encrypt);
+                header.ProcessSecureArea(reader, writer, encrypt, force);
             }
 
             return true;
