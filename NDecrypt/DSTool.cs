@@ -71,7 +71,7 @@ namespace NDecrypt
         /// <param name="ndsHeader">NDS header representing the DS file</param>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="writer">BinaryWriter representing the output stream</param>
-        public void ProcessSecureArea(NDSHeader ndsHeader, BinaryReader reader, BinaryWriter writer)
+        private void ProcessSecureArea(NDSHeader ndsHeader, BinaryReader reader, BinaryWriter writer)
         {
             // If we're forcing the operation, tell the user
             if (force)
