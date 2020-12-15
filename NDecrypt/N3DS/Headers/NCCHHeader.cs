@@ -1,10 +1,8 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Numerics;
-using NDecrypt.Data;
 
-namespace NDecrypt.Headers
+namespace NDecrypt.N3DS.Headers
 {
     public class NCCHHeader
     {

@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace NDecrypt.Headers
+namespace NDecrypt.N3DS.Headers
 {
     public class ExeFSFileHeader
     {

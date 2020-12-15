@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO;
-using NDecrypt.Data;
 
-namespace NDecrypt.Headers
+namespace NDecrypt.N3DS.Headers
 {
     public class NCSDHeader
     {

@@ -1,20 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using NDecrypt.Data;
+﻿using System.IO;
 
-namespace NDecrypt.Headers
+namespace NDecrypt.NDS.Headers
 {
     public class NDSHeader
     {
-        #region Encryption process variables
-
-        private uint[] cardHash = new uint[0x412];
-        private uint[] arg2 = new uint[3];
-
-        #endregion
-
-        #region Common to all NDS files
+        #region Common
 
         /// <summary>
         /// Game Title

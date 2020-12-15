@@ -2,8 +2,8 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using NDecrypt.Data;
-using NDecrypt.Headers;
+using NDecrypt.N3DS;
+using NDecrypt.N3DS.Headers;
 
 namespace NDecrypt
 {

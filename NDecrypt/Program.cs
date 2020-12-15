@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using NDecrypt.Data;
+using NDecrypt.N3DS;
 
 namespace NDecrypt
 {

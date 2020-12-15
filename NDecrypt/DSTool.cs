@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using NDecrypt.Data;
-using NDecrypt.Headers;
+using NDecrypt.NDS;
+using NDecrypt.NDS.Headers;
 
 namespace NDecrypt
 {

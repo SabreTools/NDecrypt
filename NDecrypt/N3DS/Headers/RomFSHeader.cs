@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace NDecrypt.Headers
+namespace NDecrypt.N3DS.Headers
 {
     // https://www.3dbrew.org/wiki/RomFS
     public class RomFSHeader

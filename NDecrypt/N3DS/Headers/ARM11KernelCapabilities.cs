@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace NDecrypt.Headers
+namespace NDecrypt.N3DS.Headers
 {
     public class ARM11KernelCapabilities
     {
