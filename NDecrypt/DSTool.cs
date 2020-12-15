@@ -119,7 +119,7 @@ namespace NDecrypt
 
             // Improperly decrypted empty secure area (decrypt empty with woodsec)
             else if ((firstValue == 0xE386C397 && secondValue == 0x82775B7E)
-                  || (firstValue == 0xF98415B8 && secondValue == 0x698068FC))
+                || (firstValue == 0xF98415B8 && secondValue == 0x698068FC))
             {
                 Console.WriteLine("Improperly decrypted empty secure area found. Should be encrypted to get proper value.");
                 return true;
@@ -127,14 +127,16 @@ namespace NDecrypt
 
             // Improperly encrypted empty secure area (encrypt empty with woodsec)
             else if ((firstValue == 0x4BCE88BE && secondValue == 0xD3662DD1)
-                  || (firstValue == 0x2543C534 && secondValue == 0xCC4BE38E))
+                || (firstValue == 0x2543C534 && secondValue == 0xCC4BE38E))
             {
                 Console.WriteLine("Improperly encrypted empty secure area found. Should be decrypted to get proper value.");
                 return false;
             }
 
             // Properly decrypted nonstandard value (mastering issue)
-            else if (firstValue == 0xD0D48B67 && secondValue == 0x39392F23)
+            else if ((firstValue == 0xD0D48B67 && secondValue == 0x39392F23)
+                || (firstValue == 0x014A191A && secondValue == 0xA5C470B9)   // Dragon Quest 5 (USA)
+                || (firstValue == 0x7829BC8D && secondValue == 0x9968EF44))  // Dragon Quest 5 (JP)
             {
                 Console.WriteLine("Decrypted secure area for known, nonstandard value found.");
                 return true;
@@ -155,7 +157,7 @@ namespace NDecrypt
             }
 
             // Standard decryption values
-            return (firstValue == 0xE7FFDEFF && secondValue == 0xE7FFDEFF);
+            return firstValue == 0xE7FFDEFF && secondValue == 0xE7FFDEFF;
         }
 
         /// <summary>
