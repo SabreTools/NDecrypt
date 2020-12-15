@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt.Core", "NDecrypt.Core\NDecrypt.Core.csproj", "{91C54370-5741-4742-B2E9-EC498551AD1C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{2E30006A-3C60-4576-A262-937B21C83C06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E30006A-3C60-4576-A262-937B21C83C06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E30006A-3C60-4576-A262-937B21C83C06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

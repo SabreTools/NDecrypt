@@ -279,7 +279,7 @@ namespace NDecrypt.Headers
             ProcessRomFS(reader, writer, header.MediaUnitSize, header.BackupHeader.Flags, encrypt, development);
 
             // Write out new CryptoMethod and BitMask flags
-            UpdateCryptoAndMasks(reader, writer, header, encrypt);
+            UpdateCryptoAndMasks(writer, header, encrypt);
         }
 
         /// <summary>
@@ -291,7 +291,7 @@ namespace NDecrypt.Headers
         private void SetEncryptionKeys(NCCHHeaderFlags backupFlags, bool encrypt, bool development)
         {
             KeyX = 0;
-            KeyX2C = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+            KeyX2C = development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C;
 
             // Backup headers can't have a KeyY value set
             if (RSA2048Signature != null)
@@ -303,8 +303,8 @@ namespace NDecrypt.Headers
             NormalKey2C = Helper.RotateLeft((Helper.RotateLeft(KeyX2C, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
 
             // Set the header to use based on mode
-            BitMasks masks = 0;
-            CryptoMethod method = 0;
+            BitMasks masks;
+            CryptoMethod method;
             if (encrypt)
             {
                 masks = backupFlags.BitMasks;
@@ -316,7 +316,7 @@ namespace NDecrypt.Headers
                 method = Flags.CryptoMethod;
             }
 
-            if ((masks & BitMasks.FixedCryptoKey) != 0)
+            if (masks.HasFlag(BitMasks.FixedCryptoKey))
             {
                 NormalKey = 0x00;
                 NormalKey2C = 0x00;
@@ -326,22 +326,22 @@ namespace NDecrypt.Headers
             {
                 if (method == CryptoMethod.Original)
                 {
-                    KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                    KeyX = development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C;
                     Console.WriteLine("Encryption Method: Key 0x2C");
                 }
                 else if (method == CryptoMethod.Seven)
                 {
-                    KeyX = (development ? Constants.KeyX0x25 : Constants.KeyX0x25);
+                    KeyX = development ? Constants.DevKeyX0x25 : Constants.KeyX0x25;
                     Console.WriteLine("Encryption Method: Key 0x25");
                 }
                 else if (method == CryptoMethod.NineThree)
                 {
-                    KeyX = (development ? Constants.DevKeyX0x18 : Constants.KeyX0x18);
+                    KeyX = development ? Constants.DevKeyX0x18 : Constants.KeyX0x18;
                     Console.WriteLine("Encryption Method: Key 0x18");
                 }
                 else if (method == CryptoMethod.NineSix)
                 {
-                    KeyX = (development ? Constants.DevKeyX0x1B : Constants.KeyX0x1B);
+                    KeyX = development ? Constants.DevKeyX0x1B : Constants.KeyX0x1B;
                     Console.WriteLine("Encryption Method: Key 0x1B");
                 }
 
@@ -517,17 +517,17 @@ namespace NDecrypt.Headers
                     // If the backup flags aren't provided and we're encrypting, assume defaults
                     if (backupFlags == null)
                     {
-                        KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                        KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
                         NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
                     }
 
-                    if ((backupFlags.BitMasks & BitMasks.FixedCryptoKey) != 0) // except if using zero-key
+                    if (backupFlags.BitMasks.HasFlag(BitMasks.FixedCryptoKey)) // except if using zero-key
                     {
                         NormalKey = 0x00;
                     }
                     else
                     {
-                        KeyX = KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
+                        KeyX = (development ? Constants.DevKeyX0x2C : Constants.KeyX0x2C);
                         NormalKey = Helper.RotateLeft((Helper.RotateLeft(KeyX, 2, 128) ^ KeyY) + Constants.AESHardwareConstant, 87, 128);
                     }
                 }
@@ -542,7 +542,7 @@ namespace NDecrypt.Headers
                     {
                         writer.Write(cipher.ProcessBytes(reader.ReadBytes(1024 * 1024)));
                         writer.Flush();
-                        Console.Write($"\rPartition {PartitionNumber} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
+                        Console.Write($"\rPartition {PartitionNumber} RomFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {i} / {romfsSizeM + 1} mb");
                     }
                 }
                 if (romfsSizeB > 0)
@@ -551,7 +551,7 @@ namespace NDecrypt.Headers
                     writer.Flush();
                 }
 
-                Console.Write($"\rPartition {PartitionNumber} RomFS: Decrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
+                Console.Write($"\rPartition {PartitionNumber} RomFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
             }
             else
             {
@@ -562,11 +562,10 @@ namespace NDecrypt.Headers
         /// <summary>
         /// Update the CryptoMethod and BitMasks for the partition
         /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="header">NCSD header for the 3DS file</param>
         /// <param name="encrypt">True if we're writing encrypted values, false otherwise</param>
-        private void UpdateCryptoAndMasks(BinaryReader reader, BinaryWriter writer, NCSDHeader header, bool encrypt)
+        private void UpdateCryptoAndMasks(BinaryWriter writer, NCSDHeader header, bool encrypt)
         {
             // Write the new CryptoMethod
             writer.BaseStream.Seek((Entry.Offset * header.MediaUnitSize) + 0x18B, SeekOrigin.Begin);
@@ -591,13 +590,13 @@ namespace NDecrypt.Headers
             BitMasks flag = Flags.BitMasks;
             if (encrypt)
             {
-                flag = (flag & ((BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF));
-                flag = (flag | (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & header.BackupHeader.Flags.BitMasks);
+                flag &= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF;
+                flag |= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & header.BackupHeader.Flags.BitMasks;
             }
             else
             {
-                flag = flag & (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
-                flag = (flag | BitMasks.NoCrypto);
+                flag &= (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
+                flag |= BitMasks.NoCrypto;
             }
 
             writer.Write((byte)flag);

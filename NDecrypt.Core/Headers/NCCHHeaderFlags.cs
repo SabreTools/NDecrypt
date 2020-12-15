@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using NDecrypt.Data;
+using NDecrypt.Core.Data;
 
-namespace NDecrypt.Headers
+namespace NDecrypt.Core.Headers
 {
     public class NCCHHeaderFlags
     {

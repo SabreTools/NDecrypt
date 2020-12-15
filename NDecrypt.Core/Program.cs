@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
-using NDecrypt.Data;
+using NDecrypt.Core.Data;
 
-namespace NDecrypt
+namespace NDecrypt.Core
 {
     class Program
     {
