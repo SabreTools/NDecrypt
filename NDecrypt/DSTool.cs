@@ -134,7 +134,7 @@ namespace NDecrypt
             }
 
             // Properly decrypted nonstandard value (mastering issue)
-            else if ((firstValue == 0xD0D48B67 && secondValue == 0x39392F23)
+            else if ((firstValue == 0xD0D48B67 && secondValue == 0x39392F23) // Dragon Quest 5 (EU)
                 || (firstValue == 0x014A191A && secondValue == 0xA5C470B9)   // Dragon Quest 5 (USA)
                 || (firstValue == 0x7829BC8D && secondValue == 0x9968EF44))  // Dragon Quest 5 (JP)
             {
