@@ -6,7 +6,7 @@ namespace NDecrypt.Core.Headers
 {
     public class ExeFSFileHeader
     {
-        private const string codeSegment = ".code\0\0\0";
+        // .code\0\0\0
         private readonly byte[] codeSegmentBytes = new byte[] { 0x2e, 0x63, 0x6f, 0x64, 0x65, 0x00, 0x00, 0x00 };
 
         /// <summary>

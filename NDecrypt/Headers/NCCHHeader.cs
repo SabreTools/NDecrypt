@@ -275,7 +275,7 @@ namespace NDecrypt.Headers
 
             // Process each of the pieces if they exist
             ProcessExtendedHeader(reader, writer, header.MediaUnitSize, encrypt);
-            ProcessExeFS(reader, writer, header.MediaUnitSize, encrypt);
+            ProcessExeFS(reader, writer, header.MediaUnitSize, header.BackupHeader.Flags, encrypt);
             ProcessRomFS(reader, writer, header.MediaUnitSize, header.BackupHeader.Flags, encrypt, development);
 
             // Write out new CryptoMethod and BitMask flags
@@ -383,8 +383,9 @@ namespace NDecrypt.Headers
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="writer">BinaryWriter representing the output stream</param>
         /// <param name="mediaUnitSize">Number of bytes per media unit</param>
+        /// <param name="backupFlags">File backup flags for encryption</param>
         /// <param name="encrypt">True if we want to encrypt the extended header, false otherwise</param>
-        private void ProcessExeFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, bool encrypt)
+        private void ProcessExeFS(BinaryReader reader, BinaryWriter writer, uint mediaUnitSize, NCCHHeaderFlags backupFlags, bool encrypt)
         {
             if (ExeFSSizeInMediaUnits > 0)
             {
@@ -393,7 +394,8 @@ namespace NDecrypt.Headers
                     ProcessExeFSFilenameTable(reader, writer, mediaUnitSize, encrypt);
 
                 // For all but the original crypto method, process each of the files in the table
-                if (Flags.CryptoMethod != CryptoMethod.Original)
+                if ((!encrypt && Flags.CryptoMethod != CryptoMethod.Original)
+                    || (encrypt && backupFlags.CryptoMethod != CryptoMethod.Original))
                 {
                     reader.BaseStream.Seek((Entry.Offset + ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
                     ExeFSHeader exefsHeader = ExeFSHeader.Read(reader);

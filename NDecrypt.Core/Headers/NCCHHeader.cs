@@ -41,27 +41,27 @@ namespace NDecrypt.Core.Headers
         /// <summary>
         /// Boot rom key
         /// </summary>
-        private BigInteger KeyX;
+        public BigInteger KeyX { get; set; }
 
         /// <summary>
         /// NCCH boot rom key
         /// </summary>
-        private BigInteger KeyX2C;
+        public BigInteger KeyX2C { get; set; }
 
         /// <summary>
         /// Kernel9/Process9 key
         /// </summary>
-        private BigInteger KeyY;
+        public BigInteger KeyY { get; set; }
 
         /// <summary>
         /// Normal AES key
         /// </summary>
-        private BigInteger NormalKey;
+        public BigInteger NormalKey { get; set; }
 
         /// <summary>
         /// NCCH AES key
         /// </summary>
-        private BigInteger NormalKey2C;
+        public BigInteger NormalKey2C { get; set; }
 
         /// <summary>
         /// Maker code
