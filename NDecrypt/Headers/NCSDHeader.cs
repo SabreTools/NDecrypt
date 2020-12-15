@@ -322,55 +322,5 @@ namespace NDecrypt.Headers
                 return null;
             }
         }
-
-        /// <summary>
-        /// Process all partitions in the partition table
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
-        /// <param name="encrypt">True if we want to encrypt the partitions, false otherwise</param>
-        /// <param name="development">True if development keys should be used, false otherwise</param>
-        /// <param name="force">True if we want to force the operation, false otherwise</param>
-        public void ProcessAllPartitions(BinaryReader reader, BinaryWriter writer, bool encrypt, bool development, bool force)
-        {
-            // Iterate over all 8 NCCH partitions
-            for (int p = 0; p < 8; p++)
-            {
-                NCCHHeader partitionHeader = GetPartitionHeader(reader, p);
-                if (partitionHeader == null)
-                    continue;
-
-                partitionHeader.ProcessPartition(reader, writer, this, encrypt, development, force);
-            }
-        }
-
-        /// <summary>
-        /// Get a specific partition header from the partition table
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="partitionNumber">Partition number to attempt to retrieve</param>
-        /// <returns>NCCH header for the partition requested, null on error</returns>
-        public NCCHHeader GetPartitionHeader(BinaryReader reader, int partitionNumber)
-        {
-            if (!PartitionsTable[partitionNumber].IsValid())
-            {
-                Console.WriteLine($"Partition {partitionNumber} Not found... Skipping...");
-                return null;
-            }
-
-            // Seek to the beginning of the NCCH partition
-            reader.BaseStream.Seek((PartitionsTable[partitionNumber].Offset * MediaUnitSize), SeekOrigin.Begin);
-
-            NCCHHeader partitionHeader = NCCHHeader.Read(reader, true);
-            if (partitionHeader == null)
-            {
-                Console.WriteLine($"Partition {partitionNumber} Unable to read NCCH header");
-                return null;
-            }
-
-            partitionHeader.PartitionNumber = partitionNumber;
-            partitionHeader.Entry = PartitionsTable[partitionNumber];
-            return partitionHeader;
-        }
     }
 }

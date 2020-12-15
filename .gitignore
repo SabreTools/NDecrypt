@@ -261,4 +261,4 @@ __pycache__/
 *.pyc
 
 # VSCode
-/NDecrypt.Core/Properties/launchSettings.json
+/NDecrypt/Properties/launchSettings.json
