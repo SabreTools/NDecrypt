@@ -43,6 +43,15 @@ You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentione
 
 The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something.
 
+## But does it work?
+
+As much as I'd like to think that this program is entirely without flaws, numbers need to speak for themselves sometimes. Here's a list of the known sets and their current compatibility percentages with woodsec and the Python scripts (as of 2020-12-15). Please note that this does not take into account invalid data in the known set, such as incorrectly encrypted or decrypted secure areas or prototype cartridges.
+
+- **Nintendo DS** -  >99% compatible (Both encryption and decryption)
+- **Nintendo DSi** - 100% compatible (Both encryption and decryption)
+- **Nintendo 3DS** - UNKNOWN (Currently being tested)
+- **Nintendo New 3DS** - 100% compatible (Both encryption and decryption)
+
 ## Anything else?
 
 I'd like to thank the developers of the original programs for doing the actual hard work to figure things out. I'd also like to thank everyone who helped to test this against the original programs and made code suggestions.
