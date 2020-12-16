@@ -126,8 +126,9 @@ namespace NDecrypt
         /// <returns>RomType value, if possible</returns>
         private static RomType DetermineRomType(string filename)
         {
-            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)
-                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase))
+            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)     // Standard carts
+                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase)  // Development carts/images
+                || filename.EndsWith(".ids", StringComparison.OrdinalIgnoreCase)) // iQue DS Carts
                 return RomType.NDS;
 
             else if (filename.EndsWith(".dsi", StringComparison.OrdinalIgnoreCase))
