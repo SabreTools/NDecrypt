@@ -47,22 +47,31 @@ namespace NDecrypt
             if (!File.Exists(filename))
                 return false;
 
-            // Open the read and write on the same file for inplace processing
-            using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
-            using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
+            try
             {
-                NDSHeader header = NDSHeader.Read(reader);
-                if (header == null)
+                // Open the read and write on the same file for inplace processing
+                using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+                using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
                 {
-                    Console.WriteLine("Error: Not a DS or DSi Rom!");
-                    return false;
+                    NDSHeader header = NDSHeader.Read(reader);
+                    if (header == null)
+                    {
+                        Console.WriteLine("Error: Not a DS or DSi Rom!");
+                        return false;
+                    }
+
+                    // Process the secure area
+                    ProcessSecureArea(header, reader, writer);
                 }
 
-                // Process the secure area
-                ProcessSecureArea(header, reader, writer);
+                return true;
             }
-
-            return true;
+            catch
+            {
+                Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
+                Console.WriteLine("Please check that the file was a valid DS or DSi file and try again.");
+                return false;
+            }
         }
 
         /// <summary>
