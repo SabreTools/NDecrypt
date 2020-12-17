@@ -51,14 +51,18 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Represents if all of the keys have been initialized properly
         /// </summary>
-        public static bool IsReady { get; private set; }
+        public static bool? IsReady { get; private set; }
 
         /// <summary>
         /// Setup all of the necessary constants
         /// </summary>
         /// <remarks>keys.bin should be in little endian format</remarks>
-        static Constants()
+        public static void Init()
         {
+            // If we're already attempted to set the constants, don't try to again
+            if (IsReady != null)
+                return;
+
             string keyfile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "keys.bin");
             if (!File.Exists(keyfile))
             {

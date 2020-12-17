@@ -16,20 +16,27 @@ This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS 
 
 ## So how do I use this?
 
-	NDecrypt.exe <flag> [-dev] <file|dir> ...
+	NDecrypt.exe <operation> [flags] <path> ...
 
-	Possible values for <flag>:
-	encrypt, e - Encrypt the incoming files
-	decrypt, d - Decrypt the incoming files
+	Possible values for <operation>:
+	e, encrypt - Encrypt the input files
+	d, decrypt - Decrypt the input files
+
+	Possible values for [flags] (one or more can be used):
+	-dev, --development - Enable using development keys, if available
+	-f, --force         - Force operation by avoiding sanity checks
+
+	<path> can be any file or folder that contains uncompressed items.
+	More than one path can be specified at a time.
 
 
-**Note:** This overwrites the incoming files, so make backups if you're working on your original, personal dumps.
+**Note:** This overwrites the input files, so make backups if you're working on your original, personal dumps.
 
 **Note:** Mixed folders or inputs are also accepted, you can decrypt or encrypt multiple files, regardless of their type. This being said, you can only do encrypt OR decrypt at one time.
 
 ## I feel like something is missing...
 
-You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for N3DS files but is required for running the program in general. If you only plan on using NDecrypt with Nintendo DS and DSi files, you can have a completely empty `keys.bin` in the folder. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
+You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for Nintendo 3DS and New 3DS files. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
 
 - Hardware constant
 - KeyX0x10

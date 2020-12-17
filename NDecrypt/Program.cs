@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using NDecrypt.N3DS;
 
 namespace NDecrypt
 {
@@ -43,14 +42,6 @@ namespace NDecrypt
                     break;
             }
 
-            // Ensure the constants are all set
-            new Constants();
-            if (!Constants.IsReady)
-            {
-                Console.WriteLine("Could not read keys from keys.bin. Please make sure the file exists and try again");
-                return;
-            }
-
             for (int i = start; i < args.Length; i++)
             {
                 if (File.Exists(args[i]))
@@ -68,6 +59,10 @@ namespace NDecrypt
                             Console.WriteLine("Processing failed!");
                     }
                 }
+                else
+                {
+                    Console.WriteLine($"{args[i]} is not a file or folder. Please check your spelling and formatting and try again.");
+                }
             }
         }
 
@@ -80,7 +75,18 @@ namespace NDecrypt
             if (!string.IsNullOrWhiteSpace(err))
                 Console.WriteLine($"Error: {err}");
 
-            Console.WriteLine("Usage: NDecrypt.exe (decrypt|encrypt) [-dev] [-f] <file|dir> ...");
+            Console.WriteLine(@"Usage: NDecrypt.exe <opeation> [flags] <path> ...
+
+Possible values for <operation>:
+e, encrypt - Encrypt the input files
+d, decrypt - Decrypt the input files
+
+Possible values for [flags] (one or more can be used):
+-dev, --development - Enable using development keys, if available
+-f, --force         - Force operation by avoiding sanity checks
+
+<path> can be any file or folder that contains uncompressed items.
+More than one path can be specified at a time.");
         }
 
         private enum RomType

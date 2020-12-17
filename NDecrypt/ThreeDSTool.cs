@@ -44,6 +44,14 @@ namespace NDecrypt
         /// </summary>
         public bool ProcessFile()
         {
+            // Ensure the constants are all set
+            Constants.Init();
+            if (Constants.IsReady != true)
+            {
+                Console.WriteLine("Could not read keys from keys.bin. Please make sure the file exists and try again.");
+                return false;
+            }
+
             // Make sure we have a file to process first
             Console.WriteLine(filename);
             if (!File.Exists(filename))
