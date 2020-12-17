@@ -69,9 +69,6 @@ namespace NDecrypt
                     }
                 }
             }
-
-            Console.WriteLine("Press Enter to Exit...");
-            Console.Read();
         }
 
         /// <summary>
