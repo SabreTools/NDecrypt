@@ -45,12 +45,14 @@ The last 4 are only required if you use the `-dev` flag. Once again, don't ask f
 
 ## But does it work?
 
-As much as I'd like to think that this program is entirely without flaws, numbers need to speak for themselves sometimes. Here's a list of the known sets and their current compatibility percentages with woodsec and the Python scripts (as of 2020-12-15). Please note that this does not take into account invalid data in the known set, such as incorrectly encrypted or decrypted secure areas or prototype cartridges.
+As much as I'd like to think that this program is entirely without flaws, numbers need to speak for themselves sometimes. Here's a list of the supported sets and their current compatibility percentages with woodsec and the Python scripts (as of 2020-12-16):
 
 - **Nintendo DS** -  >99% compatible (Both encryption and decryption)
 - **Nintendo DSi** - 100% compatible (Both encryption and decryption)
 - **Nintendo 3DS** - UNKNOWN (Currently being tested)
 - **Nintendo New 3DS** - 100% compatible (Both encryption and decryption)
+
+Please note the above numbers are based on the current, documented values, not necessarily what is correct. For example, in the Nintendo DS set, there are issues with empty secure areas being encrypted or decrypted, prototype cartridges, and unlicensed cartridges, all of which have strange, potentially hacky values in their secure areas.
 
 ## Anything else?
 

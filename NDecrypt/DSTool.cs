@@ -119,7 +119,8 @@ namespace NDecrypt
 
             // Improperly decrypted empty secure area (decrypt empty with woodsec)
             else if ((firstValue == 0xE386C397 && secondValue == 0x82775B7E)
-                || (firstValue == 0xF98415B8 && secondValue == 0x698068FC))
+                || (firstValue == 0xF98415B8 && secondValue == 0x698068FC)
+                || (firstValue == 0xA71329EE && secondValue == 0x2A1D4C38))
             {
                 Console.WriteLine("Improperly decrypted empty secure area found. Should be encrypted to get proper value.");
                 return true;
@@ -149,13 +150,6 @@ namespace NDecrypt
             {
                 Console.WriteLine("Decrypted secure area for prototype found.");
                 return true;
-            }
-
-            // Properly encrypted prototype value
-            else if (firstValue == 0xA71329EE && secondValue == 0x2A1D4C38)
-            {
-                Console.WriteLine("Encrypted secure area for prototype found.");
-                return false;
             }
 
             // Standard decryption values
