@@ -29,7 +29,7 @@ This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS 
 
 ## I feel like something is missing...
 
-You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for N3DS files. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
+You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for N3DS files but is required for running the program in general. If you only plan on using NDecrypt with Nintendo DS and DSi files, you can have a completely empty `keys.bin` in the folder. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
 
 - Hardware constant
 - KeyX0x10
@@ -41,7 +41,7 @@ You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentione
 - DevKeyX0x25
 - DevKeyX0x2C
 
-The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something.
+The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And yes, I'll fix this being required across the board at some point.
 
 ## But does it work?
 
@@ -49,10 +49,10 @@ As much as I'd like to think that this program is entirely without flaws, number
 
 - **Nintendo DS** -  >99% compatible (Both encryption and decryption)
 - **Nintendo DSi** - 100% compatible (Both encryption and decryption)
-- **Nintendo 3DS** - UNKNOWN (Currently being tested)
+- **Nintendo 3DS** - 100% compatible (Decryption only, encryption is currently being tested)
 - **Nintendo New 3DS** - 100% compatible (Both encryption and decryption)
 
-Please note the above numbers are based on the current, documented values, not necessarily what is correct. For example, in the Nintendo DS set, there are issues with empty secure areas being encrypted or decrypted, prototype cartridges, and unlicensed cartridges, all of which have strange, potentially hacky values in their secure areas.
+Please note the above numbers are based on the current, documented values, not necessarily what is correct. For example, in the Nintendo DS set, there are issues with prototype and unlicensed cartridges, all of which have strange, potentially hacky values in their secure areas.
 
 ## Anything else?
 
