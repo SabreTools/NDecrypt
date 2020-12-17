@@ -121,7 +121,8 @@ namespace NDecrypt
             else if ((firstValue == 0xE386C397 && secondValue == 0x82775B7E)
                 || (firstValue == 0xF98415B8 && secondValue == 0x698068FC)
                 || (firstValue == 0xA71329EE && secondValue == 0x2A1D4C38)
-                || (firstValue == 0xC44DCC48 && secondValue == 0x38B6F8CB))
+                || (firstValue == 0xC44DCC48 && secondValue == 0x38B6F8CB)
+                || (firstValue == 0x3A9323B5 && secondValue == 0xC0387241))
             {
                 Console.WriteLine("Improperly decrypted empty secure area found. Should be encrypted to get proper value.");
                 return true;
