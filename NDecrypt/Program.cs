@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using NDecrypt.N3DS;
+using NDecrypt.NDS;
 
 namespace NDecrypt
 {

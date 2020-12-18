@@ -1,10 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using NDecrypt.NDS;
 using NDecrypt.NDS.Headers;
 
-namespace NDecrypt
+namespace NDecrypt.NDS
 {
     internal class DSTool : ITool
     {

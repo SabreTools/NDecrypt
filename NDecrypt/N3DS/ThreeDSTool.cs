@@ -2,10 +2,9 @@
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using NDecrypt.N3DS;
 using NDecrypt.N3DS.Headers;
 
-namespace NDecrypt
+namespace NDecrypt.N3DS
 {
     internal class ThreeDSTool : ITool
     {
