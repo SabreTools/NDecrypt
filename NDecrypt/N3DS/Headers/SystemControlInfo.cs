@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class SystemControlInfo
+    internal class SystemControlInfo
     {
         /// <summary>
         /// Application title (default is "CtrApp")

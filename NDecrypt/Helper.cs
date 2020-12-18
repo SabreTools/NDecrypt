@@ -7,7 +7,7 @@ using Org.BouncyCastle.Security;
 
 namespace NDecrypt
 {
-    public static class Helper
+    internal static class Helper
     {
         /// <summary>
         /// Add an integer value to a number represented by a byte array

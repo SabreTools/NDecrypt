@@ -5,6 +5,19 @@ namespace NDecrypt
 {
     class Program
     {
+        /// <summary>
+        /// Type of the detected file
+        /// </summary>
+        private enum FileType
+        {
+            NULL,
+            NDS,
+            NDSi,
+            iQueDS,
+            N3DS,
+            iQue3DS,
+        }
+
         public static void Main(string[] args)
         {
             if (args.Length < 2)
@@ -46,6 +59,7 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
+                    Console.WriteLine(args[i]);
                     ITool tool = DeriveTool(args[i], encrypt.Value, development, force);
                     if (tool?.ProcessFile() != true)
                         Console.WriteLine("Processing failed!");
@@ -54,6 +68,7 @@ namespace NDecrypt
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
+                        Console.WriteLine(file);
                         ITool tool = DeriveTool(file, encrypt.Value, development, force);
                         if (tool?.ProcessFile() != true)
                             Console.WriteLine("Processing failed!");
@@ -89,14 +104,6 @@ Possible values for [flags] (one or more can be used):
 More than one path can be specified at a time.");
         }
 
-        private enum RomType
-        {
-            NULL,
-            NDS,
-            NDSi,
-            N3DS,
-        }
-
         /// <summary>
         /// Derive the encryption tool to be used for the given file
         /// </summary>
@@ -107,15 +114,22 @@ More than one path can be specified at a time.");
         /// <returns></returns>
         private static ITool DeriveTool(string filename, bool encrypt, bool development, bool force)
         {
-            RomType type = DetermineRomType(filename);
+            FileType type = DetermineFileType(filename);
             switch(type)
             {
-                case RomType.NDS:
-                case RomType.NDSi:
+                case FileType.NDS:
+                    Console.WriteLine("File recognized as Nintendo DS");
                     return new DSTool(filename, encrypt, force);
-                case RomType.N3DS:
+                case FileType.NDSi:
+                    Console.WriteLine("File recognized as Nintendo DS");
+                    return new DSTool(filename, encrypt, force);
+                case FileType.iQueDS:
+                    Console.WriteLine("File recognized as iQue DS");
+                    return new DSTool(filename, encrypt, force);
+                case FileType.N3DS:
+                    Console.WriteLine("File recognized as Nintendo 3DS");
                     return new ThreeDSTool(filename, development, encrypt, force);
-                case RomType.NULL:
+                case FileType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
                     return null;
@@ -123,24 +137,26 @@ More than one path can be specified at a time.");
         }
 
         /// <summary>
-        /// Determine the rom type from the filename extension
+        /// Determine the file type from the filename extension
         /// </summary>
         /// <param name="filename">Filename to derive the type from</param>
-        /// <returns>RomType value, if possible</returns>
-        private static RomType DetermineRomType(string filename)
+        /// <returns>FileType value, if possible</returns>
+        private static FileType DetermineFileType(string filename)
         {
             if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)     // Standard carts
-                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase)  // Development carts/images
-                || filename.EndsWith(".ids", StringComparison.OrdinalIgnoreCase)) // iQue DS Carts
-                return RomType.NDS;
+                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase)) // Development carts/images
+                return FileType.NDS;
 
             else if (filename.EndsWith(".dsi", StringComparison.OrdinalIgnoreCase))
-                return RomType.NDSi;
+                return FileType.NDSi;
+
+            else if (filename.EndsWith(".ids", StringComparison.OrdinalIgnoreCase))
+                return FileType.iQueDS;
 
             else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase))
-                return RomType.N3DS;
+                return FileType.N3DS;
 
-            return RomType.NULL;
+            return FileType.NULL;
         }
     }
 }

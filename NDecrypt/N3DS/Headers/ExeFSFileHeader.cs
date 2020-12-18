@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class ExeFSFileHeader
+    internal class ExeFSFileHeader
     {
         // .code\0\0\0
         private readonly byte[] codeSegmentBytes = new byte[] { 0x2e, 0x63, 0x6f, 0x64, 0x65, 0x00, 0x00, 0x00 };

@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class CXIExtendedHeader
+    internal class CXIExtendedHeader
     {
         /// <summary>
         /// SCI

@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class StorageInfo
+    internal class StorageInfo
     {
         /// <summary>
         /// Extdata ID

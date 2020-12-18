@@ -2,7 +2,7 @@
 
 namespace NDecrypt.NDS.Headers
 {
-    public class NDSHeader
+    internal class NDSHeader
     {
         #region Common
 

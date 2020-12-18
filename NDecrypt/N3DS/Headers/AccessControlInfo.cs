@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class AccessControlInfo
+    internal class AccessControlInfo
     {
         /// <summary>
         /// ARM11 local system capabilities

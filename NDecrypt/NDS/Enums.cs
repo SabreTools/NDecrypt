@@ -2,7 +2,7 @@
 
 namespace NDecrypt.NDS
 {
-    public enum NDSUnitcode : byte
+    internal enum NDSUnitcode : byte
     {
         NDS = 0x00,
         NDSPlusDSi = 0x02,

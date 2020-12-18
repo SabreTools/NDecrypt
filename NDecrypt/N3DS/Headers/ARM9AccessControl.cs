@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class ARM9AccessControl
+    internal class ARM9AccessControl
     {
         /// <summary>
         /// Descriptors

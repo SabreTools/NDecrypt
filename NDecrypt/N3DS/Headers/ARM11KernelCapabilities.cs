@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class ARM11KernelCapabilities
+    internal class ARM11KernelCapabilities
     {
         /// <summary>
         /// Descriptors

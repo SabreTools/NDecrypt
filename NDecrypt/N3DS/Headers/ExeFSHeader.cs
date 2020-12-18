@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class ExeFSHeader
+    internal class ExeFSHeader
     {
         /// <summary>
         /// File headers (10 headers maximum, 16 bytes each)

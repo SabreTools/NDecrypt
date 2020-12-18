@@ -3,7 +3,7 @@
 namespace NDecrypt.N3DS.Headers
 {
     // https://www.3dbrew.org/wiki/RomFS
-    public class RomFSHeader
+    internal class RomFSHeader
     {
         private const string RomFSMagicNumber = "IVFC";
         private const uint RomFSSecondMagicNumber = 0x10000;

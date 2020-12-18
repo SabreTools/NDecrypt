@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class NCCHHeaderFlags
+    internal class NCCHHeaderFlags
     {
         /// <summary>
         /// Reserved

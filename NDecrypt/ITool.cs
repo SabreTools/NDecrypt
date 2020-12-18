@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NDecrypt
+﻿namespace NDecrypt
 {
-    public interface ITool
+    internal interface ITool
     {
         bool ProcessFile();
     }

@@ -7,7 +7,7 @@ using NDecrypt.N3DS.Headers;
 
 namespace NDecrypt
 {
-    public class ThreeDSTool : ITool
+    internal class ThreeDSTool : ITool
     {
         /// <summary>
         /// Name of the input 3DS file
@@ -51,11 +51,6 @@ namespace NDecrypt
                 Console.WriteLine("Could not read keys from keys.bin. Please make sure the file exists and try again.");
                 return false;
             }
-
-            // Make sure we have a file to process first
-            Console.WriteLine(filename);
-            if (!File.Exists(filename))
-                return false;
 
             try
             {

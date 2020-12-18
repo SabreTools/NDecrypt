@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace NDecrypt.N3DS
 {
-    public class Constants
+    internal class Constants
     {
         // Setup Keys and IVs
         public static byte[] PlainCounter = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };

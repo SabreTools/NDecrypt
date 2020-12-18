@@ -3,7 +3,7 @@ using System.IO;
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class NCSDHeader
+    internal class NCSDHeader
     {
         private const string NCSDMagicNumber = "NCSD";
 

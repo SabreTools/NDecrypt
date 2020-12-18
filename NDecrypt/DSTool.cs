@@ -6,7 +6,7 @@ using NDecrypt.NDS.Headers;
 
 namespace NDecrypt
 {
-    public class DSTool : ITool
+    internal class DSTool : ITool
     {
         /// <summary>
         /// Name of the input DS/DSi file
@@ -42,11 +42,6 @@ namespace NDecrypt
         /// </summary>
         public bool ProcessFile()
         {
-            // Make sure we have a file to process first
-            Console.WriteLine(filename);
-            if (!File.Exists(filename))
-                return false;
-
             try
             {
                 // Open the read and write on the same file for inplace processing

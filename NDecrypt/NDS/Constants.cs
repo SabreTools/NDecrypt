@@ -1,6 +1,6 @@
 ﻿namespace NDecrypt.NDS
 {
-    public class Constants
+    internal class Constants
     {
         public static byte[] NDSEncryptionData = new byte[]
         {

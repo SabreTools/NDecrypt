@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class NCCHHeader
+    internal class NCCHHeader
     {
         private const string NCCHMagicNumber = "NCCH";
 

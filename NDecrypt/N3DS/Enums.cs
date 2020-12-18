@@ -3,7 +3,7 @@
 namespace NDecrypt.N3DS
 {
     [Flags]
-    public enum ARM9AccessControlDescriptors : byte
+    internal enum ARM9AccessControlDescriptors : byte
     {
         MountNandRoot = 0x01,
         MountNandroWriteAccess = 0x02,
@@ -18,7 +18,7 @@ namespace NDecrypt.N3DS
     }
 
     [Flags]
-    public enum ARM11LSCFlag0 : byte
+    internal enum ARM11LSCFlag0 : byte
     {
         IdealProcessor = 0x01 | 0x02,
         AffinityMask = 0x04 | 0x08,
@@ -37,14 +37,14 @@ namespace NDecrypt.N3DS
     }
 
     [Flags]
-    public enum ARM11LSCFlag1 : byte
+    internal enum ARM11LSCFlag1 : byte
     {
         EnableL2Cache = 0x01,
         Cpuspeed_804MHz = 0x02,
     }
 
     [Flags]
-    public enum ARM11LSCFlag2 : byte
+    internal enum ARM11LSCFlag2 : byte
     {
         /// <summary>
         /// Value	Description
@@ -58,7 +58,7 @@ namespace NDecrypt.N3DS
     }
 
     [Flags]
-    public enum BitMasks : byte
+    internal enum BitMasks : byte
     {
         FixedCryptoKey = 0x01,
         NoMountRomFs = 0x02,
@@ -66,14 +66,14 @@ namespace NDecrypt.N3DS
         NewKeyYGenerator = 0x20,
     }
 
-    public enum ContentPlatform : byte
+    internal enum ContentPlatform : byte
     {
         CTR = 0x01,
         Snake = 0x02, // New3DS
     }
 
     [Flags]
-    public enum ContentType : byte
+    internal enum ContentType : byte
     {
         Data = 0x01,
         Executable = 0x02,
@@ -83,7 +83,7 @@ namespace NDecrypt.N3DS
         Trial = 0x10,
     }
 
-    public enum CryptoMethod : byte
+    internal enum CryptoMethod : byte
     {
         Original = 0x00,
         Seven = 0x01,
@@ -92,7 +92,7 @@ namespace NDecrypt.N3DS
     }
 
     [Flags]
-    public enum FilesystemAccessInfo : ulong
+    internal enum FilesystemAccessInfo : ulong
     {
         CategorySystemApplication = 0x1,
         CategoryHardwareCheck = 0x2,
@@ -118,7 +118,7 @@ namespace NDecrypt.N3DS
         SeedDB = 0x200000, // Introduced in 9.6.0-X FIRM. Home Menu has this bit set starting with 9.6.0-X.
     }
 
-    public enum FilesystemType : ulong
+    internal enum FilesystemType : ulong
     {
         None = 0,
         Normal = 1,
@@ -126,19 +126,19 @@ namespace NDecrypt.N3DS
         AGB_FIRMSave = 4,
     }
 
-    public enum MediaCardDeviceType : byte
+    internal enum MediaCardDeviceType : byte
     {
         NORFlash = 0x01,
         None = 0x02,
         BT = 0x03,
     }
 
-    public enum MediaPlatformIndex : byte
+    internal enum MediaPlatformIndex : byte
     {
         CTR = 0x01,
     }
 
-    public enum MediaTypeIndex : byte
+    internal enum MediaTypeIndex : byte
     {
         InnerDevice = 0x00,
         Card1 = 0x01,
@@ -146,7 +146,7 @@ namespace NDecrypt.N3DS
         ExtendedDevice = 0x03,
     }
 
-    public enum NCCHFlags
+    internal enum NCCHFlags
     {
         CryptoMethod = 0x03,
         ContentPlatform = 0x04,
@@ -155,7 +155,7 @@ namespace NDecrypt.N3DS
         BitMasks = 0x07,
     }
 
-    public enum NCSDFlags
+    internal enum NCSDFlags
     {
         BackupWriteWaitTime = 0x00,
         MediaCardDevice3X = 0x03,
@@ -165,7 +165,7 @@ namespace NDecrypt.N3DS
         MediaCardDevice2X = 0x07,
     }
 
-    public enum ResourceLimitCategory
+    internal enum ResourceLimitCategory
     {
         APPLICATION = 0,
         SYS_APPLET = 1,
@@ -174,7 +174,7 @@ namespace NDecrypt.N3DS
     }
 
     [Flags]
-    public enum StorageInfoOtherAttributes : byte
+    internal enum StorageInfoOtherAttributes : byte
     {
         NotUseROMFS = 0x01,
         UseExtendedSavedataAccess = 0x02,

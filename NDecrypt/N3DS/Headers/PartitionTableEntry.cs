@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class PartitionTableEntry
+    internal class PartitionTableEntry
     {
         /// <summary>
         /// Offset

@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class ARM11LocalSystemCapabilities
+    internal class ARM11LocalSystemCapabilities
     {
         /// <summary>
         /// Program ID

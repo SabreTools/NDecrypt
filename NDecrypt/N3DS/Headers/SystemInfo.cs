@@ -2,7 +2,7 @@
 
 namespace NDecrypt.N3DS.Headers
 {
-    public class SystemInfo
+    internal class SystemInfo
     {
         /// <summary>
         /// SaveData Size
