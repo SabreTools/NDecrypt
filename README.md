@@ -43,7 +43,7 @@ You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentione
 - KeyX0x1B
 - KeyX0x25
 - KeyX0x2C
-- DevKeyX0x10
+- DevKeyX0x18
 - DevKeyX0x1B
 - DevKeyX0x25
 - DevKeyX0x2C
