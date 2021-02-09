@@ -43,7 +43,7 @@ namespace NDecrypt
                 return;
             }
 
-            bool development = false, force = false;
+            bool development = false, force = false, outputHashes = false;
             int start = 1;
             for ( ; start < args.Length; start++)
             {
@@ -52,6 +52,9 @@ namespace NDecrypt
 
                 else if (args[start] == "-f" || args[start] == "--force")
                     force = true;
+
+                else if (args[start] == "-h" || args[start] == "--hash")
+                    outputHashes = true;
 
                 else
                     break;
@@ -65,6 +68,8 @@ namespace NDecrypt
                     ITool tool = DeriveTool(args[i], encrypt.Value, development, force);
                     if (tool?.ProcessFile() != true)
                         Console.WriteLine("Processing failed!");
+                    else if (outputHashes)
+                        WriteHashes(args[i]);
                 }
                 else if (Directory.Exists(args[i]))
                 {
@@ -74,6 +79,8 @@ namespace NDecrypt
                         ITool tool = DeriveTool(file, encrypt.Value, development, force);
                         if (tool?.ProcessFile() != true)
                             Console.WriteLine("Processing failed!");
+                        else if (outputHashes)
+                            WriteHashes(file);
                     }
                 }
                 else
@@ -101,6 +108,7 @@ d, decrypt - Decrypt the input files
 Possible values for [flags] (one or more can be used):
 -dev, --development - Enable using development keys, if available
 -f, --force         - Force operation by avoiding sanity checks
+-h, --hash          - Output size and hashes to a companion file
 
 <path> can be any file or folder that contains uncompressed items.
 More than one path can be specified at a time.");
@@ -159,6 +167,29 @@ More than one path can be specified at a time.");
                 return FileType.N3DS;
 
             return FileType.NULL;
+        }
+    
+        /// <summary>
+        /// Write out the hashes of a file to a named file
+        /// </summary>
+        /// <param name="filename">Filename to get hashes for/param>
+        private static void WriteHashes(string filename)
+        {
+            // If the file doesn't exist, don't try anything
+            if (!File.Exists(filename))
+                return;
+
+            // Get the hash string from the file
+            string hashString = Helper.GetInfo(filename);
+            if (hashString == null)
+                return;
+            
+            // Open the output file and write the hashes
+            using (var fs = File.Create(Path.GetFullPath(filename) + ".hash"))
+            using (var sw = new StreamWriter(fs))
+            {
+                sw.WriteLine(hashString);
+            }
         }
     }
 }

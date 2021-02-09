@@ -118,10 +118,10 @@ namespace NDecrypt
 
                 // Get the results
                 string result = $"Size: {size}\n"
-                    + $"CRC32: {ByteArrayToString(hashers.First(h => h.HashType == Hash.CRC).GetHash()) ?? ""}"
-                    + $"MD5: {ByteArrayToString(hashers.First(h => h.HashType == Hash.MD5).GetHash()) ?? ""}"
-                    + $"SHA1: {ByteArrayToString(hashers.First(h => h.HashType == Hash.SHA1).GetHash()) ?? ""}"
-                    + $"SHA256: {ByteArrayToString(hashers.First(h => h.HashType == Hash.SHA256).GetHash()) ?? ""}";
+                    + $"CRC32: {ByteArrayToString(hashers.First(h => h.HashType == Hash.CRC).GetHash()) ?? ""}\n"
+                    + $"MD5: {ByteArrayToString(hashers.First(h => h.HashType == Hash.MD5).GetHash()) ?? ""}\n"
+                    + $"SHA1: {ByteArrayToString(hashers.First(h => h.HashType == Hash.SHA1).GetHash()) ?? ""}\n"
+                    + $"SHA256: {ByteArrayToString(hashers.First(h => h.HashType == Hash.SHA256).GetHash()) ?? ""}\n";
 
                 // Dispose of the hashers
                 loadBuffer.Dispose();
