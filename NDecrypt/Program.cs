@@ -18,6 +18,7 @@ namespace NDecrypt
             iQueDS,
             N3DS,
             iQue3DS,
+            N3DSCIA,
         }
 
         public static void Main(string[] args)
@@ -139,6 +140,9 @@ More than one path can be specified at a time.");
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
                     return new ThreeDSTool(filename, development, encrypt, force);
+                // case FileType.N3DSCIA:
+                //     Console.WriteLine("File recognized as Nintendo 3DS");
+                //     return new CIATool(filename, development, encrypt, force);
                 case FileType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
@@ -165,6 +169,9 @@ More than one path can be specified at a time.");
 
             else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase))
                 return FileType.N3DS;
+            
+            else if (filename.EndsWith(".cia", StringComparison.OrdinalIgnoreCase))
+                return FileType.N3DSCIA;
 
             return FileType.NULL;
         }
