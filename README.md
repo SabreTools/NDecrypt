@@ -39,7 +39,7 @@ This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS 
 
 ## I feel like something is missing...
 
-You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for Nintendo 3DS and New 3DS files. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
+You (possibly*) are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for Nintendo 3DS and New 3DS files. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
 
 - Hardware constant
 - KeyX0x18 / slot0x18KeyX
@@ -53,7 +53,7 @@ You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentione
 
 The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And yes, I'll fix this being required across the board at some point.
 
-If you choose to use the `-c` option, you can instead provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome.
+*If you choose to use the `-c` option, you can instead provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome.
 
 ## But does it work?
 
