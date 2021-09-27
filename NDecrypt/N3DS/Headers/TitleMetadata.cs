@@ -137,6 +137,14 @@ namespace NDecrypt.N3DS.Headers
         public ContentChunkRecord[] ContentChunkRecords { get; private set; }
 
         /// <summary>
+        /// Certificate chain
+        /// </summary>
+        /// <remarks>
+        /// https://www.3dbrew.org/wiki/Title_metadata#Certificate_Chain
+        /// </remarks>
+        public Certificate[] CertificateChain { get; set; }
+
+        /// <summary>
         /// Read from a stream and get ticket metadata, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
@@ -201,6 +209,13 @@ namespace NDecrypt.N3DS.Headers
                 for (int i = 0; i < tm.ContentCount; i++)
                 {
                     tm.ContentChunkRecords[i] = ContentChunkRecord.Read(reader);
+                }
+
+                if (metadataSize - (0xC4 + (64 * 0x24) + (tm.ContentCount * 0x30)) > 0)
+                {
+                    tm.CertificateChain = new Certificate[2];
+                    tm.CertificateChain[0] = Certificate.Read(reader); // TMD
+                    tm.CertificateChain[1] = Certificate.Read(reader); // CA
                 }
 
                 return tm;

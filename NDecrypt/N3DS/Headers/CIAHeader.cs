@@ -101,10 +101,9 @@ namespace NDecrypt.N3DS.Headers
                 header.ContentSize = reader.ReadInt64();
 
                 header.CertificateChain = new Certificate[3];
-                for (int i = 0; i < 3; i++)
-                {
-                    header.CertificateChain[i] = Certificate.Read(reader);
-                }
+                header.CertificateChain[0] = Certificate.Read(reader); // CA
+                header.CertificateChain[1] = Certificate.Read(reader); // Ticket
+                header.CertificateChain[2] = Certificate.Read(reader); // TMD
 
                 header.Ticket = Ticket.Read(reader, header.TicketSize);
                 header.TMDFileData = TitleMetadata.Read(reader, header.TMDFileSize);

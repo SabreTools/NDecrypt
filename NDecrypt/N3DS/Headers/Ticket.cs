@@ -150,6 +150,13 @@ namespace NDecrypt.N3DS.Headers
         public byte[] Limits { get; private set; }
 
         /// <summary>
+        /// The Content Index of a ticket has its own size defined within itself,
+        /// with seemingly a minimal of 20 bytes, the second u32 in big endian defines
+        /// the full value of X.
+        /// </summary>
+        public int ContentIndexSize { get; private set; }
+
+        /// <summary>
         /// Content Index
         /// </summary>
         /// <remarks>
@@ -158,6 +165,14 @@ namespace NDecrypt.N3DS.Headers
         /// the full value of X.
         /// </remarks>
         public byte[] ContentIndex { get; private set; }
+
+        /// <summary>
+        /// Certificate chain
+        /// </summary>
+        /// <remarks>
+        /// https://www.3dbrew.org/wiki/Ticket#Certificate_Chain
+        /// </remarks>
+        public Certificate[] CertificateChain { get; set; }
 
         /// <summary>
         /// Read from a stream and get ticket, if possible
@@ -214,9 +229,17 @@ namespace NDecrypt.N3DS.Headers
                 tk.Audit = reader.ReadByte();
                 tk.Reserved6 = reader.ReadBytes(0x42);
                 tk.Limits = reader.ReadBytes(0x40);
+                reader.ReadBytes(4);
+                tk.ContentIndexSize = reader.ReadInt32();
+                reader.BaseStream.Seek(-8, SeekOrigin.Current);
+                tk.ContentIndex = reader.ReadBytes(tk.ContentIndexSize);
 
-                if (ticketSize - 0x164 > 0)
-                    tk.ContentIndex = reader.ReadBytes(ticketSize - 0x164);
+                if (ticketSize - (0x164 + tk.ContentIndexSize) > 0)
+                {
+                    tk.CertificateChain = new Certificate[2];
+                    tk.CertificateChain[0] = Certificate.Read(reader); // Ticket
+                    tk.CertificateChain[1] = Certificate.Read(reader); // CA
+                }
 
                 return tk;
             }
