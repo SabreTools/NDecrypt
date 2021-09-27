@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace NDecrypt.NDS.Headers
+namespace NDecrypt.Nitro.Headers
 {
     internal class NDSHeader
     {

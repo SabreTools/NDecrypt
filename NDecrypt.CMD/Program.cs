@@ -2,7 +2,7 @@
 using System.IO;
 using System.Reflection;
 using NDecrypt.N3DS;
-using NDecrypt.NDS;
+using NDecrypt.Nitro;
 
 namespace NDecrypt.CMD
 {

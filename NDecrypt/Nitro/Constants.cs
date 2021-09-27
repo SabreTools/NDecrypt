@@ -1,4 +1,4 @@
-﻿namespace NDecrypt.NDS
+﻿namespace NDecrypt.Nitro
 {
     internal class Constants
     {
