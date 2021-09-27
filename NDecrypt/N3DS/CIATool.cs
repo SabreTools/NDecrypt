@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using NDecrypt.N3DS.Headers;
 
 namespace NDecrypt.N3DS
@@ -11,6 +12,11 @@ namespace NDecrypt.N3DS
         /// Name of the input CIA file
         /// </summary>
         private readonly string filename;
+
+        /// <summary>
+        /// Flag to detrmine if keys.bin (false) or aes_keys.txt (true) should be used
+        /// </summary>
+        private readonly bool useCitraKeyFile;
 
         /// <summary>
         /// Flag to detrmine if development keys should be used
@@ -27,9 +33,10 @@ namespace NDecrypt.N3DS
         /// </summary>
         private readonly bool force;
 
-        public CIATool(string filename, bool development, bool encrypt, bool force)
+        public CIATool(string filename, bool useCitraKeyFile, bool development, bool encrypt, bool force)
         {
             this.filename = filename;
+            this.useCitraKeyFile = useCitraKeyFile;
             this.development = development;
             this.encrypt = encrypt;
             this.force = force;
@@ -43,7 +50,13 @@ namespace NDecrypt.N3DS
         public bool ProcessFile()
         {
             // Ensure the constants are all set
-            Constants.Init();
+            string keyfile;
+            if (this.useCitraKeyFile)
+                keyfile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "aes_keys.txt");
+            else
+                keyfile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "keys.bin");
+
+            Constants.Init(keyfile, useCitraKeyFile);
             if (Constants.IsReady != true)
             {
                 Console.WriteLine("Could not read keys from keys.bin. Please make sure the file exists and try again.");

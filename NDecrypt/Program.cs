@@ -44,7 +44,8 @@ namespace NDecrypt
                 return;
             }
 
-            bool development = false, force = false, outputHashes = false;
+            // TODO: Make using Citra keyfile configurable
+            bool development = false, force = false, outputHashes = false, useCitraKeyFile = false;
             int start = 1;
             for ( ; start < args.Length; start++)
             {
@@ -66,7 +67,7 @@ namespace NDecrypt
                 if (File.Exists(args[i]))
                 {
                     Console.WriteLine(args[i]);
-                    ITool tool = DeriveTool(args[i], encrypt.Value, development, force);
+                    ITool tool = DeriveTool(args[i], encrypt.Value, useCitraKeyFile, development, force);
                     if (tool?.ProcessFile() != true)
                         Console.WriteLine("Processing failed!");
                     else if (outputHashes)
@@ -77,7 +78,7 @@ namespace NDecrypt
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
                         Console.WriteLine(file);
-                        ITool tool = DeriveTool(file, encrypt.Value, development, force);
+                        ITool tool = DeriveTool(file, encrypt.Value, useCitraKeyFile, development, force);
                         if (tool?.ProcessFile() != true)
                             Console.WriteLine("Processing failed!");
                         else if (outputHashes)
@@ -123,7 +124,7 @@ More than one path can be specified at a time.");
         /// <param name="development">True if we are using development keys, false otherwise</param>
         /// <param name="force">True if operations should be forced, false otherwise</param>
         /// <returns></returns>
-        private static ITool DeriveTool(string filename, bool encrypt, bool development, bool force)
+        private static ITool DeriveTool(string filename, bool encrypt, bool useCitraKeyFile, bool development, bool force)
         {
             FileType type = DetermineFileType(filename);
             switch(type)
@@ -139,10 +140,10 @@ More than one path can be specified at a time.");
                     return new DSTool(filename, encrypt, force);
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
-                    return new ThreeDSTool(filename, development, encrypt, force);
+                    return new ThreeDSTool(filename, useCitraKeyFile, development, encrypt, force);
                 // case FileType.N3DSCIA:
                 //     Console.WriteLine("File recognized as Nintendo 3DS");
-                //     return new CIATool(filename, development, encrypt, force);
+                //     return new CIATool(filename, useCitraKeyFile, development, encrypt, force);
                 case FileType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");

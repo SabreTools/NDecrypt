@@ -21,4 +21,16 @@ namespace NDecrypt.Tools
         SecureHashes = MD5 | SHA1 | SHA256 | SHA384 | SHA512,
         All =  CRC | MD5 | SHA1 | SHA256 | SHA384 | SHA512,
     }
+
+    /// <summary>
+    /// Different types of INI rows being parsed
+    /// </summary>
+    public enum IniRowType
+    {
+        None,
+        SectionHeader,
+        KeyValue,
+        Comment,
+        Invalid,
+    }
 }
