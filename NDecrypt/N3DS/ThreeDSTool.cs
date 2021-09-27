@@ -35,7 +35,7 @@ namespace NDecrypt.N3DS
             // Ensure the constants are all set
             if (decryptArgs.IsReady != true)
             {
-                Console.WriteLine("Could not read keys from keys.bin. Please make sure the file exists and try again.");
+                Console.WriteLine("Could not read keys. Please make sure the file exists and try again.");
                 return false;
             }
 
@@ -48,7 +48,7 @@ namespace NDecrypt.N3DS
                     NCSDHeader header = NCSDHeader.Read(reader, decryptArgs.Development);
                     if (header == null)
                     {
-                        Console.WriteLine("Error: Not a 3DS Rom!");
+                        Console.WriteLine("Error: Not a 3DS cart image!");
                         return false;
                     }
 
@@ -61,7 +61,7 @@ namespace NDecrypt.N3DS
             catch
             {
                 Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
-                Console.WriteLine("Please check that the file was a valid 3DS or New 3DS file and try again.");
+                Console.WriteLine("Please check that the file was a valid 3DS or New 3DS cart image and try again.");
                 return false;
             }
         }
