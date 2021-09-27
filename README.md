@@ -23,10 +23,11 @@ This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS 
 	d, decrypt - Decrypt the input files
 
 	Possible values for [flags] (one or more can be used):
-	-c, --citra         - Enable using aes_keys.txt instead of keys.bin
-	-dev, --development - Enable using development keys, if available
-	-f, --force         - Force operation by avoiding sanity checks
-	-h, --hash          - Output size and hashes to a companion file
+	-c, --citra           - Enable using aes_keys.txt instead of keys.bin
+	-dev, --development   - Enable using development keys, if available
+	-f, --force           - Force operation by avoiding sanity checks
+	-h, --hash            - Output size and hashes to a companion file
+	-k, --keyfile <path>  - Path to keys.bin or aes_keys.txt
 
 	<path> can be any file or folder that contains uncompressed items.
 	More than one path can be specified at a time.

@@ -50,19 +50,50 @@ namespace NDecrypt.CMD
             for ( ; start < args.Length; start++)
             {
                 if (args[start] == "-c" || args[start] == "--citra")
+                {
                     decryptArgs.UseCitraKeyFile = true;
-
+                }
                 else if (args[start] == "-dev" || args[start] == "--development")
+                {
                     decryptArgs.Development = true;
-
+                }
                 else if (args[start] == "-f" || args[start] == "--force")
+                {
                     decryptArgs.Force = true;
-
+                }
                 else if (args[start] == "-h" || args[start] == "--hash")
+                {
                     outputHashes = true;
+                }
+                else if (args[start] == "-k" || args[start] == "--keyfile")
+                {
+                    if (start == args.Length - 1)
+                        Console.WriteLine("Invalid keyfile path: no additional arguments found!");
 
+                    start++;
+                    string tempPath = args[start];
+                    if (string.IsNullOrWhiteSpace(tempPath))
+                        Console.WriteLine($"Invalid keyfile path: null or empty path found!");
+                    
+                    tempPath = Path.GetFullPath(tempPath);
+                    if (!File.Exists(tempPath))
+                        Console.WriteLine($"Invalid keyfile path: file {tempPath} not found!");
+                    else
+                        decryptArgs.KeyFile = tempPath;
+                }
                 else
+                {
                     break;
+                }
+            }
+
+            // Derive the keyfile path based on the runtime folder if not already set
+            if (string.IsNullOrWhiteSpace(decryptArgs.KeyFile))
+            {
+                if (decryptArgs.UseCitraKeyFile)
+                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "aes_keys.txt");
+                else
+                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "keys.bin");
             }
 
             // If we are using a Citra keyfile, there are no development keys
@@ -71,12 +102,6 @@ namespace NDecrypt.CMD
                 Console.WriteLine("Citra keyfiles don't contain development keys; disabling the option...");
                 decryptArgs.Development = false;
             }
-
-            // Derive the keyfile path based on the runtime folder -- TODO: Make the keyfile path configurable
-            if (decryptArgs.UseCitraKeyFile)
-                decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "aes_keys.txt");
-            else
-                decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "keys.bin");
             
             // Initialize the constants, if possible
             decryptArgs.Initialize();
@@ -85,23 +110,13 @@ namespace NDecrypt.CMD
             {
                 if (File.Exists(args[i]))
                 {
-                    Console.WriteLine(args[i]);
-                    ITool tool = DeriveTool(args[i], decryptArgs);
-                    if (tool?.ProcessFile() != true)
-                        Console.WriteLine("Processing failed!");
-                    else if (outputHashes)
-                        WriteHashes(args[i]);
+                    ProcessPath(args[i], decryptArgs, outputHashes);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        Console.WriteLine(file);
-                        ITool tool = DeriveTool(file, decryptArgs);
-                        if (tool?.ProcessFile() != true)
-                            Console.WriteLine("Processing failed!");
-                        else if (outputHashes)
-                            WriteHashes(file);
+                        ProcessPath(file, decryptArgs, outputHashes);
                     }
                 }
                 else
@@ -109,6 +124,22 @@ namespace NDecrypt.CMD
                     Console.WriteLine($"{args[i]} is not a file or folder. Please check your spelling and formatting and try again.");
                 }
             }
+        }
+
+        /// <summary>
+        /// Display a basic help text
+        /// </summary>
+        /// <param name="path">Path to the file to process</param>
+        /// <param name="decryptArgs">DecryptArgs to use during processing</param>
+        /// <param name="outputHashes">True to write out a hashfile, false otherwise</param>
+        private static void ProcessPath(string path, DecryptArgs decryptArgs, bool outputHashes)
+        {
+            Console.WriteLine(path);
+            ITool tool = DeriveTool(path, decryptArgs);
+            if (tool?.ProcessFile() != true)
+                Console.WriteLine("Processing failed!");
+            else if (outputHashes)
+                WriteHashes(path);
         }
 
         /// <summary>
@@ -127,10 +158,11 @@ e, encrypt - Encrypt the input files
 d, decrypt - Decrypt the input files
 
 Possible values for [flags] (one or more can be used):
--c, --citra         - Enable using aes_keys.txt instead of keys.bin
--dev, --development - Enable using development keys, if available
--f, --force         - Force operation by avoiding sanity checks
--h, --hash          - Output size and hashes to a companion file
+-c, --citra           - Enable using aes_keys.txt instead of keys.bin
+-dev, --development   - Enable using development keys, if available
+-f, --force           - Force operation by avoiding sanity checks
+-h, --hash            - Output size and hashes to a companion file
+-k, --keyfile <path>  - Path to keys.bin or aes_keys.txt
 
 <path> can be any file or folder that contains uncompressed items.
 More than one path can be specified at a time.");
