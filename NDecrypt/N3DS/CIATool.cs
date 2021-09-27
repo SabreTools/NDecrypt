@@ -51,8 +51,9 @@ namespace NDecrypt.N3DS
                     }
 
                     // TODO: Implement CIA encrypt/decrypt
-                    return false;
                 }
+
+                return false;
             }
             catch
             {

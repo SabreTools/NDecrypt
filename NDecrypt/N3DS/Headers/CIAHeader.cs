@@ -52,21 +52,34 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Certificate chain
         /// </summary>
+        /// <remarks>
+        /// https://www.3dbrew.org/wiki/Certificates
+        /// https://www.3dbrew.org/wiki/Ticket#Certificate_Chain
+        /// </remarks>
         public byte[] CertificateChain { get; set; }
 
         /// <summary>
         /// Ticket
         /// </summary>
+        /// <remarks>
+        /// https://www.3dbrew.org/wiki/Ticket#Structure
+        /// </remarks>
         public byte[] Ticket { get; set; }
 
         /// <summary>
         /// TMD file data
         /// </summary>
+        /// <remarks>
+        /// https://www.3dbrew.org/wiki/Title_metadata
+        /// </remarks>
         public byte[] TMDFileData { get; set; }
 
         /// <summary>
         /// Content file data
         /// </summary>
+        /// <remarks>
+        /// Probably not going to be read in fully later
+        /// </remarks>
         public byte[] ContentFileData { get; set; }
 
         /// <summary>
