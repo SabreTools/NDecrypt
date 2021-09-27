@@ -147,7 +147,17 @@ namespace NDecrypt.N3DS.Headers
         /// <remarks>
         /// In demos, the first u32 in the "Limits" section is 0x4, then the second u32 is the max-playcount.
         /// </remarks>
-        public byte[] Limits { get; private set; }
+        public int[] Limits { get; private set; }
+
+        /// <summary>
+        /// Denotes if the ticket denotes a demo or not
+        /// </summary>
+        public bool IsDemo => Limits != null && Limits.Length > 0 ? Limits[0] == 0x0004 : false;
+
+        /// <summary>
+        /// Denotes if the max playcount for a demo
+        /// </summary>
+        public int PlayCount => Limits != null && Limits.Length > 1 ? Limits[1] : 0;
 
         /// <summary>
         /// The Content Index of a ticket has its own size defined within itself,
@@ -228,7 +238,13 @@ namespace NDecrypt.N3DS.Headers
                 tk.Reserved5 = reader.ReadByte();
                 tk.Audit = reader.ReadByte();
                 tk.Reserved6 = reader.ReadBytes(0x42);
-                tk.Limits = reader.ReadBytes(0x40);
+
+                tk.Limits = new int[0x10];
+                for (int i = 0; i < 0x10; i++)
+                {
+                    tk.Limits[i] = reader.ReadInt32();
+                }
+
                 reader.ReadBytes(4);
                 tk.ContentIndexSize = reader.ReadInt32();
                 reader.BaseStream.Seek(-8, SeekOrigin.Current);
