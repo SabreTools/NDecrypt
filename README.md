@@ -42,10 +42,10 @@ This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS 
 You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for Nintendo 3DS and New 3DS files. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
 
 - Hardware constant
-- KeyX0x18
-- KeyX0x1B
-- KeyX0x25
-- KeyX0x2C
+- KeyX0x18 / slot0x18KeyX
+- KeyX0x1B / slot0x1BKeyX
+- KeyX0x25 / slot0x25KeyX
+- KeyX0x2C / slot0x2CKeyX
 - DevKeyX0x18
 - DevKeyX0x1B
 - DevKeyX0x25
