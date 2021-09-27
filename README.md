@@ -23,8 +23,10 @@ This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS 
 	d, decrypt - Decrypt the input files
 
 	Possible values for [flags] (one or more can be used):
+	-c, --citra         - Enable using aes_keys.txt instead of keys.bin
 	-dev, --development - Enable using development keys, if available
 	-f, --force         - Force operation by avoiding sanity checks
+	-h, --hash          - Output size and hashes to a companion file
 
 	<path> can be any file or folder that contains uncompressed items.
 	More than one path can be specified at a time.
@@ -49,6 +51,8 @@ You are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentione
 - DevKeyX0x2C
 
 The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And yes, I'll fix this being required across the board at some point.
+
+If you choose to use the `-c` option, you can instead provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome.
 
 ## But does it work?
 

@@ -5,7 +5,7 @@ using NDecrypt.NDS.Headers;
 
 namespace NDecrypt.NDS
 {
-    internal class DSTool : ITool
+    public class DSTool : ITool
     {
         /// <summary>
         /// Name of the input DS/DSi file
@@ -13,14 +13,9 @@ namespace NDecrypt.NDS
         private readonly string filename;
 
         /// <summary>
-        /// Flag to determine if encrypting or decrypting
+        /// Decryption args to use while processing
         /// </summary>
-        private readonly bool encrypt;
-
-        /// <summary>
-        /// Flag to determine if forcing operations
-        /// </summary>
-        private readonly bool force;
+        private readonly DecryptArgs decryptArgs;
 
         #region Encryption process variables
 
@@ -29,11 +24,10 @@ namespace NDecrypt.NDS
 
         #endregion
 
-        public DSTool(string filename, bool encrypt, bool force)
+        public DSTool(string filename, DecryptArgs decryptArgs)
         {
             this.filename = filename;
-            this.encrypt = encrypt;
-            this.force = force;
+            this.decryptArgs = decryptArgs;
         }
 
         /// <summary>
@@ -77,7 +71,7 @@ namespace NDecrypt.NDS
         private void ProcessSecureArea(NDSHeader ndsHeader, BinaryReader reader, BinaryWriter writer)
         {
             // If we're forcing the operation, tell the user
-            if (force)
+            if (decryptArgs.Force)
             {
                 Console.WriteLine("File is not verified due to force flag being set.");
             }
@@ -90,16 +84,16 @@ namespace NDecrypt.NDS
                     Console.WriteLine("File has an empty secure area, cannot proceed");
                     return;
                 }
-                else if (encrypt ^ isDecrypted.Value)
+                else if (decryptArgs.Encrypt ^ isDecrypted.Value)
                 {
-                    Console.WriteLine("File is already " + (encrypt ? "encrypted" : "decrypted"));
+                    Console.WriteLine("File is already " + (decryptArgs.Encrypt ? "encrypted" : "decrypted"));
                     return;
                 }
             }
 
             ProcessARM9(ndsHeader, reader, writer);
 
-            Console.WriteLine("File has been " + (encrypt ? "encrypted" : "decrypted"));
+            Console.WriteLine("File has been " + (decryptArgs.Encrypt ? "encrypted" : "decrypted"));
         }
 
         /// <summary>
@@ -179,13 +173,13 @@ namespace NDecrypt.NDS
 
             // Perform the initialization steps
             Init1(ndsHeader);
-            if (!encrypt) Decrypt(ref p1, ref p0);
+            if (!decryptArgs.Encrypt) Decrypt(ref p1, ref p0);
             arg2[1] <<= 1;
             arg2[2] >>= 1;
             Init2();
 
             // If we're decrypting, set the proper flags
-            if (!encrypt)
+            if (!decryptArgs.Encrypt)
             {
                 Decrypt(ref p1, ref p0);
                 if (p0 == Constants.MAGIC30 && p1 == Constants.MAGIC34)
@@ -209,7 +203,7 @@ namespace NDecrypt.NDS
                 p0 = reader.ReadUInt32();
                 p1 = reader.ReadUInt32();
 
-                if (encrypt)
+                if (decryptArgs.Encrypt)
                     Encrypt(ref p1, ref p0);
                 else
                     Decrypt(ref p1, ref p0);
@@ -221,7 +215,7 @@ namespace NDecrypt.NDS
             }
 
             // Replace the header explicitly if we're encrypting
-            if (encrypt)
+            if (decryptArgs.Encrypt)
             {
                 reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
                 writer.BaseStream.Seek(0x4000, SeekOrigin.Begin);

@@ -1,9 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using NDecrypt.N3DS;
 using NDecrypt.NDS;
 
-namespace NDecrypt
+namespace NDecrypt.CMD
 {
     class Program
     {
@@ -29,14 +30,14 @@ namespace NDecrypt
                 return;
             }
 
-            bool? encrypt;
+            var decryptArgs = new DecryptArgs(); 
             if (args[0] == "decrypt" || args[0] == "d")
             {
-                encrypt = false;
+                decryptArgs.Encrypt = false;
             }
             else if (args[0] == "encrypt" || args[0] == "e")
             {
-                encrypt = true;
+                decryptArgs.Encrypt = true;
             }
             else
             {
@@ -44,16 +45,18 @@ namespace NDecrypt
                 return;
             }
 
-            // TODO: Make using Citra keyfile configurable
-            bool development = false, force = false, outputHashes = false, useCitraKeyFile = false;
+            bool outputHashes = false;
             int start = 1;
             for ( ; start < args.Length; start++)
             {
-                if (args[start] == "-dev" || args[start] == "--development")
-                    development = true;
+                if (args[start] == "-c" || args[start] == "--citra")
+                    decryptArgs.UseCitraKeyFile = true;
+
+                else if (args[start] == "-dev" || args[start] == "--development")
+                    decryptArgs.Development = true;
 
                 else if (args[start] == "-f" || args[start] == "--force")
-                    force = true;
+                    decryptArgs.Force = true;
 
                 else if (args[start] == "-h" || args[start] == "--hash")
                     outputHashes = true;
@@ -62,12 +65,28 @@ namespace NDecrypt
                     break;
             }
 
+            // If we are using a Citra keyfile, there are no development keys
+            if (decryptArgs.Development && decryptArgs.UseCitraKeyFile)
+            {
+                Console.WriteLine("Citra keyfiles don't contain development keys; disabling the option...");
+                decryptArgs.Development = false;
+            }
+
+            // Derive the keyfile path based on the runtime folder -- TODO: Make the keyfile path configurable
+            if (decryptArgs.UseCitraKeyFile)
+                decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "aes_keys.txt");
+            else
+                decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "keys.bin");
+            
+            // Initialize the constants, if possible
+            decryptArgs.Initialize();
+
             for (int i = start; i < args.Length; i++)
             {
                 if (File.Exists(args[i]))
                 {
                     Console.WriteLine(args[i]);
-                    ITool tool = DeriveTool(args[i], encrypt.Value, useCitraKeyFile, development, force);
+                    ITool tool = DeriveTool(args[i], decryptArgs);
                     if (tool?.ProcessFile() != true)
                         Console.WriteLine("Processing failed!");
                     else if (outputHashes)
@@ -78,7 +97,7 @@ namespace NDecrypt
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
                         Console.WriteLine(file);
-                        ITool tool = DeriveTool(file, encrypt.Value, useCitraKeyFile, development, force);
+                        ITool tool = DeriveTool(file, decryptArgs);
                         if (tool?.ProcessFile() != true)
                             Console.WriteLine("Processing failed!");
                         else if (outputHashes)
@@ -108,6 +127,7 @@ e, encrypt - Encrypt the input files
 d, decrypt - Decrypt the input files
 
 Possible values for [flags] (one or more can be used):
+-c, --citra         - Enable using aes_keys.txt instead of keys.bin
 -dev, --development - Enable using development keys, if available
 -f, --force         - Force operation by avoiding sanity checks
 -h, --hash          - Output size and hashes to a companion file
@@ -120,30 +140,28 @@ More than one path can be specified at a time.");
         /// Derive the encryption tool to be used for the given file
         /// </summary>
         /// <param name="filename">Filename to derive the tool from</param>
-        /// <param name="encrypt">True if we are encrypting the file, false otherwise</param>
-        /// <param name="development">True if we are using development keys, false otherwise</param>
-        /// <param name="force">True if operations should be forced, false otherwise</param>
+        /// <param name="decryptArgs">Arguments to pass to the tools on creation</param>
         /// <returns></returns>
-        private static ITool DeriveTool(string filename, bool encrypt, bool useCitraKeyFile, bool development, bool force)
+        private static ITool DeriveTool(string filename, DecryptArgs decryptArgs)
         {
             FileType type = DetermineFileType(filename);
             switch(type)
             {
                 case FileType.NDS:
                     Console.WriteLine("File recognized as Nintendo DS");
-                    return new DSTool(filename, encrypt, force);
+                    return new DSTool(filename, decryptArgs);
                 case FileType.NDSi:
                     Console.WriteLine("File recognized as Nintendo DS");
-                    return new DSTool(filename, encrypt, force);
+                    return new DSTool(filename, decryptArgs);
                 case FileType.iQueDS:
                     Console.WriteLine("File recognized as iQue DS");
-                    return new DSTool(filename, encrypt, force);
+                    return new DSTool(filename, decryptArgs);
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
-                    return new ThreeDSTool(filename, useCitraKeyFile, development, encrypt, force);
+                    return new ThreeDSTool(filename, decryptArgs);
                 // case FileType.N3DSCIA:
                 //     Console.WriteLine("File recognized as Nintendo 3DS");
-                //     return new CIATool(filename, useCitraKeyFile, development, encrypt, force);
+                //     return new CIATool(filename, decryptArgs);
                 case FileType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
@@ -188,7 +206,7 @@ More than one path can be specified at a time.");
                 return;
 
             // Get the hash string from the file
-            string hashString = Helper.GetInfo(filename);
+            string hashString = HashingHelper.GetInfo(filename);
             if (hashString == null)
                 return;
             

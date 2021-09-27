@@ -1,6 +1,6 @@
 ﻿namespace NDecrypt
 {
-    internal interface ITool
+    public interface ITool
     {
         bool ProcessFile();
     }

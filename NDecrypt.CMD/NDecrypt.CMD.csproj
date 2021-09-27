@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFrameworks>net48;netcoreapp3.1;net5.0</TargetFrameworks>
     <RuntimeIdentifiers>win10-x64;win7-x86</RuntimeIdentifiers>
     <Configurations>Debug;Release</Configurations>
@@ -8,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BouncyCastle.NetCore" Version="1.8.8" />
+    <ProjectReference Include="..\NDecrypt\NDecrypt.csproj" />
   </ItemGroup>
 
 </Project>

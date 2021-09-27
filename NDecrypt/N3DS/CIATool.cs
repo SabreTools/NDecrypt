@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Reflection;
 using NDecrypt.N3DS.Headers;
 
 namespace NDecrypt.N3DS
@@ -14,32 +13,14 @@ namespace NDecrypt.N3DS
         private readonly string filename;
 
         /// <summary>
-        /// Flag to detrmine if keys.bin (false) or aes_keys.txt (true) should be used
+        /// Decryption args to use while processing
         /// </summary>
-        private readonly bool useCitraKeyFile;
+        private readonly DecryptArgs decryptArgs;
 
-        /// <summary>
-        /// Flag to detrmine if development keys should be used
-        /// </summary>
-        private readonly bool development;
-
-        /// <summary>
-        /// Flag to determine if encrypting or decrypting
-        /// </summary>
-        private readonly bool encrypt;
-
-        /// <summary>
-        /// Flag to determine if forcing operations
-        /// </summary>
-        private readonly bool force;
-
-        public CIATool(string filename, bool useCitraKeyFile, bool development, bool encrypt, bool force)
+        public CIATool(string filename, DecryptArgs decryptArgs)
         {
             this.filename = filename;
-            this.useCitraKeyFile = useCitraKeyFile;
-            this.development = development;
-            this.encrypt = encrypt;
-            this.force = force;
+            this.decryptArgs = decryptArgs;
         }
 
         #region Common Methods
@@ -50,14 +31,7 @@ namespace NDecrypt.N3DS
         public bool ProcessFile()
         {
             // Ensure the constants are all set
-            string keyfile;
-            if (this.useCitraKeyFile)
-                keyfile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "aes_keys.txt");
-            else
-                keyfile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "keys.bin");
-
-            Constants.Init(keyfile, useCitraKeyFile);
-            if (Constants.IsReady != true)
+            if (decryptArgs.IsReady != true)
             {
                 Console.WriteLine("Could not read keys from keys.bin. Please make sure the file exists and try again.");
                 return false;
