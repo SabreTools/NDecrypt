@@ -66,6 +66,24 @@ namespace NDecrypt.N3DS
         NewKeyYGenerator = 0x20,
     }
 
+    internal enum ContentIndex : ushort
+    {
+        /// <summary>
+        /// Main Content (.CXI for 3DS executable content/.CFA for 3DS Data Archives/.SRL for TWL content)
+        /// </summary>
+        MainContent = 0x0000,
+
+        /// <summary>
+        /// Home Menu Manual (.CFA)
+        /// </summary>
+        HomeMenuManual = 0x0001,
+
+        /// <summary>
+        /// DLP Child Container (.CFA)
+        /// </summary>
+        DLPChildContainer = 0x0002,
+    }
+
     internal enum ContentPlatform : byte
     {
         CTR = 0x01,
@@ -165,6 +183,13 @@ namespace NDecrypt.N3DS
         MediaCardDevice2X = 0x07,
     }
 
+    internal enum PublicKeyType : uint
+    {
+        RSA_4096 = 0x00000000,
+        RSA_2048 = 0x00000001,
+        ECDSA = 0x00000002,
+    }
+
     internal enum ResourceLimitCategory
     {
         APPLICATION = 0,
@@ -173,10 +198,30 @@ namespace NDecrypt.N3DS
         OTHER = 3,
     }
 
+    internal enum SignatureType : uint
+    {
+        RSA_4096_SHA1 = 0x010000,
+        RSA_2048_SHA1 = 0x010001,
+        ECDSA_SHA1 = 0x010002,
+        RSA_4096_SHA256 = 0x010003,
+        RSA_2048_SHA256 = 0x010004,
+        ECDSA_SHA256 = 0x010005,
+    }
+
     [Flags]
     internal enum StorageInfoOtherAttributes : byte
     {
         NotUseROMFS = 0x01,
         UseExtendedSavedataAccess = 0x02,
+    }
+
+    [Flags]
+    internal enum TMDContentType : ushort
+    {
+        Encrypted = 0x0001,
+        Disc = 0x0002,
+        CFM = 0x0004,
+        Optional = 0x4000,
+        Shared = 0x8000,
     }
 }

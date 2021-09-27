@@ -2,6 +2,7 @@ using System.IO;
 
 namespace NDecrypt.N3DS.Headers
 {
+    // https://www.3dbrew.org/wiki/CIA
     internal class CIAHeader
     {
         /// <summary>
@@ -44,35 +45,25 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         public long ContentSize { get; private set; }
 
-        /// <summary>
-        /// Content Index
-        /// </summary>
-        public byte[] ContentIndex { get; private set; }
+        #region Content Index
 
         /// <summary>
         /// Certificate chain
         /// </summary>
         /// <remarks>
-        /// https://www.3dbrew.org/wiki/Certificates
-        /// https://www.3dbrew.org/wiki/Ticket#Certificate_Chain
+        /// https://www.3dbrew.org/wiki/CIA#Certificate_Chain
         /// </remarks>
-        public byte[] CertificateChain { get; set; }
+        public Certificate[] CertificateChain { get; set; }
 
         /// <summary>
         /// Ticket
         /// </summary>
-        /// <remarks>
-        /// https://www.3dbrew.org/wiki/Ticket#Structure
-        /// </remarks>
-        public byte[] Ticket { get; set; }
+        public Ticket Ticket { get; set; }
 
         /// <summary>
         /// TMD file data
         /// </summary>
-        /// <remarks>
-        /// https://www.3dbrew.org/wiki/Title_metadata
-        /// </remarks>
-        public byte[] TMDFileData { get; set; }
+        public TitleMetadata TMDFileData { get; set; }
 
         /// <summary>
         /// Content file data
@@ -86,6 +77,8 @@ namespace NDecrypt.N3DS.Headers
         /// Meta file data (Not a necessary component)
         /// </summary>
         public MetaFile MetaFileData { get; set; }
+
+        #endregion
 
         /// <summary>
         /// Read from a stream and get a CIA header, if possible
@@ -106,11 +99,15 @@ namespace NDecrypt.N3DS.Headers
                 header.TMDFileSize = reader.ReadInt32();
                 header.MetaSize = reader.ReadInt32();
                 header.ContentSize = reader.ReadInt64();
-                header.ContentIndex = reader.ReadBytes(0x2000);
 
-                header.CertificateChain = reader.ReadBytes(header.CertificateChainSize);
-                header.Ticket = reader.ReadBytes(header.TicketSize);
-                header.TMDFileData = reader.ReadBytes(header.TMDFileSize);
+                header.CertificateChain = new Certificate[3];
+                for (int i = 0; i < 3; i++)
+                {
+                    header.CertificateChain[i] = Certificate.Read(reader);
+                }
+
+                header.Ticket = Ticket.Read(reader, header.TicketSize);
+                header.TMDFileData = TitleMetadata.Read(reader, header.TMDFileSize);
                 header.ContentFileData = reader.ReadBytes((int)header.ContentSize);
                 
                 if (header.MetaSize > 0)
