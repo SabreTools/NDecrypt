@@ -133,13 +133,11 @@ namespace NDecrypt.N3DS.Headers
                         reader.ReadBytes(0x34); // Padding
                         break;
                     case PublicKeyType.RSA_2048:
-                    case PublicKeyType.RSA_2048_REV:
                         ct.Modulus = reader.ReadBytes(0x100);
                         ct.PublicExponent = reader.ReadUInt32();
                         reader.ReadBytes(0x34); // Padding
                         break;
                     case PublicKeyType.ECDSA:
-                    case PublicKeyType.ECDSA_REV:
                         ct.PublicKey = reader.ReadBytes(0x3C);
                         reader.ReadBytes(0x3C); // Padding
                         break;
