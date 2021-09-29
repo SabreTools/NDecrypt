@@ -50,7 +50,8 @@ namespace NDecrypt.N3DS
                         return false;
                     }
 
-                    // TODO: Implement CIA encrypt/decrypt
+                    // Process all NCCH partitions
+                    ProcessAllPartitions(header, reader, writer);
                 }
 
                 return false;
@@ -61,6 +62,69 @@ namespace NDecrypt.N3DS
                 Console.WriteLine("Please check that the file was a valid 3DS CIA file and try again.");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Process all partitions in the content file data of a CIA header
+        /// </summary>
+        /// <param name="ciaHeader">CIA header representing the 3DS CIA file</param>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        private void ProcessAllPartitions(CIAHeader ciaHeader, BinaryReader reader, BinaryWriter writer)
+        {
+            // Iterate over all NCCH partitions
+            for (int p = 0; p < ciaHeader.Partitions.Length; p++)
+            {
+                NCCHHeader ncchHeader = ciaHeader.Partitions[0];
+                ProcessPartition(ciaHeader, ncchHeader, reader, writer);
+            }
+        }
+
+        /// <summary>
+        /// Process a single partition
+        /// </summary>
+        /// <param name="ciaHeader">CIA header representing the 3DS CIA file</param>
+        /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="writer">BinaryWriter representing the output stream</param>
+        private void ProcessPartition(CIAHeader ciaHeader, NCCHHeader ncchHeader, BinaryReader reader, BinaryWriter writer)
+        {
+            // If we're forcing the operation, tell the user
+            if (decryptArgs.Force)
+            {
+                Console.WriteLine($"Partition {ncchHeader.PartitionNumber} is not verified due to force flag being set.");
+            }
+            // If we're not forcing the operation, check if the 'NoCrypto' bit is set
+            else if (ncchHeader.Flags.PossblyDecrypted ^ decryptArgs.Encrypt)
+            {
+                Console.WriteLine($"Partition {ncchHeader.PartitionNumber}: Already " + (decryptArgs.Encrypt ? "Encrypted" : "Decrypted") + "?...");
+                return;
+            }
+
+            // TODO: Determine what steps need to be done here to set encryption keys and process encrypt/decrypt
+            // TODO: Below code is copied directly from ThreeDSTool.cs and may not be accurate
+
+            //// Determine the Keys to be used
+            //SetEncryptionKeys(ciaHeader, ncchHeader);
+
+            //// Process the extended header
+            //ProcessExtendedHeader(ciaHeader, ncchHeader, reader, writer);
+
+            //// If we're encrypting, encrypt the filesystems and update the flags
+            //if (decryptArgs.Encrypt)
+            //{
+            //    EncryptExeFS(ciaHeader, ncchHeader, reader, writer);
+            //    EncryptRomFS(ciaHeader, ncchHeader, reader, writer);
+            //    UpdateEncryptCryptoAndMasks(ciaHeader, ncchHeader, writer);
+            //}
+
+            //// If we're decrypting, decrypt the filesystems and update the flags
+            //else
+            //{
+            //    DecryptExeFS(ciaHeader, ncchHeader, reader, writer);
+            //    DecryptRomFS(ciaHeader, ncchHeader, reader, writer);
+            //    UpdateDecryptCryptoAndMasks(ciaHeader, ncchHeader, writer);
+            //}
         }
 
         #endregion
