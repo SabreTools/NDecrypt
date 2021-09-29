@@ -64,12 +64,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Maker code
         /// </summary>
-        public byte[] MakerCode { get; private set; }
+        public ushort MakerCode { get; private set; }
 
         /// <summary>
         /// Version
         /// </summary>
-        public byte[] Version { get; private set; }
+        public ushort Version { get; private set; }
 
         /// <summary>
         /// When ncchflag[7] = 0x20 starting with FIRM 9.6.0-X, this is compared with the first output u32 from a
@@ -77,7 +77,7 @@ namespace NDecrypt.N3DS.Headers
         /// [programID from NCCH + 0x118]. This hash is only used for verification of the content lock seed, and
         /// is not the actual keyY.
         /// </summary>
-        public byte[] VerificationHash { get; private set; }
+        public uint VerificationHash { get; private set; }
 
         /// <summary>
         /// Program ID
@@ -211,9 +211,9 @@ namespace NDecrypt.N3DS.Headers
 
                 header.ContentSizeInMediaUnits = reader.ReadUInt32();
                 header.PartitionId = reader.ReadBytes(8).Reverse().ToArray();
-                header.MakerCode = reader.ReadBytes(2);
-                header.Version = reader.ReadBytes(2);
-                header.VerificationHash = reader.ReadBytes(4);
+                header.MakerCode = reader.ReadUInt16();
+                header.Version = reader.ReadUInt16();
+                header.VerificationHash = reader.ReadUInt32();
                 header.ProgramId = reader.ReadBytes(8);
                 header.Reserved1 = reader.ReadBytes(0x10);
                 header.LogoRegionHash = reader.ReadBytes(0x20);

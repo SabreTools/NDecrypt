@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 
 namespace NDecrypt.N3DS.Headers
 {
@@ -31,6 +32,13 @@ namespace NDecrypt.N3DS.Headers
         public byte[] Issuer { get; private set; }
 
         /// <summary>
+        /// Issuer as a trimmed string
+        /// </summary>
+        public string IssuerString => Issuer != null && Issuer.Length > 0
+            ? Encoding.ASCII.GetString(Issuer)?.TrimEnd('\0')
+            : null;
+
+        /// <summary>
         /// Key Type
         /// </summary>
         public PublicKeyType KeyType { get; private set; }
@@ -39,6 +47,13 @@ namespace NDecrypt.N3DS.Headers
         /// Name
         /// </summary>
         public byte[] Name { get; private set; }
+
+        /// <summary>
+        /// Name as a trimmed string
+        /// </summary>
+        public string NameString => Name != null && Name.Length > 0
+            ? Encoding.ASCII.GetString(Name)?.TrimEnd('\0')
+            : null;
 
         /// <summary>
         /// Expiration time as UNIX Timestamp, used at least for CTCert
@@ -99,6 +114,8 @@ namespace NDecrypt.N3DS.Headers
                         ct.SignatureSize = 0x03C;
                         ct.PaddingSize = 0x40;
                         break;
+                    default:
+                        return null;
                 }
 
                 ct.Signature = reader.ReadBytes(ct.SignatureSize);
@@ -116,14 +133,18 @@ namespace NDecrypt.N3DS.Headers
                         reader.ReadBytes(0x34); // Padding
                         break;
                     case PublicKeyType.RSA_2048:
+                    case PublicKeyType.RSA_2048_REV:
                         ct.Modulus = reader.ReadBytes(0x100);
                         ct.PublicExponent = reader.ReadUInt32();
                         reader.ReadBytes(0x34); // Padding
                         break;
                     case PublicKeyType.ECDSA:
+                    case PublicKeyType.ECDSA_REV:
                         ct.PublicKey = reader.ReadBytes(0x3C);
                         reader.ReadBytes(0x3C); // Padding
                         break;
+                    default:
+                        return null;
                 }
 
                 return ct;

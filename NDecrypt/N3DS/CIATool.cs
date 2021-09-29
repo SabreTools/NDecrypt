@@ -5,7 +5,7 @@ using NDecrypt.N3DS.Headers;
 namespace NDecrypt.N3DS
 {
     // https://www.3dbrew.org/wiki/CIA
-    internal class CIATool : ITool
+    public class CIATool : ITool
     {
         /// <summary>
         /// Name of the input CIA file

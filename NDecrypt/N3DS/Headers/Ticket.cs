@@ -1,4 +1,7 @@
+using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace NDecrypt.N3DS.Headers
 {
@@ -29,6 +32,13 @@ namespace NDecrypt.N3DS.Headers
         /// Issuer
         /// </summary>
         public byte[] Issuer { get; private set; }
+
+        /// <summary>
+        /// Issuer as a trimmed string
+        /// </summary>
+        public string IssuerString => Issuer != null && Issuer.Length > 0
+            ? Encoding.ASCII.GetString(Issuer)?.TrimEnd('\0')
+            : null;
 
         /// <summary>
         /// ECC PublicKey
@@ -167,16 +177,6 @@ namespace NDecrypt.N3DS.Headers
         public int ContentIndexSize { get; private set; }
 
         /// <summary>
-        /// Content Index
-        /// </summary>
-        /// <remarks>
-        /// The Content Index of a ticket has its own size defined within itself,
-        /// with seemingly a minimal of 20 bytes, the second u32 in big endian defines
-        /// the full value of X.
-        /// </remarks>
-        public byte[] ContentIndex { get; private set; }
-
-        /// <summary>
         /// Certificate chain
         /// </summary>
         /// <remarks>
@@ -196,6 +196,8 @@ namespace NDecrypt.N3DS.Headers
 
             try
             {
+                long startingPosition = reader.BaseStream.Position;
+
                 tk.SignatureType = (SignatureType)reader.ReadUInt32();
                 switch (tk.SignatureType)
                 {
@@ -214,6 +216,8 @@ namespace NDecrypt.N3DS.Headers
                         tk.SignatureSize = 0x03C;
                         tk.PaddingSize = 0x40;
                         break;
+                    default:
+                        return null;
                 }
 
                 tk.Signature = reader.ReadBytes(tk.SignatureSize);
@@ -245,12 +249,14 @@ namespace NDecrypt.N3DS.Headers
                     tk.Limits[i] = reader.ReadInt32();
                 }
 
-                reader.ReadBytes(4);
-                tk.ContentIndexSize = reader.ReadInt32();
+                reader.ReadBytes(4); // Seek to size in Content Index
+                tk.ContentIndexSize = BitConverter.ToInt32(reader.ReadBytes(4).Reverse().ToArray(), 0);
                 reader.BaseStream.Seek(-8, SeekOrigin.Current);
-                tk.ContentIndex = reader.ReadBytes(tk.ContentIndexSize);
+                reader.ReadBytes(tk.ContentIndexSize); // TODO: Not sure what's in the Content Index area
+                if (reader.BaseStream.Position % 64 != 0)
+                    reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 
-                if (ticketSize - (0x164 + tk.ContentIndexSize) > 0)
+                if (ticketSize > (reader.BaseStream.Position - startingPosition) + (2 * 0x200))
                 {
                     tk.CertificateChain = new Certificate[2];
                     tk.CertificateChain[0] = Certificate.Read(reader); // Ticket

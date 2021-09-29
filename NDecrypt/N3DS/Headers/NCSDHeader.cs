@@ -299,7 +299,7 @@ namespace NDecrypt.N3DS.Headers
                     header.CardSeedAESMAC = reader.ReadBytes(0x10);
                     header.CardSeedNonce = reader.ReadBytes(0xC);
                     header.Reserved5 = reader.ReadBytes(0xC4);
-                    header.BackupHeader = NCCHHeader.Read(reader, false);
+                    header.BackupHeader = NCCHHeader.Read(reader, readSignature: false);
 
                     if (development)
                     {

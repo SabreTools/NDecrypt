@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace NDecrypt.N3DS.Headers
@@ -8,7 +9,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Archive header size, usually 0x2020 bytes
         /// </summary>
-        public uint HeaderSize { get; private set; }
+        public int HeaderSize { get; private set; }
 
         /// <summary>
         /// Type
@@ -45,6 +46,11 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         public long ContentSize { get; private set; }
 
+        /// <summary>
+        /// Content Index
+        /// </summary>
+        public int ContentIndex { get; private set; }
+
         #region Content Index
 
         /// <summary>
@@ -68,10 +74,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Content file data
         /// </summary>
-        /// <remarks>
-        /// Probably not going to be read in fully later
-        /// </remarks>
-        public byte[] ContentFileData { get; set; }
+        public NCCHHeader ContentFileData { get; set; }
 
         /// <summary>
         /// Meta file data (Not a necessary component)
@@ -91,7 +94,7 @@ namespace NDecrypt.N3DS.Headers
 
             try
             {
-                header.HeaderSize = reader.ReadUInt32();
+                header.HeaderSize = reader.ReadInt32();
                 header.Type = reader.ReadUInt16();
                 header.Version = reader.ReadUInt16();
                 header.CertificateChainSize = reader.ReadInt32();
@@ -99,16 +102,33 @@ namespace NDecrypt.N3DS.Headers
                 header.TMDFileSize = reader.ReadInt32();
                 header.MetaSize = reader.ReadInt32();
                 header.ContentSize = reader.ReadInt64();
+                header.ContentIndex = reader.ReadInt32();
+                reader.ReadBytes(0x2000); // TODO: Not sure what's in the Content Index area
+                if (reader.BaseStream.Position % 64 != 0)
+                    reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 
                 header.CertificateChain = new Certificate[3];
                 header.CertificateChain[0] = Certificate.Read(reader); // CA
                 header.CertificateChain[1] = Certificate.Read(reader); // Ticket
                 header.CertificateChain[2] = Certificate.Read(reader); // TMD
+                if (reader.BaseStream.Position % 64 != 0)
+                    reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 
                 header.Ticket = Ticket.Read(reader, header.TicketSize);
+                if (reader.BaseStream.Position % 64 != 0)
+                    reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
+
                 header.TMDFileData = TitleMetadata.Read(reader, header.TMDFileSize);
-                header.ContentFileData = reader.ReadBytes((int)header.ContentSize);
-                
+                if (reader.BaseStream.Position % 64 != 0)
+                    reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
+
+                header.ContentFileData = NCCHHeader.Read(reader, readSignature: true);
+                if (header.ContentFileData == null)
+                {
+                    Console.WriteLine($"CIA content file data error: Unable to read NCCH header");
+                    return null;
+                }
+
                 if (header.MetaSize > 0)
                     header.MetaFileData = MetaFile.Read(reader);
 

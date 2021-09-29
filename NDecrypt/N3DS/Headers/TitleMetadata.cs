@@ -1,4 +1,7 @@
+using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace NDecrypt.N3DS.Headers
 {
@@ -29,6 +32,13 @@ namespace NDecrypt.N3DS.Headers
         /// Signature Issuer
         /// </summary>
         public byte[] SignatureIssuer { get; private set; }
+
+        /// <summary>
+        /// Signature Issuer as a trimmed string
+        /// </summary>
+        public string SignatureIssuerString => SignatureIssuer != null && SignatureIssuer.Length > 0
+            ? Encoding.ASCII.GetString(SignatureIssuer)?.TrimEnd('\0')
+            : null;
 
         /// <summary>
         /// Version
@@ -156,6 +166,8 @@ namespace NDecrypt.N3DS.Headers
 
             try
             {
+                long startingPosition = reader.BaseStream.Position;
+
                 tm.SignatureType = (SignatureType)reader.ReadUInt32();
                 switch (tm.SignatureType)
                 {
@@ -194,7 +206,7 @@ namespace NDecrypt.N3DS.Headers
                 tm.Reserved3 = reader.ReadBytes(0x31);
                 tm.AccessRights = reader.ReadUInt32();
                 tm.TitleVersion = reader.ReadUInt16();
-                tm.ContentCount = reader.ReadUInt16();
+                tm.ContentCount = BitConverter.ToUInt16(reader.ReadBytes(2).Reverse().ToArray(), 0);
                 tm.BootContent = reader.ReadUInt16();
                 tm.Padding = reader.ReadUInt16();
                 tm.SHA256HashContentInfoRecords = reader.ReadBytes(0x20);
@@ -211,7 +223,7 @@ namespace NDecrypt.N3DS.Headers
                     tm.ContentChunkRecords[i] = ContentChunkRecord.Read(reader);
                 }
 
-                if (metadataSize - (0xC4 + (64 * 0x24) + (tm.ContentCount * 0x30)) > 0)
+                if (metadataSize > (reader.BaseStream.Position - startingPosition) + (2 * 0x200))
                 {
                     tm.CertificateChain = new Certificate[2];
                     tm.CertificateChain[0] = Certificate.Read(reader); // TMD

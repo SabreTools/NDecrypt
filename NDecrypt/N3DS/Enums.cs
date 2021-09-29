@@ -186,8 +186,8 @@ namespace NDecrypt.N3DS
     internal enum PublicKeyType : uint
     {
         RSA_4096 = 0x00000000,
-        RSA_2048 = 0x00000001,
-        ECDSA = 0x00000002,
+        RSA_2048 = 0x01000000,
+        ECDSA = 0x02000000,
     }
 
     internal enum ResourceLimitCategory
@@ -198,14 +198,15 @@ namespace NDecrypt.N3DS
         OTHER = 3,
     }
 
+    // Note: These are reversed because of how C# reads values
     internal enum SignatureType : uint
     {
-        RSA_4096_SHA1 = 0x010000,
-        RSA_2048_SHA1 = 0x010001,
-        ECDSA_SHA1 = 0x010002,
-        RSA_4096_SHA256 = 0x010003,
-        RSA_2048_SHA256 = 0x010004,
-        ECDSA_SHA256 = 0x010005,
+        RSA_4096_SHA1 = 0x00000100,
+        RSA_2048_SHA1 = 0x01000100,
+        ECDSA_SHA1 = 0x02000100,
+        RSA_4096_SHA256 = 0x03000100,
+        RSA_2048_SHA256 = 0x04000100,
+        ECDSA_SHA256 = 0x05000100,
     }
 
     [Flags]

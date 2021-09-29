@@ -103,7 +103,7 @@ namespace NDecrypt.N3DS
             // Seek to the beginning of the NCCH partition
             reader.BaseStream.Seek((ncsdHeader.PartitionsTable[partitionNumber].Offset * ncsdHeader.MediaUnitSize), SeekOrigin.Begin);
 
-            NCCHHeader partitionHeader = NCCHHeader.Read(reader, true);
+            NCCHHeader partitionHeader = NCCHHeader.Read(reader, readSignature: true);
             if (partitionHeader == null)
             {
                 Console.WriteLine($"Partition {partitionNumber} Unable to read NCCH header");
