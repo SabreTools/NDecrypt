@@ -192,7 +192,7 @@ More than one path can be specified at a time.");
                     Console.WriteLine("File recognized as Nintendo 3DS");
                     return new ThreeDSTool(filename, decryptArgs);
                 case FileType.N3DSCIA:
-                    Console.WriteLine("File recognized as Nintendo 3DS CIA");
+                    Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
                     return new CIATool(filename, decryptArgs);
                 case FileType.NULL:
                 default:

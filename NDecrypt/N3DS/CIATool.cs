@@ -104,9 +104,6 @@ namespace NDecrypt.N3DS
                 return;
             }
 
-            // TODO: Determine what steps need to be done here to set encryption keys and process encrypt/decrypt
-            // TODO: Below code is copied directly from ThreeDSTool.cs and may not be accurate
-
             // Determine the Keys to be used
             SetEncryptionKeys(ciaHeader, ncchHeader);
 
