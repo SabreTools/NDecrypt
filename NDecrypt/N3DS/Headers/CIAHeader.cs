@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace NDecrypt.N3DS.Headers
@@ -74,7 +74,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Content file data
         /// </summary>
-        public NCCHHeader ContentFileData { get; set; }
+        public NCCHHeader[] Partitions { get; set; }
 
         /// <summary>
         /// Meta file data (Not a necessary component)
@@ -122,13 +122,20 @@ namespace NDecrypt.N3DS.Headers
                 if (reader.BaseStream.Position % 64 != 0)
                     reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 
-                header.ContentFileData = NCCHHeader.Read(reader, readSignature: true);
-                if (header.ContentFileData == null)
+                long startingPosition = reader.BaseStream.Position;
+                List<NCCHHeader> headers = new List<NCCHHeader>();
+                while (reader.BaseStream.Position < startingPosition + header.ContentSize)
                 {
-                    Console.WriteLine($"CIA content file data error: Unable to read NCCH header");
-                    return null;
+                    long initPosition = reader.BaseStream.Position;
+                    NCCHHeader ncchHeader = NCCHHeader.Read(reader, readSignature: true);
+                    if (ncchHeader == null)
+                        break;
+
+                    headers.Add(ncchHeader);
+                    reader.BaseStream.Seek(initPosition + ncchHeader.ContentSizeInMediaUnits * 0x200, SeekOrigin.Begin);
                 }
 
+                header.Partitions = headers.ToArray();
                 if (header.MetaSize > 0)
                     header.MetaFileData = MetaFile.Read(reader);
 
