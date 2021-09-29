@@ -177,6 +177,11 @@ namespace NDecrypt.N3DS.Headers
         public int ContentIndexSize { get; private set; }
 
         /// <summary>
+        /// Content Index
+        /// </summary>
+        public byte[] ContentIndex { get; private set; }
+
+        /// <summary>
         /// Certificate chain
         /// </summary>
         /// <remarks>
@@ -252,7 +257,7 @@ namespace NDecrypt.N3DS.Headers
                 reader.ReadBytes(4); // Seek to size in Content Index
                 tk.ContentIndexSize = BitConverter.ToInt32(reader.ReadBytes(4).Reverse().ToArray(), 0);
                 reader.BaseStream.Seek(-8, SeekOrigin.Current);
-                reader.ReadBytes(tk.ContentIndexSize); // TODO: Not sure what's in the Content Index area
+                tk.ContentIndex = reader.ReadBytes(tk.ContentIndexSize);
                 if (reader.BaseStream.Position % 64 != 0)
                     reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 

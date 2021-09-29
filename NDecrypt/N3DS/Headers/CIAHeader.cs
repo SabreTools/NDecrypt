@@ -49,7 +49,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Content Index
         /// </summary>
-        public int ContentIndex { get; private set; }
+        public byte[] ContentIndex { get; private set; }
 
         #region Content Index
 
@@ -102,8 +102,7 @@ namespace NDecrypt.N3DS.Headers
                 header.TMDFileSize = reader.ReadInt32();
                 header.MetaSize = reader.ReadInt32();
                 header.ContentSize = reader.ReadInt64();
-                header.ContentIndex = reader.ReadInt32();
-                reader.ReadBytes(0x2000); // TODO: Not sure what's in the Content Index area
+                header.ContentIndex = reader.ReadBytes(0x2000);
                 if (reader.BaseStream.Position % 64 != 0)
                     reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 
