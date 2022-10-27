@@ -243,7 +243,9 @@ namespace NDecrypt.N3DS
                 Console.WriteLine($"Partition {ncchHeader.PartitionNumber} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
                 var cipher = CreateAESCipher(ncchHeader.NormalKey2C, ncchHeader.PlainIV, decryptArgs.Encrypt);
-                writer.Write(cipher.ProcessBytes(reader.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
+                byte[] readBytes = reader.ReadBytes(Constants.CXTExtendedDataHeaderLength);
+                byte[] processedBytes = cipher.ProcessBytes(readBytes);
+                writer.Write(processedBytes);
                 writer.Flush();
                 return true;
             }
@@ -295,7 +297,10 @@ namespace NDecrypt.N3DS
                 {
                     for (int i = 0; i < datalenM; i++)
                     {
-                        writer.Write(secondCipher.ProcessBytes(firstCipher.ProcessBytes(reader.ReadBytes(1024 * 1024))));
+                        byte[] readBytes = reader.ReadBytes(1024 * 1024);
+                        byte[] firstProcessedBytes = firstCipher.ProcessBytes(readBytes);
+                        byte[] secondProcessedBytes = secondCipher.ProcessBytes(firstProcessedBytes);
+                        writer.Write(secondProcessedBytes);
                         writer.Flush();
                         Console.Write($"\rPartition {ncchHeader.PartitionNumber} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.ReadableFileName}... {i} / {datalenM + 1} mb...");
                     }
@@ -303,7 +308,10 @@ namespace NDecrypt.N3DS
 
                 if (datalenB > 0)
                 {
-                    writer.Write(secondCipher.DoFinal(firstCipher.DoFinal(reader.ReadBytes((int)datalenB))));
+                    byte[] readBytes = reader.ReadBytes((int)datalenB);
+                    byte[] firstFinalBytes = firstCipher.DoFinal(readBytes);
+                    byte[] secondFinalBytes = secondCipher.DoFinal(firstFinalBytes);
+                    writer.Write(secondFinalBytes);
                     writer.Flush();
                 }
 
@@ -325,8 +333,10 @@ namespace NDecrypt.N3DS
 
             Console.WriteLine($"Partition {ncchHeader.PartitionNumber} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
-            var exeFSFilenameTable = CreateAESCipher(ncchHeader.NormalKey2C, ncchHeader.ExeFSIV, decryptArgs.Encrypt);
-            writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)ncsdHeader.MediaUnitSize)));
+            var cipher = CreateAESCipher(ncchHeader.NormalKey2C, ncchHeader.ExeFSIV, decryptArgs.Encrypt);
+            byte[] readBytes = reader.ReadBytes((int)ncsdHeader.MediaUnitSize);
+            byte[] processedBytes = cipher.ProcessBytes(readBytes);
+            writer.Write(processedBytes);
             writer.Flush();
         }
 
@@ -345,7 +355,7 @@ namespace NDecrypt.N3DS
 
             byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV, ctroffsetE);
 
-            var exeFS = CreateAESCipher(ncchHeader.NormalKey2C, exefsIVWithOffset, decryptArgs.Encrypt);
+            var cipher = CreateAESCipher(ncchHeader.NormalKey2C, exefsIVWithOffset, decryptArgs.Encrypt);
 
             reader.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * ncsdHeader.MediaUnitSize, SeekOrigin.Begin);
             writer.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * ncsdHeader.MediaUnitSize, SeekOrigin.Begin);
@@ -353,14 +363,18 @@ namespace NDecrypt.N3DS
             {
                 for (int i = 0; i < exefsSizeM; i++)
                 {
-                    writer.Write(exeFS.ProcessBytes(reader.ReadBytes(1024 * 1024)));
+                    byte[] readBytes = reader.ReadBytes(1024 * 1024);
+                    byte[] processedBytes = cipher.ProcessBytes(readBytes);
+                    writer.Write(processedBytes);
                     writer.Flush();
                     Console.Write($"\rPartition {ncchHeader.PartitionNumber} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
                 }
             }
             if (exefsSizeB > 0)
             {
-                writer.Write(exeFS.DoFinal(reader.ReadBytes(exefsSizeB)));
+                byte[] readBytes = reader.ReadBytes(exefsSizeB);
+                byte[] finalBytes = cipher.DoFinal(readBytes);
+                writer.Write(finalBytes);
                 writer.Flush();
             }
 
@@ -426,14 +440,18 @@ namespace NDecrypt.N3DS
             {
                 for (int i = 0; i < romfsSizeM; i++)
                 {
-                    writer.Write(cipher.ProcessBytes(reader.ReadBytes(1024 * 1024)));
+                    byte[] readBytes = reader.ReadBytes(1024 * 1024);
+                    byte[] processedBytes = cipher.ProcessBytes(readBytes);
+                    writer.Write(processedBytes);
                     writer.Flush();
                     Console.Write($"\rPartition {ncchHeader.PartitionNumber} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
                 }
             }
             if (romfsSizeB > 0)
             {
-                writer.Write(cipher.DoFinal(reader.ReadBytes(romfsSizeB)));
+                byte[] readBytes = reader.ReadBytes(romfsSizeB);
+                byte[] finalBytes = cipher.DoFinal(readBytes);
+                writer.Write(finalBytes);
                 writer.Flush();
             }
 
@@ -535,14 +553,18 @@ namespace NDecrypt.N3DS
             {
                 for (int i = 0; i < romfsSizeM; i++)
                 {
-                    writer.Write(cipher.ProcessBytes(reader.ReadBytes(1024 * 1024)));
+                    byte[] readBytes = reader.ReadBytes(1024 * 1024);
+                    byte[] processedBytes = cipher.ProcessBytes(readBytes);
+                    writer.Write(processedBytes);
                     writer.Flush();
                     Console.Write($"\rPartition {ncchHeader.PartitionNumber} RomFS: Encrypting: {i} / {romfsSizeM + 1} mb");
                 }
             }
             if (romfsSizeB > 0)
             {
-                writer.Write(cipher.DoFinal(reader.ReadBytes(romfsSizeB)));
+                byte[] readBytes = reader.ReadBytes(romfsSizeB);
+                byte[] finalBytes = cipher.DoFinal(readBytes);
+                writer.Write(finalBytes);
                 writer.Flush();
             }
 
