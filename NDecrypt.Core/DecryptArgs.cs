@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using NDecrypt.Tools;
+using NDecrypt.Core.Tools;
 
-namespace NDecrypt
+namespace NDecrypt.Core
 {
     public class DecryptArgs
     {

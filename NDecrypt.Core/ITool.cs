@@ -1,4 +1,4 @@
-﻿namespace NDecrypt
+﻿namespace NDecrypt.Core
 {
     public interface ITool
     {

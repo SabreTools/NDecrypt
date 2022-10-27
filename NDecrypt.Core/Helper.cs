@@ -5,9 +5,9 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 
-namespace NDecrypt
+namespace NDecrypt.Core
 {
-    internal static class Helper
+    public static class Helper
     {
         /// <summary>
         /// Add an integer value to a number represented by a byte array

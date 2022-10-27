@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using NDecrypt.Core;
 using NDecrypt.Nitro.Headers;
 
 namespace NDecrypt.Nitro

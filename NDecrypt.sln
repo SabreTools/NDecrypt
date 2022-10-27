@@ -1,16 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28803.156
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{31CE0445-F693-4C9A-B6CD-499C38CFF7FE}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt.Library", "NDecrypt.Library\NDecrypt.Library.csproj", "{91C54370-5741-4742-B2E9-EC498551AD1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NDecrypt", "NDecrypt\NDecrypt.csproj", "{05566793-831F-4AE1-A6D2-F9214F36618E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt", "NDecrypt\NDecrypt.csproj", "{05566793-831F-4AE1-A6D2-F9214F36618E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NDecrypt.Core", "NDecrypt.Core\NDecrypt.Core.csproj", "{91C54370-5741-4742-B2E9-EC498551AD1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt.N3DS", "NDecrypt.N3DS\NDecrypt.N3DS.csproj", "{F0A33533-B248-4D62-95CC-47DFC9721A11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt.Nitro", "NDecrypt.Nitro\NDecrypt.Nitro.csproj", "{1D2AE261-86FE-44E4-A7D3-C43AA5FB8523}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,14 +22,22 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{91C54370-5741-4742-B2E9-EC498551AD1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{91C54370-5741-4742-B2E9-EC498551AD1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{91C54370-5741-4742-B2E9-EC498551AD1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{91C54370-5741-4742-B2E9-EC498551AD1C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{05566793-831F-4AE1-A6D2-F9214F36618E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{05566793-831F-4AE1-A6D2-F9214F36618E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05566793-831F-4AE1-A6D2-F9214F36618E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05566793-831F-4AE1-A6D2-F9214F36618E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91C54370-5741-4742-B2E9-EC498551AD1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0A33533-B248-4D62-95CC-47DFC9721A11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0A33533-B248-4D62-95CC-47DFC9721A11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0A33533-B248-4D62-95CC-47DFC9721A11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0A33533-B248-4D62-95CC-47DFC9721A11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D2AE261-86FE-44E4-A7D3-C43AA5FB8523}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D2AE261-86FE-44E4-A7D3-C43AA5FB8523}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D2AE261-86FE-44E4-A7D3-C43AA5FB8523}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D2AE261-86FE-44E4-A7D3-C43AA5FB8523}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

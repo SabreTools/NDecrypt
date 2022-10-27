@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using NDecrypt.Tools;
+using NDecrypt.Core.Tools;
 
-namespace NDecrypt.CMD
+namespace NDecrypt
 {
     internal static class HashingHelper
     {

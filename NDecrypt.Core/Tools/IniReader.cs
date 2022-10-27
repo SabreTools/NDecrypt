@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace NDecrypt.Tools
+namespace NDecrypt.Core.Tools
 {
     public class IniReader : IDisposable
     {

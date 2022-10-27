@@ -1,10 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using NDecrypt.Core;
 using NDecrypt.N3DS;
 using NDecrypt.Nitro;
 
-namespace NDecrypt.CMD
+namespace NDecrypt
 {
     class Program
     {

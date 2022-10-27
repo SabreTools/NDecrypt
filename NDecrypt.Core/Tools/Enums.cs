@@ -1,6 +1,6 @@
 using System;
 
-namespace NDecrypt.Tools
+namespace NDecrypt.Core.Tools
 {
     /// <summary>
     /// Available hashing types

@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace NDecrypt.Tools
+namespace NDecrypt.Core.Tools
 {
     /// <summary>
     /// Async hashing class wraper
