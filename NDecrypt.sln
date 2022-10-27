@@ -8,9 +8,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt", "NDecrypt\NDecrypt.csproj", "{91C54370-5741-4742-B2E9-EC498551AD1C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt.Library", "NDecrypt.Library\NDecrypt.Library.csproj", "{91C54370-5741-4742-B2E9-EC498551AD1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt.CMD", "NDecrypt.CMD\NDecrypt.CMD.csproj", "{05566793-831F-4AE1-A6D2-F9214F36618E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDecrypt", "NDecrypt\NDecrypt.csproj", "{05566793-831F-4AE1-A6D2-F9214F36618E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
