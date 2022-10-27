@@ -337,6 +337,11 @@ namespace NDecrypt.N3DS
             byte[] readBytes = reader.ReadBytes((int)ncsdHeader.MediaUnitSize);
             byte[] processedBytes = cipher.ProcessBytes(readBytes);
             writer.Write(processedBytes);
+
+#if NET6_0_OR_GREATER
+            // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+#endif
             writer.Flush();
         }
 
