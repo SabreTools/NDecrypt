@@ -5,7 +5,7 @@
     <Authors>Matt Nadareski</Authors>
     <Copyright>Copyright (c)2018-2022 Matt Nadareski</Copyright>
     <RepositoryUrl>https://github.com/SabreTools/NDecrypt</RepositoryUrl>
-    <Version>0.2.3</Version>
+    <Version>0.2.4</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
     <IncludeSource>true</IncludeSource>
