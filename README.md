@@ -1,5 +1,7 @@
 # NDecrypt
 
+[![Build status](https://ci.appveyor.com/api/projects/status/cc1n298syn6r50mq?svg=true)](https://ci.appveyor.com/project/mnadareski/ndecrypt)
+
 A simple tool for simple people.
 
 ## What is this?
