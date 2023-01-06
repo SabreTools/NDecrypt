@@ -29,15 +29,15 @@ build_script:
 # post-build script
 after_build:
   - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net48
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt_net48.zip *
+  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt.%APPVEYOR_BUILD_VERSION%_net48.zip *
   - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\win-x86\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt_net6.0_win-x86.zip *
+  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_win-x86.zip *
   - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\win-x64\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt_net6.0_win-x64.zip *
+  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_win-x64.zip *
   - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\linux-x64\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt_net6.0_linux-x64.zip *
+  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_linux-x64.zip *
   - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\osx-x64\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt_net6.0_osx-x64.zip *
+  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_osx-x64.zip *
 
 # success/failure tracking
 on_success:
@@ -49,13 +49,13 @@ on_failure:
 
 # artifact linking
 artifacts:
-- path: NDecrypt_net48.zip
+- path: NDecrypt.%APPVEYOR_BUILD_VERSION%_net48.zip
   name: NDecrypt (.NET Framework 4.8)
-- path: NDecrypt_net6.0_win-x86.zip
+- path: NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_win-x86.zip
   name: NDecrypt (.NET 6.0, Windows x86)
-- path: NDecrypt_net6.0_win-x64.zip
+- path: NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_win-x64.zip
   name: NDecrypt (.NET 6.0, Windows x64)
-- path: NDecrypt_net6.0_linux-x64.zip
+- path: NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_linux-x64.zip
   name: NDecrypt (.NET 6.0, Linux x64)
-- path: NDecrypt_net6.0_osx-x64.zip
+- path: NDecrypt.%APPVEYOR_BUILD_VERSION%_net6.0_osx-x64.zip
   name: NDecrypt (.NET 6.0, OSX x64)
