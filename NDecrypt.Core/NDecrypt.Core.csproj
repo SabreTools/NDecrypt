@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Authors>Matt Nadareski</Authors>
-    <Copyright>Copyright (c)2018-2022 Matt Nadareski</Copyright>
+    <Copyright>Copyright (c)2018-2023 Matt Nadareski</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/SabreTools/NDecrypt</RepositoryUrl>
     <Version>0.2.4</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
