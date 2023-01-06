@@ -70,8 +70,6 @@ Please note the above numbers are based on the current, documented values. The n
 
 I'd like to thank the developers of the original programs for doing the actual hard work to figure things out. I'd also like to thank everyone who helped to test this against the original programs and made code suggestions.
 
-Unofficially, this is entirely, 100% FOSS, no strings attached. I keep forgetting what license that is.
-
 ## Disclaimer
 
 This program is **ONLY** for use with personally dumped files and keys and is not meant for enabling illegal activity. I do not condone using this program for anything other than personal use and research. If this program is used for anything other than that, I cannot be held liable for anything that happens.

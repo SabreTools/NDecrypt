@@ -9,7 +9,8 @@
     <Description>DS/3DS Encryption Tool</Description>
     <Authors>Matt Nadareski</Authors>
     <Product>NDecrypt</Product>
-    <Copyright>Copyright (c)2018-2022 Matt Nadareski</Copyright>
+    <Copyright>Copyright (c)2018-2023 Matt Nadareski</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/SabreTools/NDecrypt</RepositoryUrl>
     <Version>0.2.4</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
