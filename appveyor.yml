@@ -1,5 +1,5 @@
 # version format
-version: 0.2.4-%APPVEYOR_REPO_COMMIT%
+version: 0.2.4-{APPVEYOR_REPO_COMMIT}
 
 # pull request template
 pull_requests:
