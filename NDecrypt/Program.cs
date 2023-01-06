@@ -92,9 +92,9 @@ namespace NDecrypt
             if (string.IsNullOrWhiteSpace(decryptArgs.KeyFile))
             {
                 if (decryptArgs.UseCitraKeyFile)
-                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "aes_keys.txt");
+                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(AppContext.BaseDirectory), "aes_keys.txt");
                 else
-                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "keys.bin");
+                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(AppContext.BaseDirectory), "keys.bin");
             }
 
             // If we are using a Citra keyfile, there are no development keys
