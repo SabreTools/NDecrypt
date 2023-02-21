@@ -152,7 +152,7 @@ namespace NDecrypt
             if (!string.IsNullOrWhiteSpace(err))
                 Console.WriteLine($"Error: {err}");
 
-            Console.WriteLine(@"Usage: NDecrypt.exe <opeation> [flags] <path> ...
+            Console.WriteLine(@"Usage: NDecrypt.exe <operation> [flags] <path> ...
 
 Possible values for <operation>:
 e, encrypt - Encrypt the input files
