@@ -136,6 +136,9 @@ namespace NDecrypt.Core
 
                     while (reader.ReadNextLine())
                     {
+                        // Ignore comments in the file
+                        if (reader.RowType == IniRowType.Comment)
+                            continue;
                         if (reader.KeyValuePair == null || string.IsNullOrWhiteSpace(reader.KeyValuePair?.Key))
                             break;
 

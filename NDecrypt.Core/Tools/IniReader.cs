@@ -90,7 +90,7 @@ namespace NDecrypt.Core.Tools
         private void ProcessLine()
         {
             // Comment
-            if (CurrentLine.StartsWith(";"))
+            if (CurrentLine.StartsWith(";") || CurrentLine.StartsWith("#"))
             {
                 KeyValuePair = null;
                 RowType = IniRowType.Comment;
