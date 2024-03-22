@@ -197,7 +197,7 @@ More than one path can be specified at a time.");
                     return new CIATool(filename, decryptArgs);
                 case FileType.NULL:
                 default:
-                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
+                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.nds.enc, *.srl, *.dsi, *.3ds");
                     return null;
             }
         }
@@ -209,8 +209,9 @@ More than one path can be specified at a time.");
         /// <returns>FileType value, if possible</returns>
         private static FileType DetermineFileType(string filename)
         {
-            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)     // Standard carts
-                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase)) // Development carts/images
+            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)        // Standard carts
+                || filename.EndsWith(".nds.enc", StringComparison.OrdinalIgnoreCase) // carts/images with secure area encrypted
+                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase))    // Development carts/images
                 return FileType.NDS;
 
             else if (filename.EndsWith(".dsi", StringComparison.OrdinalIgnoreCase))
