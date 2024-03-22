@@ -209,9 +209,9 @@ More than one path can be specified at a time.");
         /// <returns>FileType value, if possible</returns>
         private static FileType DetermineFileType(string filename)
         {
-            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)     // Standard carts
-                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase) // Development carts/images
-                || filename.EndsWith(".nds.enc", StringComparison.OrdinalIgnoreCase)) // gm9 output encrypted nds carts/images
+            if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)        // Standard carts
+                || filename.EndsWith(".nds.enc", StringComparison.OrdinalIgnoreCase) // carts/images with secure area encrypted
+                || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase))    // Development carts/images
                 return FileType.NDS;
 
             else if (filename.EndsWith(".dsi", StringComparison.OrdinalIgnoreCase))
