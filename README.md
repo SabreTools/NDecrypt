@@ -15,7 +15,7 @@ This is a code port of 3 different programs:
 
 ## No really, what is this?
 
-This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle. The only caveat right now is that you need a `keys.bin` file for your personally obtained encryption keys.
+This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle. The only caveat right now is that you need a `keys.bin` or `aes_keys.txt` file for your personally obtained encryption keys.
 
 ## Where do I find it?
 
@@ -49,15 +49,17 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
 
 You (possibly*) are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for Nintendo 3DS and New 3DS files. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
 
-- Hardware constant
-- KeyX0x18 / slot0x18KeyX
-- KeyX0x1B / slot0x1BKeyX
-- KeyX0x25 / slot0x25KeyX
-- KeyX0x2C / slot0x2CKeyX
-- DevKeyX0x18
-- DevKeyX0x1B
-- DevKeyX0x25
-- DevKeyX0x2C
+| Name | `aes_keys.txt` Entry |
+| --- | --- |
+| Hardware constant | `generator` |
+| KeyX0x18 | `slot0x18KeyX` |
+| KeyX0x1B | `slot0x1BKeyX` |
+| KeyX0x25 | `slot0x25KeyX` |
+| KeyX0x2C | `slot0x2CKeyX` |
+| DevKeyX0x18 | **UNMAPPED** |
+| DevKeyX0x1B | **UNMAPPED** |
+| DevKeyX0x25 | **UNMAPPED** |
+| DevKeyX0x2C | **UNMAPPED** |
 
 The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And yes, I'll fix this being required across the board at some point.
 
