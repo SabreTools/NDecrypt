@@ -49,7 +49,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Content Index
         /// </summary>
-        public byte[] ContentIndex { get; private set; }
+        public byte[]? ContentIndex { get; private set; }
 
         #region Content Index
 
@@ -59,27 +59,27 @@ namespace NDecrypt.N3DS.Headers
         /// <remarks>
         /// https://www.3dbrew.org/wiki/CIA#Certificate_Chain
         /// </remarks>
-        public Certificate[] CertificateChain { get; set; }
+        public Certificate[]? CertificateChain { get; set; }
 
         /// <summary>
         /// Ticket
         /// </summary>
-        public Ticket Ticket { get; set; }
+        public Ticket? Ticket { get; set; }
 
         /// <summary>
         /// TMD file data
         /// </summary>
-        public TitleMetadata TMDFileData { get; set; }
+        public TitleMetadata? TMDFileData { get; set; }
 
         /// <summary>
         /// Content file data
         /// </summary>
-        public NCCHHeader[] Partitions { get; set; }
+        public NCCHHeader[]? Partitions { get; set; }
 
         /// <summary>
         /// Meta file data (Not a necessary component)
         /// </summary>
-        public MetaFile MetaFileData { get; set; }
+        public MetaFile? MetaFileData { get; set; }
 
         #endregion
 
@@ -88,9 +88,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>CIA header object, null on error</returns>
-        public static CIAHeader Read(BinaryReader reader)
+        public static CIAHeader? Read(BinaryReader reader)
         {
-            CIAHeader header = new CIAHeader();
+            var header = new CIAHeader();
 
             try
             {
@@ -107,9 +107,9 @@ namespace NDecrypt.N3DS.Headers
                     reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 
                 header.CertificateChain = new Certificate[3];
-                header.CertificateChain[0] = Certificate.Read(reader); // CA
-                header.CertificateChain[1] = Certificate.Read(reader); // Ticket
-                header.CertificateChain[2] = Certificate.Read(reader); // TMD
+                header.CertificateChain[0] = Certificate.Read(reader)!; // CA
+                header.CertificateChain[1] = Certificate.Read(reader)!; // Ticket
+                header.CertificateChain[2] = Certificate.Read(reader)!; // TMD
                 if (reader.BaseStream.Position % 64 != 0)
                     reader.BaseStream.Seek(64 - (reader.BaseStream.Position % 64), SeekOrigin.Current);
 
@@ -126,7 +126,7 @@ namespace NDecrypt.N3DS.Headers
                 while (reader.BaseStream.Position < startingPosition + header.ContentSize)
                 {
                     long initPosition = reader.BaseStream.Position;
-                    NCCHHeader ncchHeader = NCCHHeader.Read(reader, readSignature: true);
+                    NCCHHeader? ncchHeader = NCCHHeader.Read(reader, readSignature: true);
                     if (ncchHeader == null)
                         break;
 

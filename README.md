@@ -1,6 +1,7 @@
 # NDecrypt
 
 [![Build status](https://ci.appveyor.com/api/projects/status/cc1n298syn6r50mq?svg=true)](https://ci.appveyor.com/project/mnadareski/ndecrypt)
+[![Program Build](https://github.com/SabreTools/NDecrypt/actions/workflows/build_program.yml/badge.svg)](https://github.com/SabreTools/NDecrypt/actions/workflows/build_program.yml)
 
 A simple tool for simple people.
 
@@ -16,24 +17,29 @@ This is a code port of 3 different programs:
 
 This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle. The only caveat right now is that you need a `keys.bin` file for your personally obtained encryption keys.
 
+## Where do I find it?
+
+For the most recent stable build, download the latest release here: [Releases Page](https://github.com/SabreTools/NDecrypt/releases)
+
+For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/NDecrypt/releases/tag/rolling)
+
 ## So how do I use this?
 
-	NDecrypt.exe <operation> [flags] <path> ...
+    NDecrypt.exe <operation> [flags] <path> ...
 
-	Possible values for <operation>:
-	e, encrypt - Encrypt the input files
-	d, decrypt - Decrypt the input files
+    Possible values for <operation>:
+    e, encrypt - Encrypt the input files
+    d, decrypt - Decrypt the input files
 
-	Possible values for [flags] (one or more can be used):
-	-c, --citra           - Enable using aes_keys.txt instead of keys.bin
-	-dev, --development   - Enable using development keys, if available
-	-f, --force           - Force operation by avoiding sanity checks
-	-h, --hash            - Output size and hashes to a companion file
-	-k, --keyfile <path>  - Path to keys.bin or aes_keys.txt
+    Possible values for [flags] (one or more can be used):
+    -c, --citra           - Enable using aes_keys.txt instead of keys.bin
+    -dev, --development   - Enable using development keys, if available
+    -f, --force           - Force operation by avoiding sanity checks
+    -h, --hash            - Output size and hashes to a companion file
+    -k, --keyfile <path>  - Path to keys.bin or aes_keys.txt
 
-	<path> can be any file or folder that contains uncompressed items.
-	More than one path can be specified at a time.
-
+    <path> can be any file or folder that contains uncompressed items.
+    More than one path can be specified at a time.
 
 **Note:** This overwrites the input files, so make backups if you're working on your original, personal dumps.
 

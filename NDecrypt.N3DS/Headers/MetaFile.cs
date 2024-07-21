@@ -7,12 +7,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Title ID dependency list - Taken from the application's ExHeader
         /// </summary>
-        public byte[] TitleIDDependencyList { get; private set; }
+        public byte[]? TitleIDDependencyList { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved1 { get; private set; }
+        public byte[]? Reserved1 { get; private set; }
 
         /// <summary>
         /// Core Version
@@ -22,21 +22,21 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved2 { get; private set; }
+        public byte[]? Reserved2 { get; private set; }
 
         /// <summary>
         /// Icon Data(.ICN) - Taken from the application's ExeFS
         /// </summary>
-        public byte[] IconData { get; private set; }
+        public byte[]? IconData { get; private set; }
 
         /// <summary>
         /// Read from a stream and get the Metafile data, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Metafile data object, null on error</returns>
-        public static MetaFile Read(BinaryReader reader)
+        public static MetaFile? Read(BinaryReader reader)
         {
-            MetaFile metaFile = new MetaFile();
+            var metaFile = new MetaFile();
 
             try
             {

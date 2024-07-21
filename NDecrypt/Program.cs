@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using NDecrypt.Core;
 using NDecrypt.N3DS;
 using NDecrypt.Nitro;
@@ -31,7 +30,7 @@ namespace NDecrypt
                 return;
             }
 
-            var decryptArgs = new DecryptArgs(); 
+            var decryptArgs = new DecryptArgs();
             if (args[0] == "decrypt" || args[0] == "d")
             {
                 decryptArgs.Encrypt = false;
@@ -48,7 +47,7 @@ namespace NDecrypt
 
             bool outputHashes = false;
             int start = 1;
-            for ( ; start < args.Length; start++)
+            for (; start < args.Length; start++)
             {
                 if (args[start] == "-c" || args[start] == "--citra")
                 {
@@ -75,7 +74,7 @@ namespace NDecrypt
                     string tempPath = args[start];
                     if (string.IsNullOrWhiteSpace(tempPath))
                         Console.WriteLine($"Invalid keyfile path: null or empty path found!");
-                    
+
                     tempPath = Path.GetFullPath(tempPath);
                     if (!File.Exists(tempPath))
                         Console.WriteLine($"Invalid keyfile path: file {tempPath} not found!");
@@ -91,10 +90,13 @@ namespace NDecrypt
             // Derive the keyfile path based on the runtime folder if not already set
             if (string.IsNullOrWhiteSpace(decryptArgs.KeyFile))
             {
+                using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
+                string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
+
                 if (decryptArgs.UseCitraKeyFile)
-                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(AppContext.BaseDirectory), "aes_keys.txt");
+                    decryptArgs.KeyFile = Path.Combine(applicationDirectory, "aes_keys.txt");
                 else
-                    decryptArgs.KeyFile = Path.Combine(Path.GetDirectoryName(AppContext.BaseDirectory), "keys.bin");
+                    decryptArgs.KeyFile = Path.Combine(applicationDirectory, "keys.bin");
             }
 
             // If we are using a Citra keyfile, there are no development keys
@@ -103,7 +105,7 @@ namespace NDecrypt
                 Console.WriteLine("Citra keyfiles don't contain development keys; disabling the option...");
                 decryptArgs.Development = false;
             }
-            
+
             // Initialize the constants, if possible
             decryptArgs.Initialize();
 
@@ -136,7 +138,7 @@ namespace NDecrypt
         private static void ProcessPath(string path, DecryptArgs decryptArgs, bool outputHashes)
         {
             Console.WriteLine(path);
-            ITool tool = DeriveTool(path, decryptArgs);
+            ITool? tool = DeriveTool(path, decryptArgs);
             if (tool?.ProcessFile() != true)
                 Console.WriteLine("Processing failed!");
             else if (outputHashes)
@@ -147,7 +149,7 @@ namespace NDecrypt
         /// Display a basic help text
         /// </summary>
         /// <param name="err">Additional error text to display, can be null to ignore</param>
-        private static void DisplayHelp(string err = null)
+        private static void DisplayHelp(string? err = null)
         {
             if (!string.IsNullOrWhiteSpace(err))
                 Console.WriteLine($"Error: {err}");
@@ -175,10 +177,10 @@ More than one path can be specified at a time.");
         /// <param name="filename">Filename to derive the tool from</param>
         /// <param name="decryptArgs">Arguments to pass to the tools on creation</param>
         /// <returns></returns>
-        private static ITool DeriveTool(string filename, DecryptArgs decryptArgs)
+        private static ITool? DeriveTool(string filename, DecryptArgs decryptArgs)
         {
             FileType type = DetermineFileType(filename);
-            switch(type)
+            switch (type)
             {
                 case FileType.NDS:
                     Console.WriteLine("File recognized as Nintendo DS");
@@ -222,13 +224,13 @@ More than one path can be specified at a time.");
 
             else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase))
                 return FileType.N3DS;
-            
+
             else if (filename.EndsWith(".cia", StringComparison.OrdinalIgnoreCase))
                 return FileType.N3DSCIA;
 
             return FileType.NULL;
         }
-    
+
         /// <summary>
         /// Write out the hashes of a file to a named file
         /// </summary>
@@ -240,10 +242,10 @@ More than one path can be specified at a time.");
                 return;
 
             // Get the hash string from the file
-            string hashString = HashingHelper.GetInfo(filename);
+            string? hashString = HashingHelper.GetInfo(filename);
             if (hashString == null)
                 return;
-            
+
             // Open the output file and write the hashes
             using (var fs = File.Create(Path.GetFullPath(filename) + ".hash"))
             using (var sw = new StreamWriter(fs))

@@ -8,10 +8,6 @@ pull_requests:
 # vm template
 image: Visual Studio 2022
 
-# msbuild configuration
-configuration:
-- Debug
-
 # install dependencies
 install:
 - cd %APPVEYOR_BUILD_FOLDER%
@@ -19,25 +15,7 @@ install:
 
 # build step
 build_script:
-  - cmd: dotnet restore
-  - cmd: dotnet build NDecrypt\NDecrypt.csproj --framework net48
-  - cmd: dotnet publish NDecrypt\NDecrypt.csproj --framework net6.0 --runtime win-x86 --self-contained true -p:PublishSingleFile=true
-  - cmd: dotnet publish NDecrypt\NDecrypt.csproj --framework net6.0 --runtime win-x64 --self-contained true -p:PublishSingleFile=true
-  - cmd: dotnet publish NDecrypt\NDecrypt.csproj --framework net6.0 --runtime linux-x64 --self-contained true -p:PublishSingleFile=true
-  - cmd: dotnet publish NDecrypt\NDecrypt.csproj --framework net6.0 --runtime osx-x64 --self-contained true -p:PublishSingleFile=true
-
-# post-build script
-after_build:
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net48
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt-%APPVEYOR_REPO_COMMIT%_net48.zip *
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\win-x86\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_win-x86.zip *
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\win-x64\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_win-x64.zip *
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\linux-x64\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_linux-x64.zip *
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%\NDecrypt\bin\Debug\net6.0\osx-x64\publish\
-  - cmd: 7z a -tzip %APPVEYOR_BUILD_FOLDER%\NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_osx-x64.zip *
+  - dotnet build
 
 # success/failure tracking
 on_success:
@@ -46,16 +24,3 @@ on_success:
 on_failure:
   - ps: Invoke-RestMethod https://raw.githubusercontent.com/DiscordHooks/appveyor-discord-webhook/master/send.ps1 -o send.ps1
   - ps: ./send.ps1 failure $env:WEBHOOK_URL
-
-# artifact linking
-artifacts:
-- path: NDecrypt-%APPVEYOR_REPO_COMMIT%_net48.zip
-  name: NDecrypt (.NET Framework 4.8)
-- path: NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_win-x86.zip
-  name: NDecrypt (.NET 6.0, Windows x86)
-- path: NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_win-x64.zip
-  name: NDecrypt (.NET 6.0, Windows x64)
-- path: NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_linux-x64.zip
-  name: NDecrypt (.NET 6.0, Linux x64)
-- path: NDecrypt-%APPVEYOR_REPO_COMMIT%_net6.0_osx-x64.zip
-  name: NDecrypt (.NET 6.0, OSX x64)

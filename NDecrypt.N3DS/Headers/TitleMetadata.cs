@@ -26,17 +26,17 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Signature
         /// </summary>
-        public byte[] Signature { get; private set; }
+        public byte[]? Signature { get; private set; }
 
         /// <summary>
         /// Signature Issuer
         /// </summary>
-        public byte[] SignatureIssuer { get; private set; }
+        public byte[]? SignatureIssuer { get; private set; }
 
         /// <summary>
         /// Signature Issuer as a trimmed string
         /// </summary>
-        public string SignatureIssuerString => SignatureIssuer != null && SignatureIssuer.Length > 0
+        public string? SignatureIssuerString => SignatureIssuer != null && SignatureIssuer.Length > 0
             ? Encoding.ASCII.GetString(SignatureIssuer)?.TrimEnd('\0')
             : null;
 
@@ -103,7 +103,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved3 { get; private set; }
+        public byte[]? Reserved3 { get; private set; }
 
         /// <summary>
         /// Access Rights
@@ -133,18 +133,18 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// SHA-256 Hash of the Content Info Records
         /// </summary>
-        public byte[] SHA256HashContentInfoRecords { get; private set; }
+        public byte[]? SHA256HashContentInfoRecords { get; private set; }
 
         /// <summary>
         /// There are 64 of these records, usually only the first is used.
         /// </summary>
-        public ContentInfoRecord[] ContentInfoRecords { get; private set; }
+        public ContentInfoRecord[]? ContentInfoRecords { get; private set; }
 
         /// <summary>
         /// There is one of these for each content contained in this title.
         /// (Determined by "Content Count" in the TMD Header).
         /// </summary>
-        public ContentChunkRecord[] ContentChunkRecords { get; private set; }
+        public ContentChunkRecord[]? ContentChunkRecords { get; private set; }
 
         /// <summary>
         /// Certificate chain
@@ -152,7 +152,7 @@ namespace NDecrypt.N3DS.Headers
         /// <remarks>
         /// https://www.3dbrew.org/wiki/Title_metadata#Certificate_Chain
         /// </remarks>
-        public Certificate[] CertificateChain { get; set; }
+        public Certificate[]? CertificateChain { get; set; }
 
         /// <summary>
         /// Read from a stream and get ticket metadata, if possible
@@ -160,9 +160,9 @@ namespace NDecrypt.N3DS.Headers
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="metadataSize">Metadata size from the header</param>
         /// <returns>Title metadata object, null on error</returns>
-        public static TitleMetadata Read(BinaryReader reader, int metadataSize)
+        public static TitleMetadata? Read(BinaryReader reader, int metadataSize)
         {
-            TitleMetadata tm = new TitleMetadata();
+            var tm = new TitleMetadata();
 
             try
             {
@@ -214,20 +214,20 @@ namespace NDecrypt.N3DS.Headers
                 tm.ContentInfoRecords = new ContentInfoRecord[64];
                 for (int i = 0; i < 64; i++)
                 {
-                    tm.ContentInfoRecords[i] = ContentInfoRecord.Read(reader);
+                    tm.ContentInfoRecords[i] = ContentInfoRecord.Read(reader)!;
                 }
 
                 tm.ContentChunkRecords = new ContentChunkRecord[tm.ContentCount];
                 for (int i = 0; i < tm.ContentCount; i++)
                 {
-                    tm.ContentChunkRecords[i] = ContentChunkRecord.Read(reader);
+                    tm.ContentChunkRecords[i] = ContentChunkRecord.Read(reader)!;
                 }
 
                 if (metadataSize > (reader.BaseStream.Position - startingPosition) + (2 * 0x200))
                 {
                     tm.CertificateChain = new Certificate[2];
-                    tm.CertificateChain[0] = Certificate.Read(reader); // TMD
-                    tm.CertificateChain[1] = Certificate.Read(reader); // CA
+                    tm.CertificateChain[0] = Certificate.Read(reader)!; // TMD
+                    tm.CertificateChain[1] = Certificate.Read(reader)!; // CA
                 }
 
                 return tm;

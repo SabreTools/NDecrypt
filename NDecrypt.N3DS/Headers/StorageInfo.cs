@@ -7,22 +7,22 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Extdata ID
         /// </summary>
-        public byte[] ExtdataID { get; private set; }
+        public byte[]? ExtdataID { get; private set; }
 
         /// <summary>
         /// System savedata IDs
         /// </summary>
-        public byte[] SystemSavedataIDs { get; private set; }
+        public byte[]? SystemSavedataIDs { get; private set; }
 
         /// <summary>
         /// Storage accessible unique IDs
         /// </summary>
-        public byte[] StorageAccessibleUniqueIDs { get; private set; }
+        public byte[]? StorageAccessibleUniqueIDs { get; private set; }
 
         /// <summary>
         /// Filesystem access info
         /// </summary>
-        public byte[] FilesystemAccessInfo { get; private set; }
+        public byte[]? FilesystemAccessInfo { get; private set; }
 
         /// <summary>
         /// Other attributes
@@ -34,9 +34,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Storage info object, null on error</returns>
-        public static StorageInfo Read(BinaryReader reader)
+        public static StorageInfo? Read(BinaryReader reader)
         {
-            StorageInfo si = new StorageInfo();
+            var si = new StorageInfo();
 
             try
             {

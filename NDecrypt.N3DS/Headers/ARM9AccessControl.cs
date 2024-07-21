@@ -7,7 +7,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Descriptors
         /// </summary>
-        public ARM9AccessControlDescriptors[] Descriptors { get; private set; }
+        public ARM9AccessControlDescriptors[]? Descriptors { get; private set; }
 
         /// <summary>
         /// ARM9 Descriptor Version. Originally this value had to be ≥ 2. Starting with 9.3.0-X this value has to be either value 2 or value 3.
@@ -19,9 +19,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>ARM9 access control object, null on error</returns>
-        public static ARM9AccessControl Read(BinaryReader reader)
+        public static ARM9AccessControl? Read(BinaryReader reader)
         {
-            ARM9AccessControl ac = new ARM9AccessControl();
+            var ac = new ARM9AccessControl();
 
             try
             {

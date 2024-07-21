@@ -24,17 +24,17 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Signature
         /// </summary>
-        public byte[] Signature { get; private set; }
+        public byte[]? Signature { get; private set; }
 
         /// <summary>
         /// Issuer
         /// </summary>
-        public byte[] Issuer { get; private set; }
+        public byte[]? Issuer { get; private set; }
 
         /// <summary>
         /// Issuer as a trimmed string
         /// </summary>
-        public string IssuerString => Issuer != null && Issuer.Length > 0
+        public string? IssuerString => Issuer != null && Issuer.Length > 0
             ? Encoding.ASCII.GetString(Issuer)?.TrimEnd('\0')
             : null;
 
@@ -46,12 +46,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Name
         /// </summary>
-        public byte[] Name { get; private set; }
+        public byte[]? Name { get; private set; }
 
         /// <summary>
         /// Name as a trimmed string
         /// </summary>
-        public string NameString => Name != null && Name.Length > 0
+        public string? NameString => Name != null && Name.Length > 0
             ? Encoding.ASCII.GetString(Name)?.TrimEnd('\0')
             : null;
 
@@ -66,7 +66,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Modulus
         /// </summary>
-        public byte[] Modulus { get; private set; }
+        public byte[]? Modulus { get; private set; }
 
         /// <summary>
         /// Public Exponent
@@ -81,7 +81,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Public Key
         /// </summary>
-        public byte[] PublicKey { get; private set; }
+        public byte[]? PublicKey { get; private set; }
 
         #endregion
 
@@ -90,9 +90,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Certificate object, null on error</returns>
-        public static Certificate Read(BinaryReader reader)
+        public static Certificate? Read(BinaryReader reader)
         {
-            Certificate ct = new Certificate();
+            var ct = new Certificate();
 
             try
             {

@@ -26,24 +26,24 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Signature
         /// </summary>
-        public byte[] Signature { get; private set; }
+        public byte[]? Signature { get; private set; }
 
         /// <summary>
         /// Issuer
         /// </summary>
-        public byte[] Issuer { get; private set; }
+        public byte[]? Issuer { get; private set; }
 
         /// <summary>
         /// Issuer as a trimmed string
         /// </summary>
-        public string IssuerString => Issuer != null && Issuer.Length > 0
+        public string? IssuerString => Issuer != null && Issuer.Length > 0
             ? Encoding.ASCII.GetString(Issuer)?.TrimEnd('\0')
             : null;
 
         /// <summary>
         /// ECC PublicKey
         /// </summary>
-        public byte[] ECCPublicKey { get; private set; }
+        public byte[]? ECCPublicKey { get; private set; }
 
         /// <summary>
         /// Version (For 3DS this is always 1)
@@ -74,7 +74,7 @@ namespace NDecrypt.N3DS.Headers
         /// The titlekey is used to decrypt content downloaded from the CDN using 128-bit AES-CBC with
         /// the content index (as big endian u16, padded with trailing zeroes) as the IV.
         /// </remarks>
-        public byte[] TitleKey { get; private set; }
+        public byte[]? TitleKey { get; private set; }
 
         /// <summary>
         /// Reserved
@@ -129,7 +129,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved4 { get; private set; }
+        public byte[]? Reserved4 { get; private set; }
 
         /// <summary>
         /// eShop Account ID?
@@ -149,7 +149,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved6 { get; private set; }
+        public byte[]? Reserved6 { get; private set; }
 
         /// <summary>
         /// Limits
@@ -157,7 +157,7 @@ namespace NDecrypt.N3DS.Headers
         /// <remarks>
         /// In demos, the first u32 in the "Limits" section is 0x4, then the second u32 is the max-playcount.
         /// </remarks>
-        public int[] Limits { get; private set; }
+        public int[]? Limits { get; private set; }
 
         /// <summary>
         /// Denotes if the ticket denotes a demo or not
@@ -179,7 +179,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Content Index
         /// </summary>
-        public byte[] ContentIndex { get; private set; }
+        public byte[]? ContentIndex { get; private set; }
 
         /// <summary>
         /// Certificate chain
@@ -187,7 +187,7 @@ namespace NDecrypt.N3DS.Headers
         /// <remarks>
         /// https://www.3dbrew.org/wiki/Ticket#Certificate_Chain
         /// </remarks>
-        public Certificate[] CertificateChain { get; set; }
+        public Certificate[]? CertificateChain { get; set; }
 
         /// <summary>
         /// Read from a stream and get ticket, if possible
@@ -195,9 +195,9 @@ namespace NDecrypt.N3DS.Headers
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="ticketSize">Ticket size from the header</param>
         /// <returns>Ticket object, null on error</returns>
-        public static Ticket Read(BinaryReader reader, int ticketSize)
+        public static Ticket? Read(BinaryReader reader, int ticketSize)
         {
-            Ticket tk = new Ticket();
+            var tk = new Ticket();
 
             try
             {
@@ -264,8 +264,8 @@ namespace NDecrypt.N3DS.Headers
                 if (ticketSize > (reader.BaseStream.Position - startingPosition) + (2 * 0x200))
                 {
                     tk.CertificateChain = new Certificate[2];
-                    tk.CertificateChain[0] = Certificate.Read(reader); // Ticket
-                    tk.CertificateChain[1] = Certificate.Read(reader); // CA
+                    tk.CertificateChain[0] = Certificate.Read(reader)!; // Ticket
+                    tk.CertificateChain[1] = Certificate.Read(reader)!; // CA
                 }
 
                 return tk;

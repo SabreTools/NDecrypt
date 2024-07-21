@@ -12,21 +12,21 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Jump ID
         /// </summary>
-        public byte[] JumpID { get; private set; }
+        public byte[]? JumpID { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved { get; private set; }
+        public byte[]? Reserved { get; private set; }
 
         /// <summary>
         /// Read from a stream and get system info, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>System info object, null on error</returns>
-        public static SystemInfo Read(BinaryReader reader)
+        public static SystemInfo? Read(BinaryReader reader)
         {
-            SystemInfo si = new SystemInfo();
+            var si = new SystemInfo();
 
             try
             {

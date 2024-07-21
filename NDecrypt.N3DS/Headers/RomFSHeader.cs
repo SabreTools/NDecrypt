@@ -31,7 +31,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved1 { get; private set; }
+        public byte[]? Reserved1 { get; private set; }
 
         /// <summary>
         /// Level 2 logical offset
@@ -51,7 +51,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved2 { get; private set; }
+        public byte[]? Reserved2 { get; private set; }
 
         /// <summary>
         /// Level 3 logical offset
@@ -63,7 +63,7 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         public ulong Level3HashdataSize { get; private set; }
 
-        /// <summary>
+        /// <summary>s
         /// Level 3 block size, in log2
         /// </summary>
         public uint Level3BlockSizeLog2 { get; private set; }
@@ -71,12 +71,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved3 { get; private set; }
+        public byte[]? Reserved3 { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved4 { get; private set; }
+        public byte[]? Reserved4 { get; private set; }
 
         /// <summary>
         /// Optional info size.
@@ -88,9 +88,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>RomFS header object, null on error</returns>
-        public static RomFSHeader Read(BinaryReader reader)
+        public static RomFSHeader? Read(BinaryReader reader)
         {
-            RomFSHeader header = new RomFSHeader();
+            var header = new RomFSHeader();
 
             try
             {

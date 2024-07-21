@@ -20,8 +20,8 @@ namespace NDecrypt.Nitro
 
         #region Encryption process variables
 
-        private uint[] cardHash = new uint[0x412];
-        private uint[] arg2 = new uint[3];
+        private uint[] _cardHash = new uint[0x412];
+        private uint[] _arg2 = new uint[3];
 
         #endregion
 
@@ -42,7 +42,7 @@ namespace NDecrypt.Nitro
                 using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
                 {
-                    NDSHeader header = NDSHeader.Read(reader);
+                    NDSHeader? header = NDSHeader.Read(reader);
                     if (header == null)
                     {
                         Console.WriteLine("Error: Not a DS or DSi Rom!");
@@ -79,7 +79,7 @@ namespace NDecrypt.Nitro
             // If we're not forcing the operation, check to see if we should be proceeding
             else
             {
-                bool? isDecrypted = CheckIfDecrypted(reader);
+                bool? isDecrypted = DSTool.CheckIfDecrypted(reader);
                 if (isDecrypted == null)
                 {
                     Console.WriteLine("File has an empty secure area, cannot proceed");
@@ -102,7 +102,7 @@ namespace NDecrypt.Nitro
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>True if the file has known values for a decrypted file, null if it's empty, false otherwise</returns>
-        private bool? CheckIfDecrypted(BinaryReader reader)
+        private static bool? CheckIfDecrypted(BinaryReader reader)
         {
             reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
             uint firstValue = reader.ReadUInt32();
@@ -175,8 +175,8 @@ namespace NDecrypt.Nitro
             // Perform the initialization steps
             Init1(ndsHeader);
             if (!decryptArgs.Encrypt) Decrypt(ref p1, ref p0);
-            arg2[1] <<= 1;
-            arg2[2] >>= 1;
+            _arg2[1] <<= 1;
+            _arg2[2] >>= 1;
             Init2();
 
             // If we're decrypting, set the proper flags
@@ -245,8 +245,8 @@ namespace NDecrypt.Nitro
         /// <param name="ndsHeader">NDS header representing the DS file</param>
         private void Init1(NDSHeader ndsHeader)
         {
-            Buffer.BlockCopy(Constants.NDSEncryptionData, 0, cardHash, 0, 4 * (1024 + 18));
-            arg2 = new uint[] { ndsHeader.Gamecode, ndsHeader.Gamecode >> 1, ndsHeader.Gamecode << 1 };
+            Buffer.BlockCopy(Constants.NDSEncryptionData, 0, _cardHash, 0, 4 * (1024 + 18));
+            _arg2 = [ndsHeader.Gamecode, ndsHeader.Gamecode >> 1, ndsHeader.Gamecode << 1];
             Init2();
             Init2();
         }
@@ -256,12 +256,12 @@ namespace NDecrypt.Nitro
         /// </summary>
         private void Init2()
         {
-            Encrypt(ref arg2[2], ref arg2[1]);
-            Encrypt(ref arg2[1], ref arg2[0]);
+            Encrypt(ref _arg2[2], ref _arg2[1]);
+            Encrypt(ref _arg2[1], ref _arg2[0]);
 
-            byte[] allBytes = BitConverter.GetBytes(arg2[0])
-                .Concat(BitConverter.GetBytes(arg2[1]))
-                .Concat(BitConverter.GetBytes(arg2[2]))
+            byte[] allBytes = BitConverter.GetBytes(_arg2[0])
+                .Concat(BitConverter.GetBytes(_arg2[1]))
+                .Concat(BitConverter.GetBytes(_arg2[2]))
                 .ToArray();
 
             UpdateHashtable(allBytes);
@@ -278,13 +278,13 @@ namespace NDecrypt.Nitro
             uint b = arg2;
             for (int i = 17; i > 1; i--)
             {
-                uint c = cardHash[i] ^ a;
+                uint c = _cardHash[i] ^ a;
                 a = b ^ Lookup(c);
                 b = c;
             }
 
-            arg1 = b ^ cardHash[0];
-            arg2 = a ^ cardHash[1];
+            arg1 = b ^ _cardHash[0];
+            arg2 = a ^ _cardHash[1];
         }
 
         /// <summary>
@@ -298,13 +298,13 @@ namespace NDecrypt.Nitro
             uint b = arg2;
             for (int i = 0; i < 16; i++)
             {
-                uint c = cardHash[i] ^ a;
+                uint c = _cardHash[i] ^ a;
                 a = b ^ Lookup(c);
                 b = c;
             }
 
-            arg2 = a ^ cardHash[16];
-            arg1 = b ^ cardHash[17];
+            arg2 = a ^ _cardHash[16];
+            arg1 = b ^ _cardHash[17];
         }
 
         /// <summary>
@@ -319,10 +319,10 @@ namespace NDecrypt.Nitro
             uint c = (v >> 8) & 0xFF;
             uint d = (v >> 0) & 0xFF;
 
-            a = cardHash[a + 18 + 0];
-            b = cardHash[b + 18 + 256];
-            c = cardHash[c + 18 + 512];
-            d = cardHash[d + 18 + 768];
+            a = _cardHash[a + 18 + 0];
+            b = _cardHash[b + 18 + 256];
+            c = _cardHash[c + 18 + 512];
+            d = _cardHash[d + 18 + 768];
 
             return d + (c ^ (b + a));
         }
@@ -342,7 +342,7 @@ namespace NDecrypt.Nitro
                     r3 |= arg1[(j * 4 + i) & 7];
                 }
 
-                cardHash[j] ^= r3;
+                _cardHash[j] ^= r3;
             }
 
             uint tmp1 = 0;
@@ -350,14 +350,14 @@ namespace NDecrypt.Nitro
             for (int i = 0; i < 18; i += 2)
             {
                 Encrypt(ref tmp1, ref tmp2);
-                cardHash[i + 0] = tmp1;
-                cardHash[i + 1] = tmp2;
+                _cardHash[i + 0] = tmp1;
+                _cardHash[i + 1] = tmp2;
             }
             for (int i = 0; i < 0x400; i += 2)
             {
                 Encrypt(ref tmp1, ref tmp2);
-                cardHash[i + 18 + 0] = tmp1;
-                cardHash[i + 18 + 1] = tmp2;
+                _cardHash[i + 18 + 0] = tmp1;
+                _cardHash[i + 18 + 1] = tmp2;
             }
         }
     }

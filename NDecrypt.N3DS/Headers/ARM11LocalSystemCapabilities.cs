@@ -7,7 +7,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Program ID
         /// </summary>
-        public byte[] ProgramID { get; private set; }
+        public byte[]? ProgramID { get; private set; }
 
         /// <summary>
         /// Core version (The Title ID low of the required FIRM)
@@ -37,27 +37,27 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Resource limit descriptors. The first byte here controls the maximum allowed CpuTime.
         /// </summary>
-        public byte[][] ResourceLimitDescriptors { get; private set; }
+        public byte[][]? ResourceLimitDescriptors { get; private set; }
 
         /// <summary>
         /// Storage info
         /// </summary>
-        public StorageInfo StorageInfo { get; private set; }
+        public StorageInfo? StorageInfo { get; private set; }
 
         /// <summary>
         /// Service access control
         /// </summary>
-        public byte[][] ServiceAccessControl { get; private set; }
+        public byte[][]? ServiceAccessControl { get; private set; }
 
         /// <summary>
         /// Extended service access control, support for this was implemented with 9.3.0-X.
         /// </summary>
-        public byte[][] ExtendedServiceAccessControl { get; private set; }
+        public byte[][]? ExtendedServiceAccessControl { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved { get; private set; }
+        public byte[]? Reserved { get; private set; }
 
         /// <summary>
         /// Resource limit category. (0 = APPLICATION, 1 = SYS_APPLET, 2 = LIB_APPLET, 3 = OTHER (sysmodules running under the BASE memregion))
@@ -69,9 +69,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>ARM11 local system capabilities object, null on error</returns>
-        public static ARM11LocalSystemCapabilities Read(BinaryReader reader)
+        public static ARM11LocalSystemCapabilities? Read(BinaryReader reader)
         {
-            ARM11LocalSystemCapabilities lsc = new ARM11LocalSystemCapabilities();
+            var lsc = new ARM11LocalSystemCapabilities();
 
             try
             {

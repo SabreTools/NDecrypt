@@ -9,7 +9,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Game Title
         /// </summary>
-        public char[] GameTitle { get; private set; }
+        public char[]? GameTitle { get; private set; }
 
         /// <summary>
         /// Gamecode
@@ -19,7 +19,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Makercode
         /// </summary>
-        public char[] Makercode { get; private set; }
+        public char[]? Makercode { get; private set; }
 
         /// <summary>
         /// Unitcode
@@ -40,7 +40,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved1 { get; private set; }
+        public byte[]? Reserved1 { get; private set; }
 
         /// <summary>
         /// Game Revision (used by DSi titles)
@@ -140,12 +140,12 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Normal card control register settings (0x00416657 for OneTimePROM)
         /// </summary>
-        public byte[] NormalCardControlRegisterSettings { get; private set; }
+        public byte[]? NormalCardControlRegisterSettings { get; private set; }
 
         /// <summary>
         /// Secure card control register settings (0x081808F8 for OneTimePROM)
         /// </summary>
-        public byte[] SecureCardControlRegisterSettings { get; private set; }
+        public byte[]? SecureCardControlRegisterSettings { get; private set; }
 
         /// <summary>
         /// Icon Banner offset (NDSi same as NDS, but with new extra entries)
@@ -165,17 +165,17 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// ARM9 autoload
         /// </summary>
-        public byte[] ARM9Autoload { get; private set; }
+        public byte[]? ARM9Autoload { get; private set; }
 
         /// <summary>
         /// ARM7 autoload
         /// </summary>
-        public byte[] ARM7Autoload { get; private set; }
+        public byte[]? ARM7Autoload { get; private set; }
 
         /// <summary>
         /// Secure disable
         /// </summary>
-        public byte[] SecureDisable { get; private set; }
+        public byte[]? SecureDisable { get; private set; }
 
         /// <summary>
         /// NTR region ROM size (excluding DSi area)
@@ -190,12 +190,12 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         ///Reserved (0x88, 0x8C, 0x90 = Unknown, used by DSi)
         /// </summary>
-        public byte[] Reserved2 { get; private set; }
+        public byte[]? Reserved2 { get; private set; }
 
         /// <summary>
         /// Nintendo Logo
         /// </summary>
-        public byte[] NintendoLogo { get; private set; }
+        public byte[]? NintendoLogo { get; private set; }
 
         /// <summary>
         /// Nintendo Logo CRC
@@ -210,7 +210,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Debugger reserved
         /// </summary>
-        public byte[] DebuggerReserved { get; private set; }
+        public byte[]? DebuggerReserved { get; private set; }
 
         #endregion
 
@@ -219,42 +219,42 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Global MBK1..MBK5 Settings
         /// </summary>
-        public byte[] GlobalMBK15Settings { get; private set; }
+        public byte[]? GlobalMBK15Settings { get; private set; }
 
         /// <summary>
         ///	Local MBK6..MBK8 Settings for ARM9
         /// </summary>
-        public byte[] LocalMBK68SettingsARM9 { get; private set; }
+        public byte[]? LocalMBK68SettingsARM9 { get; private set; }
 
         /// <summary>
         /// Local MBK6..MBK8 Settings for ARM7
         /// </summary>
-        public byte[] LocalMBK68SettingsARM7 { get; private set; }
+        public byte[]? LocalMBK68SettingsARM7 { get; private set; }
 
         /// <summary>
         /// Global MBK9 Setting
         /// </summary>
-        public byte[] GlobalMBK9Setting { get; private set; }
+        public byte[]? GlobalMBK9Setting { get; private set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public byte[] RegionFlags { get; private set; }
+        public byte[]? RegionFlags { get; private set; }
 
         /// <summary>
         /// Access control
         /// </summary>
-        public byte[] AccessControl { get; private set; }
+        public byte[]? AccessControl { get; private set; }
 
         /// <summary>
         /// ARM7 SCFG EXT mask (controls which devices to enable)
         /// </summary>
-        public byte[] ARM7SCFGEXTMask { get; private set; }
+        public byte[]? ARM7SCFGEXTMask { get; private set; }
 
         /// <summary>
         /// Reserved/flags? When bit2 of byte 0x1bf is set, usage of banner.sav from the title data dir is enabled.(additional banner data)
         /// </summary>
-        public byte[] ReservedFlags { get; private set; }
+        public byte[]? ReservedFlags { get; private set; }
 
         /// <summary>
         /// ARM9i rom offset
@@ -264,7 +264,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved3 { get; private set; }
+        public byte[]? Reserved3 { get; private set; }
 
         /// <summary>
         /// ARM9i load address
@@ -284,7 +284,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Pointer to base address where various structures and parameters are passed to the title - what is that???
         /// </summary>
-        public byte[] Reserved4 { get; private set; }
+        public byte[]? Reserved4 { get; private set; }
 
         /// <summary>
         /// ARM7i load address
@@ -354,7 +354,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Unknown (used by DSi)
         /// </summary>
-        public byte[] Unknown1 { get; private set; }
+        public byte[]? Unknown1 { get; private set; }
 
         /// <summary>
         /// NTR+TWL region ROM size (total size including DSi area)
@@ -364,7 +364,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Unknown (used by DSi)
         /// </summary>
-        public byte[] Unknown2 { get; private set; }
+        public byte[]? Unknown2 { get; private set; }
 
         /// <summary>
         /// Modcrypt area 1 offset
@@ -389,7 +389,7 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Title ID
         /// </summary>
-        public byte[] TitleID { get; private set; }
+        public byte[]? TitleID { get; private set; }
 
         /// <summary>
         /// DSiWare: "public.sav" size
@@ -404,67 +404,67 @@ namespace NDecrypt.Nitro.Headers
         /// <summary>
         /// Reserved (zero)
         /// </summary>
-        public byte[] ReservedZero { get; private set; }
+        public byte[]? ReservedZero { get; private set; }
 
         /// <summary>
         /// Unknown (used by DSi)
         /// </summary>
-        public byte[] Unknown3 { get; private set; }
+        public byte[]? Unknown3 { get; private set; }
 
         /// <summary>
         /// ARM9 (with encrypted secure area) SHA1 HMAC hash
         /// </summary>
-        public byte[] ARM9WithSecureAreaSHA1HMACHash { get; private set; }
+        public byte[]? ARM9WithSecureAreaSHA1HMACHash { get; private set; }
 
         /// <summary>
         /// ARM7 SHA1 HMAC hash
         /// </summary>
-        public byte[] ARM7SHA1HMACHash { get; private set; }
+        public byte[]? ARM7SHA1HMACHash { get; private set; }
 
         /// <summary>
         /// Digest master SHA1 HMAC hash
         /// </summary>
-        public byte[] DigestMasterSHA1HMACHash { get; private set; }
+        public byte[]? DigestMasterSHA1HMACHash { get; private set; }
 
         /// <summary>
         /// Banner SHA1 HMAC hash
         /// </summary>
-        public byte[] BannerSHA1HMACHash { get; private set; }
+        public byte[]? BannerSHA1HMACHash { get; private set; }
 
         /// <summary>
         /// ARM9i (decrypted) SHA1 HMAC hash
         /// </summary>
-        public byte[] ARM9iDecryptedSHA1HMACHash { get; private set; }
+        public byte[]? ARM9iDecryptedSHA1HMACHash { get; private set; }
 
         /// <summary>
         /// ARM7i (decrypted) SHA1 HMAC hash
         /// </summary>
-        public byte[] ARM7iDecryptedSHA1HMACHash { get; private set; }
+        public byte[]? ARM7iDecryptedSHA1HMACHash { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved5 { get; private set; }
+        public byte[]? Reserved5 { get; private set; }
 
         /// <summary>
         /// ARM9 (without secure area) SHA1 HMAC hash
         /// </summary>
-        public byte[] ARM9NoSecureAreaSHA1HMACHash { get; private set; }
+        public byte[]? ARM9NoSecureAreaSHA1HMACHash { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved6 { get; private set; }
+        public byte[]? Reserved6 { get; private set; }
 
         /// <summary>
         /// Reserved and unchecked region, always zero. Used for passing arguments in debug environment.
         /// </summary>
-        public byte[] ReservedAndUnchecked { get; private set; }
+        public byte[]? ReservedAndUnchecked { get; private set; }
 
         /// <summary>
         /// RSA signature (the first 0xE00 bytes of the header are signed with an 1024-bit RSA signature).
         /// </summary>
-        public byte[] RSASignature { get; private set; }
+        public byte[]? RSASignature { get; private set; }
 
         #endregion
 
@@ -473,9 +473,9 @@ namespace NDecrypt.Nitro.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>NDS/NDSi header object, null on error</returns>
-        public static NDSHeader Read(BinaryReader reader)
+        public static NDSHeader? Read(BinaryReader reader)
         {
-            NDSHeader header = new NDSHeader();
+            var header = new NDSHeader();
 
             try
             {

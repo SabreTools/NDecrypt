@@ -19,9 +19,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Partition table entry object, null on error</returns>
-        public static PartitionTableEntry Read(BinaryReader reader)
+        public static PartitionTableEntry? Read(BinaryReader reader)
         {
-            PartitionTableEntry entry = new PartitionTableEntry();
+            var entry = new PartitionTableEntry();
 
             try
             {

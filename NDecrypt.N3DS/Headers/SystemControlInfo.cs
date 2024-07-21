@@ -7,12 +7,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Application title (default is "CtrApp")
         /// </summary>
-        public char[] ApplicationTitle { get; private set; }
+        public char[]? ApplicationTitle { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved1 { get; private set; }
+        public byte[]? Reserved1 { get; private set; }
 
         /// <summary>
         /// Flag (bit 0: CompressExefsCode, bit 1: SDApplication)
@@ -22,12 +22,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Remaster version
         /// </summary>
-        public byte[] RemasterVersion { get; private set; }
+        public byte[]? RemasterVersion { get; private set; }
 
         /// <summary>
         /// Text code set info
         /// </summary>
-        public CodeSetInfo TextCodesetInfo { get; private set; }
+        public CodeSetInfo? TextCodesetInfo { get; private set; }
 
         /// <summary>
         /// Stack size
@@ -37,17 +37,17 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Read-only code set info
         /// </summary>
-        public CodeSetInfo ReadOnlyCodeSetInfo { get; private set; }
+        public CodeSetInfo? ReadOnlyCodeSetInfo { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved2 { get; private set; }
+        public byte[]? Reserved2 { get; private set; }
 
         /// <summary>
         /// Data code set info
         /// </summary>
-        public CodeSetInfo DataCodeSetInfo { get; private set; }
+        public CodeSetInfo? DataCodeSetInfo { get; private set; }
 
         /// <summary>
         /// BSS size
@@ -57,21 +57,21 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Dependency module (program ID) list
         /// </summary>
-        public byte[][] DependencyModuleList { get; private set; }
+        public byte[][]? DependencyModuleList { get; private set; }
 
         /// <summary>
         /// SystemInfo
         /// </summary>
-        public SystemInfo SystemInfo { get; private set; }
+        public SystemInfo? SystemInfo { get; private set; }
 
         /// <summary>
         /// Read from a stream and get system control info, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>System control info object, null on error</returns>
-        public static SystemControlInfo Read(BinaryReader reader)
+        public static SystemControlInfo? Read(BinaryReader reader)
         {
-            SystemControlInfo sci = new SystemControlInfo();
+            var sci = new SystemControlInfo();
 
             try
             {

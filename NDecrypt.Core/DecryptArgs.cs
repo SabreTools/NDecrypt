@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using NDecrypt.Core.Tools;
+using SabreTools.IO.Readers;
 
 namespace NDecrypt.Core
 {
@@ -37,7 +37,7 @@ namespace NDecrypt.Core
         /// <summary>
         /// Path to the keyfile [3DS only]
         /// </summary>
-        public string KeyFile { get; set; }
+        public string? KeyFile { get; set; }
 
         /// <summary>
         /// Flag to indicate keyfile format to use [3DS only]
@@ -119,9 +119,9 @@ namespace NDecrypt.Core
         /// Setup all of the necessary constants from aes_keys.txt
         /// </summary>
         /// <param name="keyfile">Path to aes_keys.txt</param>
-        private void InitAesKeysTxt(string keyfile)
+        private void InitAesKeysTxt(string? keyfile)
         {
-            if (!File.Exists(keyfile))
+            if (keyfile == null || !File.Exists(keyfile))
             {
                 IsReady = false;
                 return;
@@ -129,7 +129,7 @@ namespace NDecrypt.Core
 
             try
             {
-                using (IniReader reader = new IniReader(keyfile))
+                using (var reader = new IniReader(keyfile))
                 {
                     // This is required to preserve sign for BigInteger
                     byte[] signByte = new byte[] { 0x00 };
@@ -142,7 +142,7 @@ namespace NDecrypt.Core
                         if (reader.KeyValuePair == null || string.IsNullOrWhiteSpace(reader.KeyValuePair?.Key))
                             break;
 
-                        var kvp = reader.KeyValuePair.Value;
+                        var kvp = reader.KeyValuePair!.Value;
                         byte[] value = StringToByteArray(kvp.Value).Reverse().ToArray();
                         byte[] valueWithSign = value.Concat(signByte).ToArray();
 
@@ -240,9 +240,9 @@ namespace NDecrypt.Core
         /// </summary>
         /// <param name="keyfile">Path to keys.bin</param>
         /// <remarks>keys.bin should be in little endian format</remarks>
-        private void InitKeysBin(string keyfile)
+        private void InitKeysBin(string? keyfile)
         {
-            if (!File.Exists(keyfile))
+            if (keyfile == null || !File.Exists(keyfile))
             {
                 IsReady = false;
                 return;

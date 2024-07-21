@@ -16,12 +16,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Partition table entry for the current partition
         /// </summary>
-        public PartitionTableEntry Entry { get; set; }
+        public PartitionTableEntry? Entry { get; set; }
 
         /// <summary>
         /// RSA-2048 signature of the NCCH header, using SHA-256.
         /// </summary>
-        public byte[] RSA2048Signature { get; private set; }
+        public byte[]? RSA2048Signature { get; private set; }
 
         /// <summary>
         /// Content size, in media units (1 media unit = 0x200 bytes)
@@ -31,10 +31,10 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Partition ID
         /// </summary>
-        public byte[] PartitionId { get; private set; }
-        public byte[] PlainIV { get { return PartitionId.Concat(Constants.PlainCounter).ToArray(); } }
-        public byte[] ExeFSIV { get { return PartitionId.Concat(Constants.ExefsCounter).ToArray(); } }
-        public byte[] RomFSIV { get { return PartitionId.Concat(Constants.RomfsCounter).ToArray(); } }
+        public byte[]? PartitionId { get; private set; }
+        public byte[]? PlainIV { get { return [.. PartitionId, .. Constants.PlainCounter]; } }
+        public byte[]? ExeFSIV { get { return [.. PartitionId, .. Constants.ExefsCounter]; } }
+        public byte[]? RomFSIV { get { return [.. PartitionId, .. Constants.RomfsCounter]; } }
 
         /// <summary>
         /// Boot rom key
@@ -82,27 +82,27 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Program ID
         /// </summary>
-        public byte[] ProgramId { get; private set; }
+        public byte[]? ProgramId { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved1 { get; private set; }
+        public byte[]? Reserved1 { get; private set; }
 
         /// <summary>
         /// Logo Region SHA-256 hash. (For applications built with SDK 5+) (Supported from firmware: 5.0.0-11)
         /// </summary>
-        public byte[] LogoRegionHash { get; private set; }
+        public byte[]? LogoRegionHash { get; private set; }
 
         /// <summary>
         /// Product code
         /// </summary>
-        public byte[] ProductCode { get; private set; }
+        public byte[]? ProductCode { get; private set; }
 
         /// <summary>
         /// Extended header SHA-256 hash (SHA256 of 2x Alignment Size, beginning at 0x0 of ExHeader)
         /// </summary>
-        public byte[] ExtendedHeaderHash { get; private set; }
+        public byte[]? ExtendedHeaderHash { get; private set; }
 
         /// <summary>
         /// Extended header size, in bytes
@@ -112,12 +112,12 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved2 { get; private set; }
+        public byte[]? Reserved2 { get; private set; }
 
         /// <summary>
         /// Flags
         /// </summary>
-        public NCCHHeaderFlags Flags { get; private set; }
+        public NCCHHeaderFlags? Flags { get; private set; }
 
         /// <summary>
         /// Plain region offset, in media units
@@ -157,7 +157,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved3 { get; private set; }
+        public byte[]? Reserved3 { get; private set; }
 
         /// <summary>
         /// RomFS offset, in media units
@@ -177,19 +177,19 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved4 { get; private set; }
+        public byte[]? Reserved4 { get; private set; }
 
         /// <summary>
         /// ExeFS superblock SHA-256 hash - (SHA-256 hash, starting at 0x0 of the ExeFS over the number of
         /// media units specified in the ExeFS hash region size)
         /// </summary>
-        public byte[] ExeFSSuperblockHash { get; private set; }
+        public byte[]? ExeFSSuperblockHash { get; private set; }
 
         /// <summary>
         /// RomFS superblock SHA-256 hash - (SHA-256 hash, starting at 0x0 of the RomFS over the number
         /// of media units specified in the RomFS hash region size)
         /// </summary>
-        public byte[] RomFSSuperblockHash { get; private set; }
+        public byte[]? RomFSSuperblockHash { get; private set; }
 
         /// <summary>
         /// Read from a stream and get an NCCH header, if possible
@@ -197,9 +197,9 @@ namespace NDecrypt.N3DS.Headers
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="readSignature">True if the RSA signature is read, false otherwise</param>
         /// <returns>NCCH header object, null on error</returns>
-        public static NCCHHeader Read(BinaryReader reader, bool readSignature)
+        public static NCCHHeader? Read(BinaryReader reader, bool readSignature)
         {
-            NCCHHeader header = new NCCHHeader();
+            var header = new NCCHHeader();
 
             try
             {

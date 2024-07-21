@@ -30,16 +30,16 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// SHA-256 hash
         /// </summary>
-        public byte[] SHA256Hash { get; private set; }
+        public byte[]? SHA256Hash { get; private set; }
 
         /// <summary>
         /// Read from a stream and get content chunk record, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Content chunk record object, null on error</returns>
-        public static ContentChunkRecord Read(BinaryReader reader)
+        public static ContentChunkRecord? Read(BinaryReader reader)
         {
-            ContentChunkRecord ccr = new ContentChunkRecord();
+            var ccr = new ContentChunkRecord();
 
             try
             {

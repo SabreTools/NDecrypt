@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NDecrypt.Nitro
+﻿namespace NDecrypt.Nitro
 {
     internal enum NDSUnitcode : byte
     {

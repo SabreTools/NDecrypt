@@ -57,9 +57,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>NCCH header flags object, null on error</returns>
-        public static NCCHHeaderFlags Read(BinaryReader reader)
+        public static NCCHHeaderFlags? Read(BinaryReader reader)
         {
-            NCCHHeaderFlags flags = new NCCHHeaderFlags();
+            var flags = new NCCHHeaderFlags();
 
             try
             {

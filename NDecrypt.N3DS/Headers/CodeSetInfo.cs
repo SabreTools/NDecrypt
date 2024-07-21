@@ -7,7 +7,7 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// Address
         /// </summary>
-        public byte[] Address { get; private set; }
+        public byte[]? Address { get; private set; }
 
         /// <summary>
         /// Physical region size (in page-multiples)
@@ -24,9 +24,9 @@ namespace NDecrypt.N3DS.Headers
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Code set info object, null on error</returns>
-        public static CodeSetInfo Read(BinaryReader reader)
+        public static CodeSetInfo? Read(BinaryReader reader)
         {
-            CodeSetInfo csi = new CodeSetInfo();
+            var csi = new CodeSetInfo();
 
             try
             {

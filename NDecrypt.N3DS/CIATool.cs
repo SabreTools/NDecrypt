@@ -47,7 +47,7 @@ namespace NDecrypt.N3DS
                 using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
                 {
-                    CIAHeader header = CIAHeader.Read(reader);
+                    CIAHeader? header = CIAHeader.Read(reader);
                     if (header == null)
                     {
                         Console.WriteLine("Error: Not a 3DS CIA!");
@@ -77,7 +77,7 @@ namespace NDecrypt.N3DS
         private void ProcessAllPartitions(CIAHeader ciaHeader, BinaryReader reader, BinaryWriter writer)
         {
             // Iterate over all NCCH partitions
-            for (int p = 0; p < ciaHeader.Partitions.Length; p++)
+            for (int p = 0; p < ciaHeader.Partitions!.Length; p++)
             {
                 NCCHHeader ncchHeader = ciaHeader.Partitions[0];
                 ProcessPartition(ciaHeader, ncchHeader, reader, writer);
@@ -99,7 +99,7 @@ namespace NDecrypt.N3DS
                 Console.WriteLine($"Partition {ncchHeader.PartitionNumber} is not verified due to force flag being set.");
             }
             // If we're not forcing the operation, check if the 'NoCrypto' bit is set
-            else if (ncchHeader.Flags.PossblyDecrypted ^ decryptArgs.Encrypt)
+            else if (ncchHeader.Flags!.PossblyDecrypted ^ decryptArgs.Encrypt)
             {
                 Console.WriteLine($"Partition {ncchHeader.PartitionNumber}: Already " + (decryptArgs.Encrypt ? "Encrypted" : "Decrypted") + "?...");
                 return;
@@ -159,7 +159,7 @@ namespace NDecrypt.N3DS
             }
             else
             {
-                masks = ncchHeader.Flags.BitMasks;
+                masks = ncchHeader.Flags!.BitMasks;
                 method = ncchHeader.Flags.CryptoMethod;
             }
 
@@ -209,12 +209,12 @@ namespace NDecrypt.N3DS
 
             if (ncchHeader.ExtendedHeaderSizeInBytes > 0)
             {
-                reader.BaseStream.Seek((ncchHeader.Entry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
+                reader.BaseStream.Seek((ncchHeader.Entry!.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
                 writer.BaseStream.Seek((ncchHeader.Entry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
 
                 Console.WriteLine($"Partition {ncchHeader.PartitionNumber} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
-                var cipher = CreateAESCipher(ncchHeader.NormalKey2C, ncchHeader.PlainIV, decryptArgs.Encrypt);
+                var cipher = CreateAESCipher(ncchHeader.NormalKey2C, ncchHeader.PlainIV!, decryptArgs.Encrypt);
                 writer.Write(cipher.ProcessBytes(reader.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
                 writer.Flush();
                 return true;
@@ -224,8 +224,6 @@ namespace NDecrypt.N3DS
                 Console.WriteLine($"Partition {ncchHeader.PartitionNumber} ExeFS: No Extended Header... Skipping...");
                 return false;
             }
-
-            return false;
         }
 
         /// <summary>
@@ -239,8 +237,8 @@ namespace NDecrypt.N3DS
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // mediaUnitSize;
 
-            reader.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            ExeFSHeader exefsHeader = ExeFSHeader.Read(reader);
+            reader.BaseStream.Seek((ncchHeader.Entry!.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            ExeFSHeader? exefsHeader = ExeFSHeader.Read(reader);
 
             // If the header failed to read, log and return
             if (exefsHeader == null)
@@ -249,7 +247,7 @@ namespace NDecrypt.N3DS
                 return;
             }
 
-            foreach (ExeFSFileHeader fileHeader in exefsHeader.FileHeaders)
+            foreach (ExeFSFileHeader fileHeader in exefsHeader.FileHeaders!)
             {
                 // Only decrypt a file if it's a code binary
                 if (!fileHeader.IsCodeBinary)
@@ -259,7 +257,7 @@ namespace NDecrypt.N3DS
                 uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
                 uint ctroffset = ((fileHeader.FileOffset + mediaUnitSize) / 0x10);
 
-                byte[] exefsIVWithOffsetForHeader = AddToByteArray(ncchHeader.ExeFSIV, (int)ctroffset);
+                byte[] exefsIVWithOffsetForHeader = AddToByteArray(ncchHeader.ExeFSIV!, (int)ctroffset);
 
                 var firstCipher = CreateAESCipher(ncchHeader.NormalKey, exefsIVWithOffsetForHeader, decryptArgs.Encrypt);
                 var secondCipher = CreateAESCipher(ncchHeader.NormalKey2C, exefsIVWithOffsetForHeader, !decryptArgs.Encrypt);
@@ -298,12 +296,12 @@ namespace NDecrypt.N3DS
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // mediaUnitSize;
 
-            reader.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            reader.BaseStream.Seek((ncchHeader.Entry!.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
 
             Console.WriteLine($"Partition {ncchHeader.PartitionNumber} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
-            var exeFSFilenameTable = CreateAESCipher(ncchHeader.NormalKey2C, ncchHeader.ExeFSIV, decryptArgs.Encrypt);
+            var exeFSFilenameTable = CreateAESCipher(ncchHeader.NormalKey2C, ncchHeader.ExeFSIV!, decryptArgs.Encrypt);
             writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)mediaUnitSize)));
             writer.Flush();
         }
@@ -323,11 +321,11 @@ namespace NDecrypt.N3DS
             int exefsSizeB = (int)((long)((ncchHeader.ExeFSSizeInMediaUnits - 1) * mediaUnitSize) % (1024 * 1024));
             int ctroffsetE = (int)(mediaUnitSize / 0x10);
 
-            byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV, ctroffsetE);
+            byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV!, ctroffsetE);
 
             var exeFS = CreateAESCipher(ncchHeader.NormalKey2C, exefsIVWithOffset, decryptArgs.Encrypt);
 
-            reader.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
+            reader.BaseStream.Seek((ncchHeader.Entry!.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
             writer.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
             if (exefsSizeM > 0)
             {
@@ -370,7 +368,7 @@ namespace NDecrypt.N3DS
             ProcessExeFSFilenameTable(ncchHeader, reader, writer);
 
             // For all but the original crypto method, process each of the files in the table
-            if (ncchHeader.Flags.CryptoMethod != CryptoMethod.Original)
+            if (ncchHeader.Flags!.CryptoMethod != CryptoMethod.Original)
                 ProcessExeFSFileEntries(ncchHeader, reader, writer);
 
             // Decrypt the rest of the ExeFS
@@ -399,9 +397,9 @@ namespace NDecrypt.N3DS
             long romfsSizeM = (int)((long)(ncchHeader.RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024));
             int romfsSizeB = (int)((long)(ncchHeader.RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024));
 
-            var cipher = CreateAESCipher(ncchHeader.NormalKey, ncchHeader.RomFSIV, decryptArgs.Encrypt);
+            var cipher = CreateAESCipher(ncchHeader.NormalKey, ncchHeader.RomFSIV!, decryptArgs.Encrypt);
 
-            reader.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            reader.BaseStream.Seek((ncchHeader.Entry!.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             if (romfsSizeM > 0)
             {
@@ -432,13 +430,13 @@ namespace NDecrypt.N3DS
             uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
 
             // Write the new CryptoMethod
-            writer.BaseStream.Seek((ncchHeader.Entry.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
+            writer.BaseStream.Seek((ncchHeader.Entry!.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
             writer.Write((byte)CryptoMethod.Original);
             writer.Flush();
 
             // Write the new BitMasks flag
             writer.BaseStream.Seek((ncchHeader.Entry.Offset * mediaUnitSize) + 0x18F, SeekOrigin.Begin);
-            BitMasks flag = ncchHeader.Flags.BitMasks;
+            BitMasks flag = ncchHeader.Flags!.BitMasks;
             flag &= (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
             flag |= BitMasks.NoCrypto;
             writer.Write((byte)flag);
@@ -513,9 +511,9 @@ namespace NDecrypt.N3DS
                 //}
             }
 
-            var cipher = CreateAESCipher(ncchHeader.NormalKey, ncchHeader.RomFSIV, decryptArgs.Encrypt);
+            var cipher = CreateAESCipher(ncchHeader.NormalKey, ncchHeader.RomFSIV!, decryptArgs.Encrypt);
 
-            reader.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            reader.BaseStream.Seek((ncchHeader.Entry!.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.BaseStream.Seek((ncchHeader.Entry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             if (romfsSizeM > 0)
             {
@@ -547,7 +545,7 @@ namespace NDecrypt.N3DS
             uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
 
             // Write the new CryptoMethod
-            writer.BaseStream.Seek((ncchHeader.Entry.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
+            writer.BaseStream.Seek((ncchHeader.Entry!.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
 
             // For partitions 1 and up, set crypto-method to 0x00
             if (ncchHeader.PartitionNumber > 0)
@@ -562,7 +560,7 @@ namespace NDecrypt.N3DS
 
             // Write the new BitMasks flag
             writer.BaseStream.Seek((ncchHeader.Entry.Offset * mediaUnitSize) + 0x18F, SeekOrigin.Begin);
-            BitMasks flag = ncchHeader.Flags.BitMasks;
+            BitMasks flag = ncchHeader.Flags!.BitMasks;
             flag &= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF;
 
             // TODO: Determine how to figure out the original crypto method, if possible

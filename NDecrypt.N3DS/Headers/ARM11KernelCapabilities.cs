@@ -31,21 +31,21 @@ namespace NDecrypt.N3DS.Headers
         /// 12	Special memory
         /// 13	Process has access to CPU core 2 (New3DS only)
         /// </summary>
-        public byte[][] Descriptors { get; private set; }
+        public byte[][]? Descriptors { get; private set; }
 
         /// <summary>
         /// Reserved
         /// </summary>
-        public byte[] Reserved { get; private set; }
+        public byte[]? Reserved { get; private set; }
 
         /// <summary>
         /// Read from a stream and get ARM11 kernel capabilities, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>ARM11 kernel capabilities object, null on error</returns>
-        public static ARM11KernelCapabilities Read(BinaryReader reader)
+        public static ARM11KernelCapabilities? Read(BinaryReader reader)
         {
-            ARM11KernelCapabilities kc = new ARM11KernelCapabilities();
+            var kc = new ARM11KernelCapabilities();
 
             try
             {

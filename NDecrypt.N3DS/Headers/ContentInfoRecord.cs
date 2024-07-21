@@ -17,16 +17,16 @@ namespace NDecrypt.N3DS.Headers
         /// <summary>
         /// SHA-256 hash of the next k content records that have not been hashed yet
         /// </summary>
-        public byte[] UnhashedContentRecordsSHA256Hash { get; private set; }
+        public byte[]? UnhashedContentRecordsSHA256Hash { get; private set; }
 
         /// <summary>
         /// Read from a stream and get content info record, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Content info record object, null on error</returns>
-        public static ContentInfoRecord Read(BinaryReader reader)
+        public static ContentInfoRecord? Read(BinaryReader reader)
         {
-            ContentInfoRecord cir = new ContentInfoRecord();
+            var cir = new ContentInfoRecord();
 
             try
             {
