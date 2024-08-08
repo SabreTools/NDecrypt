@@ -24,40 +24,36 @@ namespace NDecrypt.N3DS
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="development">True if development cart, false otherwise</param>
         /// <returns>N3DS cart image object, null on error</returns>
-        public static (Cart?, NCCHHeader?) ReadCart(BinaryReader reader, bool development)
+        public static Cart? ReadCart(BinaryReader reader, bool development)
         {
             var cart = new Cart();
-            NCCHHeader? backupHeader = null;
 
             try
             {
                 cart.Header = ReadNCSDHeader(reader);
                 if (cart.Header == null)
-                    return (null, null);
+                    return null;
 
                 if (cart.Header.PartitionsFSType == FilesystemType.Normal
                     || cart.Header.PartitionsFSType == FilesystemType.None)
                 {
                     cart.CardInfoHeader = ReadCardInfoHeader(reader);
                     if (cart.CardInfoHeader == null)
-                        return (null, null);
-
-                    // TODO: Remove when InitialData is read correctly
-                    backupHeader = ReadNCCHHeader(reader, readSignature: false);
+                        return null;
 
                     if (development)
                     {
                         cart.DevelopmentCardInfoHeader = ReadDevelopmentCardInfoHeader(reader);
                         if (cart.DevelopmentCardInfoHeader == null)
-                            return (null, null);
+                            return null;
                     }
                 }
 
-                return (cart, backupHeader);
+                return cart;
             }
             catch
             {
-                return (null, null); ;
+                return null;
             }
         }
 
@@ -236,7 +232,7 @@ namespace NDecrypt.N3DS
                 header.TitleVersion = reader.ReadUInt16();
                 header.CardRevision = reader.ReadUInt16();
                 header.Reserved4 = reader.ReadBytes(0xCD6);
-                _ = ReadInitialData(reader);                
+                header.InitialData = ReadInitialData(reader);
 
                 return header;
             }
@@ -424,7 +420,7 @@ namespace NDecrypt.N3DS
                 id.CardSeedAESMAC = reader.ReadBytes(0x10);
                 id.CardSeedNonce = reader.ReadBytes(0x0C);
                 id.Reserved = reader.ReadBytes(0xC4);
-                // TODO: Read backup header here instead of separately
+                id.BackupHeader = ReadNCCHHeader(reader, readSignature: false);
 
                 return id;
             }
