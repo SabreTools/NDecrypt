@@ -13,134 +13,10 @@ namespace NDecrypt.N3DS
 
         private const string NCCHMagicNumber = "NCCH";
         private const string NCSDMagicNumber = "NCSD";
-        private const string RomFSMagicNumber = "IVFC";
-        private const uint RomFSSecondMagicNumber = 0x10000;
 
         #endregion
 
         #region Reading
-
-        /// <summary>
-        /// Read from a stream and get access control info, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>Access control info object, null on error</returns>
-        public static AccessControlInfo? ReadAccessControlInfo(BinaryReader reader)
-        {
-            var aci = new AccessControlInfo();
-
-            try
-            {
-                aci.ARM11LocalSystemCapabilities = ReadARM11LocalSystemCapabilities(reader);
-                aci.ARM11KernelCapabilities = ReadARM11KernelCapabilities(reader);
-                aci.ARM9AccessControl = ReadARM9AccessControl(reader);
-                return aci;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get ARM9 access control, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>ARM9 access control object, null on error</returns>
-        public static ARM9AccessControl? ReadARM9AccessControl(BinaryReader reader)
-        {
-            var ac = new ARM9AccessControl();
-
-            try
-            {
-                ac.Descriptors = new byte[15]; // TODO: Implement ARM9AccessControlDescriptors in Models
-                for (int i = 0; i < 15; i++)
-                {
-                    ac.Descriptors[i] = reader.ReadByte();
-                }
-
-                ac.DescriptorVersion = reader.ReadByte();
-                return ac;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get ARM11 kernel capabilities, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>ARM11 kernel capabilities object, null on error</returns>
-        public static ARM11KernelCapabilities? ReadARM11KernelCapabilities(BinaryReader reader)
-        {
-            var kc = new ARM11KernelCapabilities();
-
-            try
-            {
-                kc.Descriptors = new uint[28];
-                for (int i = 0; i < 28; i++)
-                {
-                    kc.Descriptors[i] = reader.ReadUInt32();
-                }
-
-                kc.Reserved = reader.ReadBytes(0x10);
-                return kc;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get ARM11 local system capabilities, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>ARM11 local system capabilities object, null on error</returns>
-        public static ARM11LocalSystemCapabilities? ReadARM11LocalSystemCapabilities(BinaryReader reader)
-        {
-            var lsc = new ARM11LocalSystemCapabilities();
-
-            try
-            {
-                lsc.ProgramID = reader.ReadUInt64();
-                lsc.CoreVersion = reader.ReadUInt32();
-                lsc.Flag1 = (ARM11LSCFlag1)reader.ReadByte();
-                lsc.Flag2 = (ARM11LSCFlag2)reader.ReadByte();
-                lsc.Flag0 = (ARM11LSCFlag0)reader.ReadByte();
-                lsc.Priority = reader.ReadByte();
-
-                lsc.ResourceLimitDescriptors = new ushort[16];
-                for (int i = 0; i < 16; i++)
-                {
-                    lsc.ResourceLimitDescriptors[i] = reader.ReadUInt16();
-                }
-
-                lsc.StorageInfo = ReadStorageInfo(reader);
-
-                lsc.ServiceAccessControl = new ulong[32];
-                for (int i = 0; i < 32; i++)
-                {
-                    lsc.ServiceAccessControl[i] = reader.ReadUInt64();
-                }
-
-                lsc.ExtendedServiceAccessControl = new ulong[2];
-                for (int i = 0; i < 2; i++)
-                {
-                    lsc.ExtendedServiceAccessControl[i] = reader.ReadUInt64();
-                }
-
-                lsc.Reserved = reader.ReadBytes(0xF);
-                lsc.ResourceLimitCategory = (ResourceLimitCategory)reader.ReadByte();
-                return lsc;
-            }
-            catch
-            {
-                return null;
-            }
-        }
 
         /// <summary>
         /// Read from a stream and get N3DS cart image, if possible
@@ -166,7 +42,7 @@ namespace NDecrypt.N3DS
                     if (cart.CardInfoHeader == null)
                         return (null, null);
 
-                    // TODO: Undocumented in current model?
+                    // TODO: Remove when InitialData is read correctly
                     backupHeader = ReadNCCHHeader(reader, readSignature: false);
 
                     if (development)
@@ -186,114 +62,11 @@ namespace NDecrypt.N3DS
         }
 
         /// <summary>
-        /// Read from a stream and get an CardInfo header, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>CardInfo header object, null on error</returns>
-        public static CardInfoHeader? ReadCardInfoHeader(BinaryReader reader)
-        {
-            var header = new CardInfoHeader();
-
-            try
-            {
-                header.WritableAddressMediaUnits = reader.ReadUInt32();
-                header.CardInfoBitmask = reader.ReadUInt32();
-                header.Reserved3 = reader.ReadBytes(0x108);
-                header.TitleVersion = reader.ReadUInt16();
-                header.CardRevision = reader.ReadUInt16();
-                header.Reserved4 = reader.ReadBytes(0xCD6);
-
-                // TODO: Undocumented in current model?
-                _ = reader.ReadBytes(0x10); // header.CardSeedKeyY
-                _ = reader.ReadBytes(0x10); // header.EncryptedCardSeed
-                _ = reader.ReadBytes(0x10); // header.CardSeedAESMAC
-                _ = reader.ReadBytes(0x0C); // header.CardSeedNonce
-                _ = reader.ReadBytes(0xC4); // header.Reserved5
-
-                return header;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get certificate, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>Certificate object, null on error</returns>
-        public static Certificate? ReadCertificate(BinaryReader reader)
-        {
-            var ct = new Certificate();
-
-            try
-            {
-                ct.SignatureType = (SignatureType)reader.ReadUInt32();
-                switch (ct.SignatureType)
-                {
-                    case SignatureType.RSA_4096_SHA1:
-                    case SignatureType.RSA_4096_SHA256:
-                        ct.SignatureSize = 0x200;
-                        ct.PaddingSize = 0x3C;
-                        break;
-                    case SignatureType.RSA_2048_SHA1:
-                    case SignatureType.RSA_2048_SHA256:
-                        ct.SignatureSize = 0x100;
-                        ct.PaddingSize = 0x3C;
-                        break;
-                    case SignatureType.ECDSA_SHA1:
-                    case SignatureType.ECDSA_SHA256:
-                        ct.SignatureSize = 0x03C;
-                        ct.PaddingSize = 0x40;
-                        break;
-                    default:
-                        return null;
-                }
-
-                ct.Signature = reader.ReadBytes(ct.SignatureSize);
-                reader.ReadBytes(ct.PaddingSize); // Padding
-                byte[] issuerBytes = reader.ReadBytes(0x40);
-                ct.Issuer = Encoding.ASCII.GetString(issuerBytes);
-                ct.KeyType = (PublicKeyType)reader.ReadUInt32();
-                byte[] nameBytes = reader.ReadBytes(0x40);
-                ct.Name = Encoding.ASCII.GetString(nameBytes);
-                ct.ExpirationTime = reader.ReadUInt32();
-
-                switch (ct.KeyType)
-                {
-                    case PublicKeyType.RSA_4096:
-                        ct.RSAModulus = reader.ReadBytes(0x200);
-                        ct.RSAPublicExponent = reader.ReadUInt32();
-                        ct.RSAPadding = reader.ReadBytes(0x34);
-                        break;
-                    case PublicKeyType.RSA_2048:
-                        ct.RSAModulus = reader.ReadBytes(0x100);
-                        ct.RSAPublicExponent = reader.ReadUInt32();
-                        ct.RSAPadding = reader.ReadBytes(0x34);
-                        break;
-                    case PublicKeyType.EllipticCurve:
-                        ct.ECCPublicKey = reader.ReadBytes(0x3C);
-                        ct.ECCPadding = reader.ReadBytes(0x3C);
-                        break;
-                    default:
-                        return null;
-                }
-
-                return ct;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Read from a stream and get a CIA header, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>CIA header object, null on error</returns>
-        public static CIA? ReadCIAHeader(BinaryReader reader)
+        public static CIA? ReadCIA(BinaryReader reader)
         {
             var cia = new CIA();
 
@@ -359,120 +132,6 @@ namespace NDecrypt.N3DS
         }
 
         /// <summary>
-        /// Read from a stream and get code set info, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>Code set info object, null on error</returns>
-        public static CodeSetInfo? ReadCodeSetInfo(BinaryReader reader)
-        {
-            var csi = new CodeSetInfo();
-
-            try
-            {
-                csi.Address = reader.ReadUInt32();
-                csi.PhysicalRegionSizeInPages = reader.ReadUInt32();
-                csi.SizeInBytes = reader.ReadUInt32();
-                return csi;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get content chunk record, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>Content chunk record object, null on error</returns>
-        public static ContentChunkRecord? ReadContentChunkRecord(BinaryReader reader)
-        {
-            var ccr = new ContentChunkRecord();
-
-            try
-            {
-                ccr.ContentId = reader.ReadUInt32();
-                ccr.ContentIndex = (ContentIndex)reader.ReadUInt16();
-                ccr.ContentType = (TMDContentType)reader.ReadUInt16();
-                ccr.ContentSize = reader.ReadUInt64();
-                ccr.SHA256Hash = reader.ReadBytes(0x20);
-                return ccr;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get content info record, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>Content info record object, null on error</returns>
-        public static ContentInfoRecord? ReadContentInfoRecord(BinaryReader reader)
-        {
-            var cir = new ContentInfoRecord();
-
-            try
-            {
-                cir.ContentIndexOffset = reader.ReadUInt16();
-                cir.ContentCommandCount = reader.ReadUInt16();
-                cir.UnhashedContentRecordsSHA256Hash = reader.ReadBytes(0x20);
-                return cir;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get an DevelopmentCardInfo header, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>DevelopmentCardInfo object, null on error</returns>
-        public static DevelopmentCardInfoHeader? ReadDevelopmentCardInfoHeader(BinaryReader reader)
-        {
-            var header = new DevelopmentCardInfoHeader();
-
-            try
-            {
-                header.CardDeviceReserved1 = reader.ReadBytes(0x200);
-                header.TitleKey = reader.ReadBytes(0x10);
-                header.CardDeviceReserved2 = reader.ReadBytes(0xF0);
-
-                return header;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get an ExeFS file header, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>ExeFS file header object, null on error</returns>
-        public static ExeFSFileHeader? ReadExeFSFileHeader(BinaryReader reader)
-        {
-            var header = new ExeFSFileHeader();
-
-            try
-            {
-                byte[] fileNameBytes = reader.ReadBytes(8);
-                header.FileName = Encoding.ASCII.GetString(fileNameBytes);
-                header.FileOffset = reader.ReadUInt32();
-                header.FileSize = reader.ReadUInt32();
-                return header;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Read from a stream and get an ExeFS header, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
@@ -498,31 +157,6 @@ namespace NDecrypt.N3DS
                 }
 
                 return header;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get the Metafile data, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>Metafile data object, null on error</returns>
-        public static MetaData? ReadMetaData(BinaryReader reader)
-        {
-            var metaData = new MetaData();
-
-            try
-            {
-                metaData.TitleIDDependencyList = reader.ReadBytes(0x180);
-                metaData.Reserved1 = reader.ReadBytes(0x180);
-                metaData.CoreVersion = reader.ReadUInt32();
-                metaData.Reserved2 = reader.ReadBytes(0xFC);
-                metaData.IconData = reader.ReadBytes(0x36C0);
-
-                return metaData;
             }
             catch
             {
@@ -586,11 +220,251 @@ namespace NDecrypt.N3DS
         }
 
         /// <summary>
+        /// Read from a stream and get an CardInfo header, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>CardInfo header object, null on error</returns>
+        private static CardInfoHeader? ReadCardInfoHeader(BinaryReader reader)
+        {
+            var header = new CardInfoHeader();
+
+            try
+            {
+                header.WritableAddressMediaUnits = reader.ReadUInt32();
+                header.CardInfoBitmask = reader.ReadUInt32();
+                header.Reserved3 = reader.ReadBytes(0x108);
+                header.TitleVersion = reader.ReadUInt16();
+                header.CardRevision = reader.ReadUInt16();
+                header.Reserved4 = reader.ReadBytes(0xCD6);
+                _ = ReadInitialData(reader);                
+
+                return header;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get certificate, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>Certificate object, null on error</returns>
+        private static Certificate? ReadCertificate(BinaryReader reader)
+        {
+            var ct = new Certificate();
+
+            try
+            {
+                ct.SignatureType = (SignatureType)reader.ReadUInt32();
+                switch (ct.SignatureType)
+                {
+                    case SignatureType.RSA_4096_SHA1:
+                    case SignatureType.RSA_4096_SHA256:
+                        ct.SignatureSize = 0x200;
+                        ct.PaddingSize = 0x3C;
+                        break;
+                    case SignatureType.RSA_2048_SHA1:
+                    case SignatureType.RSA_2048_SHA256:
+                        ct.SignatureSize = 0x100;
+                        ct.PaddingSize = 0x3C;
+                        break;
+                    case SignatureType.ECDSA_SHA1:
+                    case SignatureType.ECDSA_SHA256:
+                        ct.SignatureSize = 0x03C;
+                        ct.PaddingSize = 0x40;
+                        break;
+                    default:
+                        return null;
+                }
+
+                ct.Signature = reader.ReadBytes(ct.SignatureSize);
+                reader.ReadBytes(ct.PaddingSize); // Padding
+                byte[] issuerBytes = reader.ReadBytes(0x40);
+                ct.Issuer = Encoding.ASCII.GetString(issuerBytes);
+                ct.KeyType = (PublicKeyType)reader.ReadUInt32();
+                byte[] nameBytes = reader.ReadBytes(0x40);
+                ct.Name = Encoding.ASCII.GetString(nameBytes);
+                ct.ExpirationTime = reader.ReadUInt32();
+
+                switch (ct.KeyType)
+                {
+                    case PublicKeyType.RSA_4096:
+                        ct.RSAModulus = reader.ReadBytes(0x200);
+                        ct.RSAPublicExponent = reader.ReadUInt32();
+                        ct.RSAPadding = reader.ReadBytes(0x34);
+                        break;
+                    case PublicKeyType.RSA_2048:
+                        ct.RSAModulus = reader.ReadBytes(0x100);
+                        ct.RSAPublicExponent = reader.ReadUInt32();
+                        ct.RSAPadding = reader.ReadBytes(0x34);
+                        break;
+                    case PublicKeyType.EllipticCurve:
+                        ct.ECCPublicKey = reader.ReadBytes(0x3C);
+                        ct.ECCPadding = reader.ReadBytes(0x3C);
+                        break;
+                    default:
+                        return null;
+                }
+
+                return ct;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get content chunk record, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>Content chunk record object, null on error</returns>
+        private static ContentChunkRecord? ReadContentChunkRecord(BinaryReader reader)
+        {
+            var ccr = new ContentChunkRecord();
+
+            try
+            {
+                ccr.ContentId = reader.ReadUInt32();
+                ccr.ContentIndex = (ContentIndex)reader.ReadUInt16();
+                ccr.ContentType = (TMDContentType)reader.ReadUInt16();
+                ccr.ContentSize = reader.ReadUInt64();
+                ccr.SHA256Hash = reader.ReadBytes(0x20);
+                return ccr;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get content info record, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>Content info record object, null on error</returns>
+        private static ContentInfoRecord? ReadContentInfoRecord(BinaryReader reader)
+        {
+            var cir = new ContentInfoRecord();
+
+            try
+            {
+                cir.ContentIndexOffset = reader.ReadUInt16();
+                cir.ContentCommandCount = reader.ReadUInt16();
+                cir.UnhashedContentRecordsSHA256Hash = reader.ReadBytes(0x20);
+                return cir;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get an DevelopmentCardInfo header, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>DevelopmentCardInfo object, null on error</returns>
+        private static DevelopmentCardInfoHeader? ReadDevelopmentCardInfoHeader(BinaryReader reader)
+        {
+            var header = new DevelopmentCardInfoHeader();
+
+            try
+            {
+                header.CardDeviceReserved1 = reader.ReadBytes(0x200);
+                header.TitleKey = reader.ReadBytes(0x10);
+                header.CardDeviceReserved2 = reader.ReadBytes(0xF0);
+
+                return header;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get an ExeFS file header, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>ExeFS file header object, null on error</returns>
+        private static ExeFSFileHeader? ReadExeFSFileHeader(BinaryReader reader)
+        {
+            var header = new ExeFSFileHeader();
+
+            try
+            {
+                byte[] fileNameBytes = reader.ReadBytes(8);
+                header.FileName = Encoding.ASCII.GetString(fileNameBytes);
+                header.FileOffset = reader.ReadUInt32();
+                header.FileSize = reader.ReadUInt32();
+                return header;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get inital data, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>Initial data object, null on error</returns>
+        private static InitialData? ReadInitialData(BinaryReader reader)
+        {
+            var id = new InitialData();
+
+            try
+            {
+                id.CardSeedKeyY = reader.ReadBytes(0x10);
+                id.EncryptedCardSeed = reader.ReadBytes(0x10);
+                id.CardSeedAESMAC = reader.ReadBytes(0x10);
+                id.CardSeedNonce = reader.ReadBytes(0x0C);
+                id.Reserved = reader.ReadBytes(0xC4);
+                // TODO: Read backup header here instead of separately
+
+                return id;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get the Metafile data, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>Metafile data object, null on error</returns>
+        private static MetaData? ReadMetaData(BinaryReader reader)
+        {
+            var metaData = new MetaData();
+
+            try
+            {
+                metaData.TitleIDDependencyList = reader.ReadBytes(0x180);
+                metaData.Reserved1 = reader.ReadBytes(0x180);
+                metaData.CoreVersion = reader.ReadUInt32();
+                metaData.Reserved2 = reader.ReadBytes(0xFC);
+                metaData.IconData = reader.ReadBytes(0x36C0);
+
+                return metaData;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Read from a stream and get an NCCH header flags, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>NCCH header flags object, null on error</returns>
-        public static NCCHHeaderFlags? ReadNCCHHeaderFlags(BinaryReader reader)
+        private static NCCHHeaderFlags? ReadNCCHHeaderFlags(BinaryReader reader)
         {
             var flags = new NCCHHeaderFlags();
 
@@ -613,35 +487,11 @@ namespace NDecrypt.N3DS
         }
 
         /// <summary>
-        /// Read from a stream and get a CXI extended header, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>CXI extended header object, null on error</returns>
-        public static NCCHExtendedHeader? ReadNCCHExtendedHeader(BinaryReader reader)
-        {
-            var header = new NCCHExtendedHeader();
-
-            try
-            {
-                header.SCI = ReadSystemControlInfo(reader);
-                header.ACI = ReadAccessControlInfo(reader);
-                header.AccessDescSignature = reader.ReadBytes(0x100);
-                header.NCCHHDRPublicKey = reader.ReadBytes(0x100);
-                header.ACIForLimitations = ReadAccessControlInfo(reader);
-                return header;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Read from a stream and get an NCSD header, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>NCSD header object, null on error</returns>
-        public static NCSDHeader? ReadNCSDHeader(BinaryReader reader)
+        private static NCSDHeader? ReadNCSDHeader(BinaryReader reader)
         {
             var header = new NCSDHeader();
 
@@ -701,7 +551,7 @@ namespace NDecrypt.N3DS
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>Partition table entry object, null on error</returns>
-        public static PartitionTableEntry? ReadPartitionTableEntry(BinaryReader reader)
+        private static PartitionTableEntry? ReadPartitionTableEntry(BinaryReader reader)
         {
             var entry = new PartitionTableEntry();
 
@@ -718,137 +568,12 @@ namespace NDecrypt.N3DS
         }
 
         /// <summary>
-        /// Read from a stream and get a RomFS header, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>RomFS header object, null on error</returns>
-        public static RomFSHeader? ReadRomFSHeader(BinaryReader reader)
-        {
-            var header = new RomFSHeader();
-
-            try
-            {
-                if (new string(reader.ReadChars(4)) != RomFSMagicNumber)
-                    return null;
-
-                if (reader.ReadUInt32() != RomFSSecondMagicNumber)
-                    return null;
-
-                header.MasterHashSize = reader.ReadUInt32();
-                header.Level1LogicalOffset = reader.ReadUInt64();
-                header.Level1HashdataSize = reader.ReadUInt64();
-                header.Level1BlockSizeLog2 = reader.ReadUInt32();
-                header.Reserved1 = reader.ReadUInt32();
-                header.Level2LogicalOffset = reader.ReadUInt64();
-                header.Level2HashdataSize = reader.ReadUInt64();
-                header.Level2BlockSizeLog2 = reader.ReadUInt32();
-                header.Reserved2 = reader.ReadUInt32();
-                header.Level3LogicalOffset = reader.ReadUInt64();
-                header.Level3HashdataSize = reader.ReadUInt64();
-                header.Level3BlockSizeLog2 = reader.ReadUInt32();
-                header.Reserved3 = reader.ReadUInt32();
-                header.Reserved4 = reader.ReadUInt32();
-                header.OptionalInfoSize = reader.ReadUInt32();
-
-                return header;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get storage info, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>Storage info object, null on error</returns>
-        public static StorageInfo? ReadStorageInfo(BinaryReader reader)
-        {
-            var si = new StorageInfo();
-
-            try
-            {
-                si.ExtdataID = reader.ReadUInt64();
-                si.SystemSavedataIDs = reader.ReadBytes(8);
-                si.StorageAccessibleUniqueIDs = reader.ReadBytes(8);
-                si.FileSystemAccessInfo = reader.ReadBytes(7);
-                si.OtherAttributes = (StorageInfoOtherAttributes)reader.ReadByte();
-                return si;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get system control info, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>System control info object, null on error</returns>
-        public static SystemControlInfo? ReadSystemControlInfo(BinaryReader reader)
-        {
-            var sci = new SystemControlInfo();
-
-            try
-            {
-                byte[] applicationTitleBytes = reader.ReadBytes(8);
-                sci.ApplicationTitle = Encoding.ASCII.GetString(applicationTitleBytes);
-                sci.Reserved1 = reader.ReadBytes(5);
-                sci.Flag = reader.ReadByte();
-                sci.RemasterVersion = reader.ReadUInt16();
-                sci.TextCodeSetInfo = ReadCodeSetInfo(reader);
-                sci.StackSize = reader.ReadUInt32();
-                sci.ReadOnlyCodeSetInfo = ReadCodeSetInfo(reader);
-                sci.Reserved2 = reader.ReadUInt32();
-                sci.DataCodeSetInfo = ReadCodeSetInfo(reader);
-                sci.BSSSize = reader.ReadUInt32();
-
-                sci.DependencyModuleList = new ulong[48];
-                for (int i = 0; i < 48; i++)
-                {
-                    sci.DependencyModuleList[i] = reader.ReadUInt64();
-                }
-
-                sci.SystemInfo = ReadSystemInfo(reader);
-                return sci;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get system info, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>System info object, null on error</returns>
-        public static SystemInfo? ReadSystemInfo(BinaryReader reader)
-        {
-            var si = new SystemInfo();
-
-            try
-            {
-                si.SaveDataSize = reader.ReadUInt64();
-                si.JumpID = reader.ReadUInt64();
-                si.Reserved = reader.ReadBytes(0x30);
-                return si;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Read from a stream and get ticket, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="ticketSize">Ticket size from the header</param>
         /// <returns>Ticket object, null on error</returns>
-        public static Ticket? ReadTicket(BinaryReader reader, uint ticketSize)
+        private static Ticket? ReadTicket(BinaryReader reader, uint ticketSize)
         {
             var tk = new Ticket();
 
@@ -936,7 +661,7 @@ namespace NDecrypt.N3DS
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="metadataSize">Metadata size from the header</param>
         /// <returns>Title metadata object, null on error</returns>
-        public static TitleMetadata? ReadTitleMetadata(BinaryReader reader, uint metadataSize)
+        private static TitleMetadata? ReadTitleMetadata(BinaryReader reader, uint metadataSize)
         {
             var tm = new TitleMetadata();
 

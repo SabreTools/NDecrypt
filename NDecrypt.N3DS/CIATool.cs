@@ -72,7 +72,7 @@ namespace NDecrypt.N3DS
                 using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
                 {
-                    var cia = Serializer.ReadCIAHeader(reader);
+                    var cia = Serializer.ReadCIA(reader);
                     if (cia == null)
                     {
                         Console.WriteLine("Error: Not a 3DS CIA!");
