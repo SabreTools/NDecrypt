@@ -26,6 +26,20 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Get the initial value for the plain counter
         /// </summary>
+        public static byte[] PlainIV(this Cart cart, int partitionIndex)
+        {
+            if (cart.Partitions == null)
+                return [];
+            if (partitionIndex < 0 || partitionIndex >= cart.Partitions.Length)
+                return [];
+
+            var header = cart.Partitions[partitionIndex];
+            return PlainIV(header);
+        }
+
+        /// <summary>
+        /// Get the initial value for the plain counter
+        /// </summary>
         public static byte[] PlainIV(this NCCHHeader? header)
         {
             if (header == null)
@@ -38,7 +52,21 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Get the initial value for the ExeFS counter
         /// </summary>
-        public static byte[] ExeFSIV(this NCCHHeader header)
+        public static byte[] ExeFSIV(this Cart cart, int partitionIndex)
+        {
+            if (cart.Partitions == null)
+                return [];
+            if (partitionIndex < 0 || partitionIndex >= cart.Partitions.Length)
+                return [];
+
+            var header = cart.Partitions[partitionIndex];
+            return ExeFSIV(header);
+        }
+
+        /// <summary>
+        /// Get the initial value for the ExeFS counter
+        /// </summary>
+        public static byte[] ExeFSIV(this NCCHHeader? header)
         {
             if (header == null)
                 return [];
@@ -50,7 +78,21 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Get the initial value for the RomFS counter
         /// </summary>
-        public static byte[] RomFSIV(this NCCHHeader header)
+        public static byte[] RomFSIV(this Cart cart, int partitionIndex)
+        {
+            if (cart.Partitions == null)
+                return [];
+            if (partitionIndex < 0 || partitionIndex >= cart.Partitions.Length)
+                return [];
+
+            var header = cart.Partitions[partitionIndex];
+            return RomFSIV(header);
+        }
+
+        /// <summary>
+        /// Get the initial value for the RomFS counter
+        /// </summary>
+        public static byte[] RomFSIV(this NCCHHeader? header)
         {
             if (header == null)
                 return [];
@@ -58,21 +100,6 @@ namespace NDecrypt.N3DS
             byte[] partitionIdBytes = BitConverter.GetBytes(header.PartitionId);
             return [.. partitionIdBytes, .. Constants.RomfsCounter];
         }
-
-        /// <summary>
-        /// NCCH boot rom key
-        /// </summary>
-        public static BigInteger KeyX2C { get; set; }
-
-        /// <summary>
-        /// Normal AES key
-        /// </summary>
-        public static BigInteger NormalKey { get; set; }
-
-        /// <summary>
-        /// NCCH AES key
-        /// </summary>
-        public static BigInteger NormalKey2C { get; set; }
 
         #endregion
 
@@ -196,6 +223,14 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Media Unit Size i.e. u32 MediaUnitSize = 0x200*2^flags[6];
         /// </summary>
+        public static uint MediaUnitSize(this Cart cart)
+        {
+            return cart.Header.MediaUnitSize();
+        }
+
+        /// <summary>
+        /// Media Unit Size i.e. u32 MediaUnitSize = 0x200*2^flags[6];
+        /// </summary>
         public static uint MediaUnitSize(this NCSDHeader? header)
         {
             if (header?.PartitionFlags == null)
@@ -213,22 +248,6 @@ namespace NDecrypt.N3DS
                 return default;
 
             return (MediaCardDeviceType)header.PartitionFlags[(int)NCSDFlags.MediaCardDevice2X];
-        }
-
-        #endregion
-
-        #region PartitionTableEntry
-
-        /// <summary>
-        /// Check for a valid partition
-        /// </summary>
-        /// <returns>True if the offset and length are not 0, false otherwise</returns>
-        public static bool IsValid(this PartitionTableEntry? entry)
-        {
-            if (entry == null)
-                return false;
-
-            return entry.Offset != 0 && entry.Length != 0;
         }
 
         #endregion

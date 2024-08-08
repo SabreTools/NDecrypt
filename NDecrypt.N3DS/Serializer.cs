@@ -49,6 +49,21 @@ namespace NDecrypt.N3DS
                     }
                 }
 
+                cart.Partitions = new NCCHHeader[8];
+                for (int i = 0; i < 8; i++)
+                {
+                    // Check the entry is valid
+                    var tableEntry = cart.Header.PartitionsTable![i];
+                    if (tableEntry == null || tableEntry.Offset == 0 || tableEntry.Length == 0)
+                        continue;
+
+                    // Seek to the beginning of the NCCH partition
+                    long offset = tableEntry.Offset * cart.Header.ImageSizeInMediaUnits;
+                    reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+
+                    cart.Partitions[i] = ReadNCCHHeader(reader, readSignature: true);
+                }
+
                 return cart;
             }
             catch
