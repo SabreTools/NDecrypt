@@ -201,7 +201,7 @@ namespace NDecrypt.N3DS
                 header.Reserved3 = reader.ReadBytes(0x108);
                 header.TitleVersion = reader.ReadUInt16();
                 header.CardRevision = reader.ReadUInt16();
-                header.Reserved4 = reader.ReadBytes(0xCEC); // Incorrectly documented as 0xCEE
+                header.Reserved4 = reader.ReadBytes(0xCD6);
 
                 // TODO: Undocumented in current model?
                 _ = reader.ReadBytes(0x10); // header.CardSeedKeyY
@@ -426,33 +426,6 @@ namespace NDecrypt.N3DS
             }
         }
 
-        // TODO: Create model for this
-        /*
-        /// <summary>
-        /// Read from a stream and get a CXI extended header, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>CXI extended header object, null on error</returns>
-        public static CXIExtendedHeader? ReadCXIExtendedHeader(BinaryReader reader)
-        {
-            var header = new CXIExtendedHeader();
-
-            try
-            {
-                header.SCI = ReadSystemControlInfo(reader);
-                header.ACI = ReadAccessControlInfo(reader);
-                header.AccessDescSignature = reader.ReadBytes(0x100);
-                header.NCCHHDRPublicKey = reader.ReadBytes(0x100);
-                header.ACIForLimitations = ReadAccessControlInfo(reader);
-                return header;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-        */
-
         /// <summary>
         /// Read from a stream and get an DevelopmentCardInfo header, if possible
         /// </summary>
@@ -632,6 +605,30 @@ namespace NDecrypt.N3DS
                 flags.ContentUnitSize = reader.ReadByte();
                 flags.BitMasks = (BitMasks)reader.ReadByte();
                 return flags;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get a CXI extended header, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>CXI extended header object, null on error</returns>
+        public static NCCHExtendedHeader? ReadNCCHExtendedHeader(BinaryReader reader)
+        {
+            var header = new NCCHExtendedHeader();
+
+            try
+            {
+                header.SCI = ReadSystemControlInfo(reader);
+                header.ACI = ReadAccessControlInfo(reader);
+                header.AccessDescSignature = reader.ReadBytes(0x100);
+                header.NCCHHDRPublicKey = reader.ReadBytes(0x100);
+                header.ACIForLimitations = ReadAccessControlInfo(reader);
+                return header;
             }
             catch
             {
