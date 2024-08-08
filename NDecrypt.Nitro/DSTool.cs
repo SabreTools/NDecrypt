@@ -39,19 +39,19 @@ namespace NDecrypt.Nitro
             try
             {
                 // Open the read and write on the same file for inplace processing
-                using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
-                using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
-                {
-                    Cart? cart = Serializer.ReadCart(reader);
-                    if (cart == null)
-                    {
-                        Console.WriteLine("Error: Not a DS or DSi Rom!");
-                        return false;
-                    }
+                using BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                using BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
 
-                    // Process the secure area
-                    ProcessSecureArea(cart, reader, writer);
+                // Deserialize the cart information
+                Cart? cart = Serializer.ReadCart(reader);
+                if (cart == null)
+                {
+                    Console.WriteLine("Error: Not a DS or DSi Rom!");
+                    return false;
                 }
+
+                // Process the secure area
+                ProcessSecureArea(cart, reader, writer);
 
                 return true;
             }

@@ -68,19 +68,19 @@ namespace NDecrypt.N3DS
             try
             {
                 // Open the read and write on the same file for inplace processing
-                using (var reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
-                using (var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
+                using var reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                using var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
+                
+                // Deserialize the cart information
+                (var cart, var backupHeader) = Serializer.ReadCart(reader, decryptArgs.Development);
+                if (cart?.Header == null)
                 {
-                    (var cart, var backupHeader) = Serializer.ReadCart(reader, decryptArgs.Development);
-                    if (cart?.Header == null)
-                    {
-                        Console.WriteLine("Error: Not a 3DS cart image!");
-                        return false;
-                    }
-
-                    // Process all 8 NCCH partitions
-                    ProcessAllPartitions(cart.Header, backupHeader, reader, writer);
+                    Console.WriteLine("Error: Not a 3DS cart image!");
+                    return false;
                 }
+
+                // Process all 8 NCCH partitions
+                ProcessAllPartitions(cart.Header, backupHeader, reader, writer);
 
                 return true;
             }
