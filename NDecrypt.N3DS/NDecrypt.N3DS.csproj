@@ -39,4 +39,8 @@
     <ProjectReference Include="..\NDecrypt.Core\NDecrypt.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+      <PackageReference Include="SabreTools.Models" Version="1.4.8" />
+  </ItemGroup>
+
 </Project>
