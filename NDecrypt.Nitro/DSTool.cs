@@ -39,8 +39,8 @@ namespace NDecrypt.Nitro
             try
             {
                 // Open the read and write on the same file for inplace processing
-                using BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-                using BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
+                using var reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                using var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
 
                 // Deserialize the cart information
                 Cart? cart = Serializer.ReadCart(reader);
