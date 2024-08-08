@@ -2,16 +2,16 @@
 using System.Text;
 using SabreTools.Models.Nitro;
 
-namespace NDecrypt.Nitro.Headers
+namespace NDecrypt.Nitro
 {
-    internal static class NDSHeader
+    internal static class Serializer
     {
         /// <summary>
         /// Read from a stream and get an NDS/NDSi Cart, if possible
         /// </summary>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <returns>NDS/NDSi Cart object, null on error</returns>
-        public static Cart? Read(BinaryReader reader)
+        public static Cart? ReadCart(BinaryReader reader)
         {
             var cart = new Cart();
 

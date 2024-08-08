@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using NDecrypt.Core;
-using NDecrypt.Nitro.Headers;
 using SabreTools.Models.Nitro;
 
 namespace NDecrypt.Nitro
@@ -44,7 +42,7 @@ namespace NDecrypt.Nitro
                 using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
                 {
-                    Cart? cart = NDSHeader.Read(reader);
+                    Cart? cart = Serializer.ReadCart(reader);
                     if (cart == null)
                     {
                         Console.WriteLine("Error: Not a DS or DSi Rom!");
