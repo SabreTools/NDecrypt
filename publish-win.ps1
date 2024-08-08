@@ -114,11 +114,11 @@ if (!$NO_ARCHIVE.IsPresent) {
 
             # Only include Debug if building all
             if ($USE_ALL.IsPresent) {
-                Set-Location -Path $BUILD_FOLDER\Test\bin\Debug\${FRAMEWORK}\${RUNTIME}\publish\
+                Set-Location -Path $BUILD_FOLDER\NDecrypt\bin\Debug\${FRAMEWORK}\${RUNTIME}\publish\
                 7z a -tzip $BUILD_FOLDER\NDecrypt_${FRAMEWORK}_${RUNTIME}_debug.zip *
             }
         
-            Set-Location -Path $BUILD_FOLDER\Test\bin\Release\${FRAMEWORK}\${RUNTIME}\publish\
+            Set-Location -Path $BUILD_FOLDER\NDecrypt\bin\Release\${FRAMEWORK}\${RUNTIME}\publish\
             7z a -tzip $BUILD_FOLDER\NDecrypt_${FRAMEWORK}_${RUNTIME}_release.zip *
         }
     }
