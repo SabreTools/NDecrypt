@@ -319,9 +319,9 @@ namespace NDecrypt.N3DS
                     continue;
 
                 // Get MiB-aligned block count and extra byte count
-                uint datalenM = ((fileHeader.FileSize) / (1024 * 1024));
-                uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
-                uint ctroffset = ((fileHeader.FileOffset + cart.MediaUnitSize()) / 0x10);
+                uint datalenM = fileHeader.FileSize / (1024 * 1024);
+                uint datalenB = fileHeader.FileSize % (1024 * 1024);
+                uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize()) / 0x10;
 
                 // Create the ExeFS AES ciphers for this partition
                 byte[] exefsIVWithOffsetForHeader = AddToByteArray(cart.ExeFSIV(partitionIndex), (int)ctroffset);
@@ -571,8 +571,10 @@ namespace NDecrypt.N3DS
             uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
             uint partitionOffset = partitionOffsetMU * cart.MediaUnitSize();
 
-            // Write the new CryptoMethod
+            // Seek to the CryptoMethod location
             writer.BaseStream.Seek(partitionOffset + 0x18B, SeekOrigin.Begin);
+
+            // Write the new CryptoMethod
             writer.Write((byte)CryptoMethod.Original);
             writer.Flush();
 
@@ -660,7 +662,8 @@ namespace NDecrypt.N3DS
             // Encrypting RomFS for partitions 1 and up always use Key0x2C
             if (partitionIndex > 0)
             {
-                if (backupHeader!.Flags?.BitMasks.HasFlag(BitMasks.FixedCryptoKey) == true) // except if using zero-key
+                // Except if using zero-key
+                if (backupHeader!.Flags!.BitMasks.HasFlag(BitMasks.FixedCryptoKey))
                 {
                     NormalKey[partitionIndex] = 0x00;
                 }
@@ -719,15 +722,14 @@ namespace NDecrypt.N3DS
             // Get the backup header
             var backupHeader = cart.CardInfoHeader!.InitialData!.BackupHeader;
 
-            // Write the new CryptoMethod
+            // Seek to the CryptoMethod location
             writer.BaseStream.Seek(partitionOffset + 0x18B, SeekOrigin.Begin);
 
-            // For partitions 1 and up, set crypto-method to 0x00
-            // If partition 0, restore crypto-method from backup flags
-            if (partitionIndex > 0)
-                writer.Write((byte)CryptoMethod.Original);
-            else
-                writer.Write((byte)backupHeader!.Flags!.CryptoMethod);
+            // Write the new CryptoMethod
+            // - For partitions 1 and up, set crypto-method to 0x00
+            // - If partition 0, restore crypto-method from backup flags
+            byte cryptoMethod = partitionIndex > 0 ? (byte)CryptoMethod.Original : (byte)backupHeader!.Flags!.CryptoMethod;
+            writer.Write(cryptoMethod);
             writer.Flush();
 
             // Seek to the BitMasks location
