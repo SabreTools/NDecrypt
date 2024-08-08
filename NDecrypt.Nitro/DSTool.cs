@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using NDecrypt.Core;
 using NDecrypt.Nitro.Headers;
+using SabreTools.Models.Nitro;
 
 namespace NDecrypt.Nitro
 {
@@ -42,15 +44,15 @@ namespace NDecrypt.Nitro
                 using (BinaryReader reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
                 {
-                    NDSHeader? header = NDSHeader.Read(reader);
-                    if (header == null)
+                    Cart? cart = NDSHeader.Read(reader);
+                    if (cart == null)
                     {
                         Console.WriteLine("Error: Not a DS or DSi Rom!");
                         return false;
                     }
 
                     // Process the secure area
-                    ProcessSecureArea(header, reader, writer);
+                    ProcessSecureArea(cart, reader, writer);
                 }
 
                 return true;
@@ -66,10 +68,10 @@ namespace NDecrypt.Nitro
         /// <summary>
         /// Process secure area in the DS/DSi file
         /// </summary>
-        /// <param name="ndsHeader">NDS header representing the DS file</param>
+        /// <param name="cart">Cart representing the DS file</param>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="writer">BinaryWriter representing the output stream</param>
-        private void ProcessSecureArea(NDSHeader ndsHeader, BinaryReader reader, BinaryWriter writer)
+        private void ProcessSecureArea(Cart cart, BinaryReader reader, BinaryWriter writer)
         {
             // If we're forcing the operation, tell the user
             if (decryptArgs.Force)
@@ -79,7 +81,7 @@ namespace NDecrypt.Nitro
             // If we're not forcing the operation, check to see if we should be proceeding
             else
             {
-                bool? isDecrypted = DSTool.CheckIfDecrypted(reader);
+                bool? isDecrypted = CheckIfDecrypted(reader);
                 if (isDecrypted == null)
                 {
                     Console.WriteLine("File has an empty secure area, cannot proceed");
@@ -92,7 +94,7 @@ namespace NDecrypt.Nitro
                 }
             }
 
-            ProcessARM9(ndsHeader, reader, writer);
+            ProcessARM9(cart.CommonHeader!, reader, writer);
 
             Console.WriteLine("File has been " + (decryptArgs.Encrypt ? "encrypted" : "decrypted"));
         }
@@ -159,10 +161,10 @@ namespace NDecrypt.Nitro
         /// <summary>
         /// Process the secure ARM9 region of the file, if possible
         /// </summary>
-        /// <param name="ndsHeader">NDS header representing the DS file</param>
+        /// <param name="commonHeader">CommonHeader representing the DS header</param>
         /// <param name="reader">BinaryReader representing the input stream</param>
         /// <param name="writer">BinaryWriter representing the output stream</param>
-        private void ProcessARM9(NDSHeader ndsHeader, BinaryReader reader, BinaryWriter writer)
+        private void ProcessARM9(CommonHeader commonHeader, BinaryReader reader, BinaryWriter writer)
         {
             // Seek to the beginning of the secure area
             reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
@@ -173,7 +175,7 @@ namespace NDecrypt.Nitro
             uint p1 = reader.ReadUInt32();
 
             // Perform the initialization steps
-            Init1(ndsHeader);
+            Init1(commonHeader);
             if (!decryptArgs.Encrypt) Decrypt(ref p1, ref p0);
             _arg2[1] <<= 1;
             _arg2[2] >>= 1;
@@ -231,7 +233,7 @@ namespace NDecrypt.Nitro
                 }
 
                 Encrypt(ref p1, ref p0);
-                Init1(ndsHeader);
+                Init1(commonHeader);
                 Encrypt(ref p1, ref p0);
 
                 writer.Write(p0);
@@ -242,11 +244,11 @@ namespace NDecrypt.Nitro
         /// <summary>
         /// First common initialization step
         /// </summary>
-        /// <param name="ndsHeader">NDS header representing the DS file</param>
-        private void Init1(NDSHeader ndsHeader)
+        /// <param name="commonHeader">CommonHeader representing the DS file</param>
+        private void Init1(CommonHeader commonHeader)
         {
             Buffer.BlockCopy(Constants.NDSEncryptionData, 0, _cardHash, 0, 4 * (1024 + 18));
-            _arg2 = [ndsHeader.Gamecode, ndsHeader.Gamecode >> 1, ndsHeader.Gamecode << 1];
+            _arg2 = [commonHeader.GameCode, commonHeader.GameCode >> 1, commonHeader.GameCode << 1];
             Init2();
             Init2();
         }
