@@ -5,6 +5,8 @@ using System.Numerics;
 using NDecrypt.Core;
 using SabreTools.Models.N3DS;
 using static NDecrypt.Core.Helper;
+using CIADeserializer = SabreTools.Serialization.Deserializers.CIA;
+using N3DSDeserializer = SabreTools.Serialization.Deserializers.N3DS;
 
 namespace NDecrypt.N3DS
 {
@@ -71,9 +73,9 @@ namespace NDecrypt.N3DS
                 // Open the read and write on the same file for inplace processing
                 using var reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
                 using var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
-                
+
                 // Deserialize the CIA information
-                var cia = Serializer.ReadCIA(reader);
+                var cia = ReadCIA(reader);
                 if (cia == null)
                 {
                     Console.WriteLine("Error: Not a 3DS CIA!");
@@ -284,7 +286,7 @@ namespace NDecrypt.N3DS
             uint mediaUnitSize = 0x200; // mediaUnitSize;
 
             reader.BaseStream.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            var exefsHeader = Serializer.ReadExeFSHeader(reader);
+            var exefsHeader = ReadExeFSHeader(reader);
 
             // If the header failed to read, log and return
             if (exefsHeader?.FileHeaders == null)
@@ -656,6 +658,60 @@ namespace NDecrypt.N3DS
             //flag |= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & ciaHeader.BackupHeader.Flags.BitMasks;
             writer.Write((byte)flag);
             writer.Flush();
+        }
+
+        #endregion
+
+        #region Serialization
+
+        /// <summary>
+        /// Read from a stream and get a CIA header, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>CIA header object, null on error</returns>
+        private static CIA? ReadCIA(BinaryReader reader)
+        {
+            try
+            {
+                return CIADeserializer.DeserializeStream(reader.BaseStream);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get an ExeFS header, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>ExeFS header object, null on error</returns>
+        private static ExeFSHeader? ReadExeFSHeader(BinaryReader reader)
+        {
+            var header = new ExeFSHeader();
+
+            try
+            {
+                header.FileHeaders = new ExeFSFileHeader[10];
+                for (int i = 0; i < 10; i++)
+                {
+                    header.FileHeaders[i] = N3DSDeserializer.ParseExeFSFileHeader(reader.BaseStream)!;
+                }
+
+                header.Reserved = reader.ReadBytes(0x20);
+
+                header.FileHashes = new byte[10][];
+                for (int i = 0; i < 10; i++)
+                {
+                    header.FileHashes[9 - i] = reader.ReadBytes(0x20);
+                }
+
+                return header;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         #endregion

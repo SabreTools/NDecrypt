@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NDecrypt.Core;
 using SabreTools.Models.Nitro;
+using NitroDeserializer = SabreTools.Serialization.Deserializers.Nitro;
 
 namespace NDecrypt.Nitro
 {
@@ -43,7 +44,7 @@ namespace NDecrypt.Nitro
                 using var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
 
                 // Deserialize the cart information
-                Cart? cart = Serializer.ReadCart(reader);
+                Cart? cart = ReadCart(reader);
                 if (cart == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
@@ -360,5 +361,26 @@ namespace NDecrypt.Nitro
                 _cardHash[i + 18 + 1] = tmp2;
             }
         }
+
+        #region Serialization
+
+        /// <summary>
+        /// Read from a stream and get an NDS/NDSi Cart, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>NDS/NDSi Cart object, null on error</returns>
+        private static Cart? ReadCart(BinaryReader reader)
+        {
+            try
+            {
+                return NitroDeserializer.DeserializeStream(reader.BaseStream);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        #endregion
     }
 }

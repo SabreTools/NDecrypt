@@ -5,6 +5,7 @@ using System.Numerics;
 using NDecrypt.Core;
 using SabreTools.Models.N3DS;
 using static NDecrypt.Core.Helper;
+using N3DSDeserializer = SabreTools.Serialization.Deserializers.N3DS;
 
 namespace NDecrypt.N3DS
 {
@@ -72,7 +73,7 @@ namespace NDecrypt.N3DS
                 using var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
 
                 // Deserialize the cart information
-                var cart = Serializer.ReadCart(reader, decryptArgs.Development);
+                var cart = ReadCart(reader);
                 if (cart?.Header == null || cart?.CardInfoHeader?.InitialData?.BackupHeader == null)
                 {
                     Console.WriteLine("Error: Not a 3DS cart image!");
@@ -303,7 +304,7 @@ namespace NDecrypt.N3DS
             uint exeFsOffset = (partitionOffsetMU + exeFsOffsetMU + 1) * cart.MediaUnitSize();
 
             reader.BaseStream.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
-            var exefsHeader = Serializer.ReadExeFSHeader(reader);
+            var exefsHeader = ReadExeFSHeader(reader);
 
             // If the header failed to read, log and return
             if (exefsHeader == null)
@@ -741,6 +742,89 @@ namespace NDecrypt.N3DS
             flag |= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & backupHeader!.Flags!.BitMasks;
             writer.Write((byte)flag);
             writer.Flush();
+        }
+
+        #endregion
+
+        #region Serialization
+
+        /// <summary>
+        /// Read from a stream and get N3DS cart image, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>N3DS cart image object, null on error</returns>
+        private static Cart? ReadCart(BinaryReader reader)
+        {
+            var cart = new Cart();
+
+            try
+            {
+                cart.Header = N3DSDeserializer.ParseNCSDHeader(reader.BaseStream);
+                if (cart.Header == null)
+                    return null;
+
+                if (cart.Header.PartitionsFSType == FilesystemType.Normal
+                    || cart.Header.PartitionsFSType == FilesystemType.None)
+                {
+                    cart.CardInfoHeader = N3DSDeserializer.ParseCardInfoHeader(reader.BaseStream);
+                    if (cart.CardInfoHeader == null)
+                        return null;
+                }
+
+                cart.Partitions = new NCCHHeader[8];
+                for (int i = 0; i < 8; i++)
+                {
+                    // Check the entry is valid
+                    var tableEntry = cart.Header.PartitionsTable![i];
+                    if (tableEntry == null || tableEntry.Offset == 0 || tableEntry.Length == 0)
+                        continue;
+
+                    // Seek to the beginning of the NCCH partition
+                    long offset = tableEntry.Offset * cart.Header.ImageSizeInMediaUnits;
+                    reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+
+                    cart.Partitions[i] = N3DSDeserializer.ParseNCCHHeader(reader.BaseStream, skipSignature: false);
+                }
+
+                return cart;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Read from a stream and get an ExeFS header, if possible
+        /// </summary>
+        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <returns>ExeFS header object, null on error</returns>
+        private static ExeFSHeader? ReadExeFSHeader(BinaryReader reader)
+        {
+            var header = new ExeFSHeader();
+
+            try
+            {
+                header.FileHeaders = new ExeFSFileHeader[10];
+                for (int i = 0; i < 10; i++)
+                {
+                    header.FileHeaders[i] = N3DSDeserializer.ParseExeFSFileHeader(reader.BaseStream)!;
+                }
+
+                header.Reserved = reader.ReadBytes(0x20);
+
+                header.FileHashes = new byte[10][];
+                for (int i = 0; i < 10; i++)
+                {
+                    header.FileHashes[9 - i] = reader.ReadBytes(0x20);
+                }
+
+                return header;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         #endregion

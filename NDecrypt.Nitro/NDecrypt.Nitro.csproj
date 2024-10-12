@@ -40,7 +40,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="SabreTools.Models" Version="1.4.9" />
+        <PackageReference Include="SabreTools.Models" Version="1.4.10" />
+        <PackageReference Include="SabreTools.Serialization" Version="1.6.8" />
     </ItemGroup>
 
 </Project>
