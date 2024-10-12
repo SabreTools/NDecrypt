@@ -13,11 +13,6 @@ namespace NDecrypt.N3DS
     public class ThreeDSTool : ITool
     {
         /// <summary>
-        /// Name of the input 3DS file
-        /// </summary>
-        private readonly string filename;
-
-        /// <summary>
         /// Decryption args to use while processing
         /// </summary>
         private readonly DecryptArgs decryptArgs;
@@ -47,26 +42,27 @@ namespace NDecrypt.N3DS
         /// </summary>
         private readonly BigInteger[] NormalKey2C = new BigInteger[8];
 
-        public ThreeDSTool(string filename, DecryptArgs decryptArgs)
+        public ThreeDSTool(DecryptArgs decryptArgs)
         {
-            this.filename = filename;
             this.decryptArgs = decryptArgs;
         }
 
         #region Common Methods
 
         /// <inheritdoc/>
-        public bool EncryptFile(bool force) => ProcessFile(encrypt: true, force);
+        public bool EncryptFile(string filename, bool force)
+            => ProcessFile(filename, encrypt: true, force);
 
         /// <inheritdoc/>
-        public bool DecryptFile(bool force) => ProcessFile(encrypt: false, force);
+        public bool DecryptFile(string filename, bool force)
+            => ProcessFile(filename, encrypt: false, force);
 
         /// <summary>
         /// Process an input file given the input values
         /// </summary>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="force">Indicates if the operation should be forced</param>
-        private bool ProcessFile(bool encrypt, bool force)
+        private bool ProcessFile(string filename, bool encrypt, bool force)
         {
             // Ensure the constants are all set
             if (decryptArgs.IsReady != true)

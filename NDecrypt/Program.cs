@@ -150,12 +150,12 @@ namespace NDecrypt
             if (tool == null)
                 return;
 
-            if (encrypt && !tool.EncryptFile(force))
+            if (encrypt && !tool.EncryptFile(path, force))
             {
                 Console.WriteLine("Encryption failed!");
                 return;
             }
-            else if (!encrypt && !tool.DecryptFile(force))
+            else if (!encrypt && !tool.DecryptFile(path, force))
             {
                 Console.WriteLine("Decryption failed!");
                 return;
@@ -204,19 +204,19 @@ More than one path can be specified at a time.");
             {
                 case FileType.NDS:
                     Console.WriteLine("File recognized as Nintendo DS");
-                    return new DSTool(filename, decryptArgs);
+                    return new DSTool();
                 case FileType.NDSi:
                     Console.WriteLine("File recognized as Nintendo DS");
-                    return new DSTool(filename, decryptArgs);
+                    return new DSTool();
                 case FileType.iQueDS:
                     Console.WriteLine("File recognized as iQue DS");
-                    return new DSTool(filename, decryptArgs);
+                    return new DSTool();
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
-                    return new ThreeDSTool(filename, decryptArgs);
+                    return new ThreeDSTool(decryptArgs);
                 case FileType.N3DSCIA:
                     Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
-                    return new CIATool(filename, decryptArgs);
+                    return new CIATool(decryptArgs);
                 case FileType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.nds.enc, *.srl, *.dsi, *.3ds");

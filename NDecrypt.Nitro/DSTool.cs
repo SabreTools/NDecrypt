@@ -10,11 +10,6 @@ namespace NDecrypt.Nitro
 {
     public class DSTool : ITool
     {
-        /// <summary>
-        /// Name of the input DS/DSi file
-        /// </summary>
-        private readonly string filename;
-
         #region Encryption process variables
 
         private uint[] _cardHash = new uint[0x412];
@@ -22,15 +17,12 @@ namespace NDecrypt.Nitro
 
         #endregion
 
-        public DSTool(string filename, DecryptArgs decryptArgs)
-        {
-            this.filename = filename;
-        }
+        public DSTool() { }
 
         #region Encrypt
 
         /// <inheritdoc/>
-        public bool EncryptFile(bool force)
+        public bool EncryptFile(string filename, bool force)
         {
             try
             {
@@ -45,6 +37,10 @@ namespace NDecrypt.Nitro
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
                 }
+
+                // Reset state variables
+                _cardHash = new uint[0x412];
+                _arg2 = new uint[3];
 
                 // Encrypt the secure area
                 EncryptSecureArea(cart, force, reader, writer);
@@ -180,7 +176,7 @@ namespace NDecrypt.Nitro
         #region Decrypt
 
         /// <inheritdoc/>
-        public bool DecryptFile(bool force)
+        public bool DecryptFile(string filename, bool force)
         {
             try
             {
@@ -189,12 +185,16 @@ namespace NDecrypt.Nitro
                 using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                Cart? cart = NitroDeserializer.DeserializeStream(reader);
+                var cart = NitroDeserializer.DeserializeStream(reader);
                 if (cart == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
                 }
+
+                // Reset state variables
+                _cardHash = new uint[0x412];
+                _arg2 = new uint[3];
 
                 // Decrypt the secure area
                 DecryptSecureArea(cart, force, reader, writer);
