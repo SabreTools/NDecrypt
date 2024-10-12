@@ -46,13 +46,14 @@ namespace NDecrypt
                 return;
             }
 
-            bool force = false, outputHashes = false;
+            bool force = false, outputHashes = false, useAesKeysTxt = false;
+            string? keyfile = null;
             int start = 1;
             for (; start < args.Length; start++)
             {
                 if (args[start] == "-c" || args[start] == "--citra")
                 {
-                    decryptArgs.UseCitraKeyFile = true;
+                    useAesKeysTxt = true;
                 }
                 else if (args[start] == "-dev" || args[start] == "--development")
                 {
@@ -80,7 +81,7 @@ namespace NDecrypt
                     if (!File.Exists(tempPath))
                         Console.WriteLine($"Invalid keyfile path: file {tempPath} not found!");
                     else
-                        decryptArgs.KeyFile = tempPath;
+                        keyfile = tempPath;
                 }
                 else
                 {
@@ -89,14 +90,17 @@ namespace NDecrypt
             }
 
             // Derive the keyfile path based on the runtime folder if not already set
-            decryptArgs.KeyFile = DeriveKeyFile(decryptArgs.KeyFile, decryptArgs.UseCitraKeyFile);
+            keyfile = DeriveKeyFile(keyfile, useAesKeysTxt);
 
             // If we are using a Citra keyfile, there are no development keys
-            if (decryptArgs.Development && decryptArgs.UseCitraKeyFile)
+            if (decryptArgs.Development && useAesKeysTxt)
             {
                 Console.WriteLine("Citra keyfiles don't contain development keys; disabling the option...");
                 decryptArgs.Development = false;
             }
+
+            // Initialize the decrypt args, if possible
+            decryptArgs.Initialize(keyfile, useAesKeysTxt);
 
             for (int i = start; i < args.Length; i++)
             {
@@ -228,11 +232,9 @@ More than one path can be specified at a time.");
                     return new DSTool();
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
-                    decryptArgs.Initialize();
                     return new ThreeDSTool(decryptArgs);
                 case FileType.N3DSCIA:
                     Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
-                    decryptArgs.Initialize();
                     return new CIATool(decryptArgs);
                 case FileType.NULL:
                 default:

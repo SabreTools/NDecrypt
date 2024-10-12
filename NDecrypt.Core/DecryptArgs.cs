@@ -25,16 +25,6 @@ namespace NDecrypt.Core
         public bool Development { get; set; } = false;
 
         /// <summary>
-        /// Path to the keyfile [3DS only]
-        /// </summary>
-        public string? KeyFile { get; set; }
-
-        /// <summary>
-        /// Flag to indicate keyfile format to use [3DS only]
-        /// </summary>
-        public bool UseCitraKeyFile { get; set; } = false;
-
-        /// <summary>
         /// AES Hardware Constant
         /// </summary>
         public BigInteger AESHardwareConstant { get; private set; }
@@ -92,17 +82,19 @@ namespace NDecrypt.Core
         /// <summary>
         /// Setup all of the necessary constants
         /// </summary>
-        public void Initialize()
+        /// <param name="keyfile">Path to the keyfile</param>
+        /// <param name="useAesKeysTxt">Indicates if the keyfile format is aeskeys.txt</param>
+        public void Initialize(string? keyfile, bool useAesKeysTxt)
         {
             // If we're already attempted to set the constants, don't try to again
             if (IsReady != null)
                 return;
 
             // Read the proper keyfile format
-            if (UseCitraKeyFile)
-                InitAesKeysTxt(KeyFile);
+            if (useAesKeysTxt)
+                InitAesKeysTxt(keyfile);
             else
-                InitKeysBin(KeyFile);
+                InitKeysBin(keyfile);
         }
         
         /// <summary>
