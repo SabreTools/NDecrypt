@@ -119,7 +119,7 @@ namespace NDecrypt.N3DS
                 if (ncchHeader == null)
                     continue;
 
-                ProcessPartition(ncchHeader, p, encrypt, reader, writer);
+                ProcessPartition(ncchHeader, p, encrypt, decryptArgs.Force, reader, writer);
             }
         }
 
@@ -129,16 +129,18 @@ namespace NDecrypt.N3DS
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
         private void ProcessPartition(NCCHHeader ncchHeader,
             int partitionIndex,
             bool encrypt,
+            bool force,
             Stream reader,
             Stream writer)
         {
             // If we're forcing the operation, tell the user
-            if (decryptArgs.Force)
+            if (force)
             {
                 Console.WriteLine($"Partition {partitionIndex} is not verified due to force flag being set.");
             }
