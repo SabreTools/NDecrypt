@@ -79,12 +79,8 @@ namespace NDecrypt.Core
         /// </summary>
         /// <param name="keyfile">Path to the keyfile</param>
         /// <param name="useAesKeysTxt">Indicates if the keyfile format is aeskeys.txt</param>
-        public void Initialize(string? keyfile, bool useAesKeysTxt)
+        public DecryptArgs(string? keyfile, bool useAesKeysTxt)
         {
-            // If we're already attempted to set the constants, don't try to again
-            if (IsReady != null)
-                return;
-
             // Read the proper keyfile format
             if (useAesKeysTxt)
                 InitAesKeysTxt(keyfile);

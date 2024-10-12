@@ -31,7 +31,6 @@ namespace NDecrypt
             }
 
             bool encrypt;
-            var decryptArgs = new DecryptArgs();
             if (args[0] == "decrypt" || args[0] == "d")
             {
                 encrypt = false;
@@ -104,7 +103,7 @@ namespace NDecrypt
             }
 
             // Initialize the decrypt args, if possible
-            decryptArgs.Initialize(keyfile, useAesKeysTxt);
+            var decryptArgs = new DecryptArgs(keyfile, useAesKeysTxt);
 
             for (int i = start; i < args.Length; i++)
             {
