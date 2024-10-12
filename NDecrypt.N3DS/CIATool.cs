@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using NDecrypt.Core;
+using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
 using static NDecrypt.Core.Helper;
 using CIADeserializer = SabreTools.Serialization.Deserializers.CIA;
@@ -71,8 +72,8 @@ namespace NDecrypt.N3DS
             try
             {
                 // Open the read and write on the same file for inplace processing
-                using var reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-                using var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
+                using var reader = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the CIA information
                 var cia = ReadCIA(reader);
@@ -99,9 +100,9 @@ namespace NDecrypt.N3DS
         /// Process all partitions in the content file data of a CIA header
         /// </summary>
         /// <param name="cia">CIA representing the 3DS CIA file</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
-        private void ProcessAllPartitions(CIA cia, BinaryReader reader, BinaryWriter writer)
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
+        private void ProcessAllPartitions(CIA cia, Stream reader, Stream writer)
         {
             // Iterate over all NCCH partitions
             for (int p = 0; p < cia.Partitions!.Length; p++)
@@ -119,12 +120,12 @@ namespace NDecrypt.N3DS
         /// </summary>
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         private void ProcessPartition(int partitionIndex,
             NCCHHeader ncchHeader,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // If we're forcing the operation, tell the user
             if (decryptArgs.Force)
@@ -238,21 +239,21 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         private bool ProcessExtendedHeader(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // mediaUnitSize;
 
             if (ncchHeader.ExtendedHeaderSizeInBytes > 0)
             {
-                reader.BaseStream.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
-                writer.BaseStream.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
+                reader.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
+                writer.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
 
                 Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
@@ -274,19 +275,19 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         private void ProcessExeFSFileEntries(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // mediaUnitSize;
 
-            reader.BaseStream.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            var exefsHeader = N3DSDeserializer.ParseExeFSHeader(reader.BaseStream);
+            reader.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            var exefsHeader = N3DSDeserializer.ParseExeFSHeader(reader);
 
             // If the header failed to read, log and return
             if (exefsHeader?.FileHeaders == null)
@@ -310,8 +311,8 @@ namespace NDecrypt.N3DS
                 var firstCipher = CreateAESCipher(NormalKey[partitionIndex], exefsIVWithOffsetForHeader, decryptArgs.Encrypt);
                 var secondCipher = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffsetForHeader, !decryptArgs.Encrypt);
 
-                reader.BaseStream.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-                writer.BaseStream.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+                reader.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
+                writer.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
 
                 if (datalenM > 0)
                 {
@@ -339,19 +340,19 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         private void ProcessExeFSFilenameTable(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // mediaUnitSize;
 
-            reader.BaseStream.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            writer.BaseStream.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            reader.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
 
             Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
@@ -366,13 +367,13 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         private void ProcessExeFS(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // mediaUnitSize;
@@ -385,8 +386,8 @@ namespace NDecrypt.N3DS
 
             var exeFS = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffset, decryptArgs.Encrypt);
 
-            reader.BaseStream.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
-            writer.BaseStream.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
+            reader.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
             if (exefsSizeM > 0)
             {
                 for (int i = 0; i < exefsSizeM; i++)
@@ -415,13 +416,13 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         private void DecryptExeFS(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // If the ExeFS size is 0, we log and return
             if (ncchHeader.ExeFSSizeInMediaUnits == 0)
@@ -447,14 +448,14 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Encrypt
         private void DecryptRomFS(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
@@ -471,8 +472,8 @@ namespace NDecrypt.N3DS
 
             var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), decryptArgs.Encrypt);
 
-            reader.BaseStream.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            writer.BaseStream.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            reader.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             if (romfsSizeM > 0)
             {
                 for (int i = 0; i < romfsSizeM; i++)
@@ -496,21 +497,21 @@ namespace NDecrypt.N3DS
         /// </summary>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="writer">Stream representing the output</param>
         private void UpdateDecryptCryptoAndMasks(NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryWriter writer)
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
 
             // Write the new CryptoMethod
-            writer.BaseStream.Seek((tableEntry.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
             writer.Write((byte)CryptoMethod.Original);
             writer.Flush();
 
             // Write the new BitMasks flag
-            writer.BaseStream.Seek((tableEntry.Offset * mediaUnitSize) + 0x18F, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset * mediaUnitSize) + 0x18F, SeekOrigin.Begin);
             BitMasks flag = ncchHeader.Flags!.BitMasks;
             flag &= (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
             flag |= BitMasks.NoCrypto;
@@ -528,13 +529,13 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         private void EncryptExeFS(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // If the ExeFS size is 0, we log and return
             if (ncchHeader.ExeFSSizeInMediaUnits == 0)
@@ -561,14 +562,14 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Decrypt
         private void EncryptRomFS(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryReader reader,
-            BinaryWriter writer)
+            Stream reader,
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
@@ -600,8 +601,8 @@ namespace NDecrypt.N3DS
 
             var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), decryptArgs.Encrypt);
 
-            reader.BaseStream.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            writer.BaseStream.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            reader.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             if (romfsSizeM > 0)
             {
                 for (int i = 0; i < romfsSizeM; i++)
@@ -626,17 +627,17 @@ namespace NDecrypt.N3DS
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
+        /// <param name="writer">Stream representing the output</param>
         private void UpdateEncryptCryptoAndMasks(int partitionIndex,
             NCCHHeader ncchHeader,
             PartitionTableEntry tableEntry,
-            BinaryWriter writer)
+            Stream writer)
         {
             // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
             uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
 
             // Write the new CryptoMethod
-            writer.BaseStream.Seek((tableEntry.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset * mediaUnitSize) + 0x18B, SeekOrigin.Begin);
 
             // For partitions 1 and up, set crypto-method to 0x00
             if (partitionIndex > 0)
@@ -650,7 +651,7 @@ namespace NDecrypt.N3DS
             writer.Flush();
 
             // Write the new BitMasks flag
-            writer.BaseStream.Seek((tableEntry.Offset * mediaUnitSize) + 0x18F, SeekOrigin.Begin);
+            writer.Seek((tableEntry.Offset * mediaUnitSize) + 0x18F, SeekOrigin.Begin);
             BitMasks flag = ncchHeader.Flags!.BitMasks;
             flag &= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF;
 
@@ -667,13 +668,13 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Read from a stream and get a CIA header, if possible
         /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="reader">Stream representing the input</param>
         /// <returns>CIA header object, null on error</returns>
-        private static CIA? ReadCIA(BinaryReader reader)
+        private static CIA? ReadCIA(Stream reader)
         {
             try
             {
-                return CIADeserializer.DeserializeStream(reader.BaseStream);
+                return CIADeserializer.DeserializeStream(reader);
             }
             catch
             {

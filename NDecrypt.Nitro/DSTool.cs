@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using NDecrypt.Core;
+using SabreTools.IO.Extensions;
 using SabreTools.Models.Nitro;
 using NitroDeserializer = SabreTools.Serialization.Deserializers.Nitro;
 
@@ -40,11 +41,11 @@ namespace NDecrypt.Nitro
             try
             {
                 // Open the read and write on the same file for inplace processing
-                using var reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-                using var writer = new BinaryWriter(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
+                using var reader = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                Cart? cart = ReadCart(reader);
+                Cart? cart = NitroDeserializer.DeserializeStream(reader);
                 if (cart == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
@@ -66,11 +67,11 @@ namespace NDecrypt.Nitro
 
         /// <summary>
         /// Process secure area in the DS/DSi file
-        /// </summary>
+        /// </summary>s
         /// <param name="cart">Cart representing the DS file</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
-        private void ProcessSecureArea(Cart cart, BinaryReader reader, BinaryWriter writer)
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
+        private void ProcessSecureArea(Cart cart, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
             if (decryptArgs.Force)
@@ -101,11 +102,11 @@ namespace NDecrypt.Nitro
         /// <summary>
         /// Determine if the current file is already decrypted or not (or has an empty secure area)
         /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
+        /// <param name="reader">Stream representing the input</param>
         /// <returns>True if the file has known values for a decrypted file, null if it's empty, false otherwise</returns>
-        private static bool? CheckIfDecrypted(BinaryReader reader)
+        private static bool? CheckIfDecrypted(Stream reader)
         {
-            reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
+            reader.Seek(0x4000, SeekOrigin.Begin);
             uint firstValue = reader.ReadUInt32();
             uint secondValue = reader.ReadUInt32();
 
@@ -161,13 +162,13 @@ namespace NDecrypt.Nitro
         /// Process the secure ARM9 region of the file, if possible
         /// </summary>
         /// <param name="commonHeader">CommonHeader representing the DS header</param>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <param name="writer">BinaryWriter representing the output stream</param>
-        private void ProcessARM9(CommonHeader commonHeader, BinaryReader reader, BinaryWriter writer)
+        /// <param name="reader">Stream representing the input</param>
+        /// <param name="writer">Stream representing the output</param>
+        private void ProcessARM9(CommonHeader commonHeader, Stream reader, Stream writer)
         {
             // Seek to the beginning of the secure area
-            reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
-            writer.BaseStream.Seek(0x4000, SeekOrigin.Begin);
+            reader.Seek(0x4000, SeekOrigin.Begin);
+            writer.Seek(0x4000, SeekOrigin.Begin);
 
             // Grab the first two blocks
             uint p0 = reader.ReadUInt32();
@@ -195,8 +196,8 @@ namespace NDecrypt.Nitro
             }
 
             // Ensure alignment
-            reader.BaseStream.Seek(0x4008, SeekOrigin.Begin);
-            writer.BaseStream.Seek(0x4008, SeekOrigin.Begin);
+            reader.Seek(0x4008, SeekOrigin.Begin);
+            writer.Seek(0x4008, SeekOrigin.Begin);
 
             // Loop throgh the main encryption step
             uint size = 0x800 - 8;
@@ -219,8 +220,8 @@ namespace NDecrypt.Nitro
             // Replace the header explicitly if we're encrypting
             if (decryptArgs.Encrypt)
             {
-                reader.BaseStream.Seek(0x4000, SeekOrigin.Begin);
-                writer.BaseStream.Seek(0x4000, SeekOrigin.Begin);
+                reader.Seek(0x4000, SeekOrigin.Begin);
+                writer.Seek(0x4000, SeekOrigin.Begin);
 
                 p0 = reader.ReadUInt32();
                 p1 = reader.ReadUInt32();
@@ -361,26 +362,5 @@ namespace NDecrypt.Nitro
                 _cardHash[i + 18 + 1] = tmp2;
             }
         }
-
-        #region Serialization
-
-        /// <summary>
-        /// Read from a stream and get an NDS/NDSi Cart, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>NDS/NDSi Cart object, null on error</returns>
-        private static Cart? ReadCart(BinaryReader reader)
-        {
-            try
-            {
-                return NitroDeserializer.DeserializeStream(reader.BaseStream);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        #endregion
     }
 }
