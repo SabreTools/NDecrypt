@@ -51,7 +51,8 @@ namespace NDecrypt
             int start = 1;
             for (; start < args.Length; start++)
             {
-                if (args[start] == "-c" || args[start] == "--citra")
+                if (args[start] == "-a" || args[start] == "--aes-keys"
+                    || args[start] == "-c" || args[start] == "--citra")
                 {
                     useAesKeysTxt = true;
                 }
@@ -173,7 +174,7 @@ e, encrypt - Encrypt the input files
 d, decrypt - Decrypt the input files
 
 Possible values for [flags] (one or more can be used):
--c, --citra           Enable using aes_keys.txt instead of keys.bin
+-a, --aes-keys        Enable using aes_keys.txt instead of keys.bin
 -dev, --development   Enable using development keys, if available
 -f, --force           Force operation by avoiding sanity checks
 -h, --hash            Output size and hashes to a companion file
