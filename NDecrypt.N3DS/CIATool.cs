@@ -57,10 +57,17 @@ namespace NDecrypt.N3DS
 
         #region Common Methods
 
+        /// <inheritdoc/>
+        public bool EncryptFile() => ProcessFile(encrypt: true);
+
+        /// <inheritdoc/>
+        public bool DecryptFile() => ProcessFile(encrypt: false);
+
         /// <summary>
         /// Process an input file given the input values
         /// </summary>
-        public bool ProcessFile()
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        private bool ProcessFile(bool encrypt)
         {
             // Ensure the constants are all set
             if (decryptArgs.IsReady != true)
@@ -84,7 +91,7 @@ namespace NDecrypt.N3DS
                 }
 
                 // Process all NCCH partitions
-                ProcessAllPartitions(cia, reader, writer);
+                ProcessAllPartitions(cia, encrypt, reader, writer);
 
                 return false;
             }
@@ -100,9 +107,10 @@ namespace NDecrypt.N3DS
         /// Process all partitions in the content file data of a CIA header
         /// </summary>
         /// <param name="cia">CIA representing the 3DS CIA file</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessAllPartitions(CIA cia, Stream reader, Stream writer)
+        private void ProcessAllPartitions(CIA cia, bool encrypt, Stream reader, Stream writer)
         {
             // Iterate over all NCCH partitions
             for (int p = 0; p < cia.Partitions!.Length; p++)
@@ -111,19 +119,21 @@ namespace NDecrypt.N3DS
                 if (ncchHeader == null)
                     continue;
 
-                ProcessPartition(p, ncchHeader, reader, writer);
+                ProcessPartition(ncchHeader, p, encrypt, reader, writer);
             }
         }
 
         /// <summary>
         /// Process a single partition
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessPartition(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void ProcessPartition(NCCHHeader ncchHeader,
+            int partitionIndex,
+            bool encrypt,
             Stream reader,
             Stream writer)
         {
@@ -133,9 +143,9 @@ namespace NDecrypt.N3DS
                 Console.WriteLine($"Partition {partitionIndex} is not verified due to force flag being set.");
             }
             // If we're not forcing the operation, check if the 'NoCrypto' bit is set
-            else if (ncchHeader.Flags!.PossblyDecrypted() ^ decryptArgs.Encrypt)
+            else if (ncchHeader.Flags!.PossblyDecrypted() ^ encrypt)
             {
-                Console.WriteLine($"Partition {partitionIndex}: Already " + (decryptArgs.Encrypt ? "Encrypted" : "Decrypted") + "?...");
+                Console.WriteLine($"Partition {partitionIndex}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
                 return;
             }
 
@@ -143,24 +153,24 @@ namespace NDecrypt.N3DS
             var tableEntry = new PartitionTableEntry();
 
             // Determine the Keys to be used
-            SetEncryptionKeys(partitionIndex, ncchHeader);
+            SetEncryptionKeys(ncchHeader, partitionIndex, encrypt);
 
             // Process the extended header
-            ProcessExtendedHeader(partitionIndex, ncchHeader, tableEntry, reader, writer);
+            ProcessExtendedHeader(ncchHeader, partitionIndex, tableEntry, encrypt, reader, writer);
 
             // If we're encrypting, encrypt the filesystems and update the flags
-            if (decryptArgs.Encrypt)
+            if (encrypt)
             {
-                EncryptExeFS(partitionIndex, ncchHeader, tableEntry, reader, writer);
-                EncryptRomFS(partitionIndex, ncchHeader, tableEntry, reader, writer);
-                UpdateEncryptCryptoAndMasks(partitionIndex, ncchHeader, tableEntry, writer);
+                EncryptExeFS(ncchHeader, partitionIndex, tableEntry, reader, writer);
+                EncryptRomFS(ncchHeader, partitionIndex, tableEntry, reader, writer);
+                UpdateEncryptCryptoAndMasks(ncchHeader, partitionIndex, tableEntry, writer);
             }
 
             // If we're decrypting, decrypt the filesystems and update the flags
             else
             {
-                DecryptExeFS(partitionIndex, ncchHeader, tableEntry, reader, writer);
-                DecryptRomFS(partitionIndex, ncchHeader, tableEntry, reader, writer);
+                DecryptExeFS(ncchHeader, partitionIndex, tableEntry, reader, writer);
+                DecryptRomFS(ncchHeader, partitionIndex, tableEntry, reader, writer);
                 UpdateDecryptCryptoAndMasks(ncchHeader, tableEntry, writer);
             }
         }
@@ -168,9 +178,10 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Determine the set of keys to be used for encryption or decryption
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
-        private void SetEncryptionKeys(int partitionIndex, NCCHHeader ncchHeader)
+        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        private void SetEncryptionKeys(NCCHHeader ncchHeader, int partitionIndex, bool encrypt)
         {
             KeyX[partitionIndex] = 0;
             KeyX2C[partitionIndex] = decryptArgs.Development ? decryptArgs.DevKeyX0x2C : decryptArgs.KeyX0x2C;
@@ -188,7 +199,7 @@ namespace NDecrypt.N3DS
             // Set the header to use based on mode
             BitMasks masks = BitMasks.NoCrypto;
             CryptoMethod method = CryptoMethod.Original;
-            if (decryptArgs.Encrypt)
+            if (encrypt)
             {
                 // TODO: Can we actually re-encrypt a CIA?
                 //masks = ciaHeader.BackupHeader.Flags.BitMasks;
@@ -236,14 +247,16 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Process the extended header, if it exists
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private bool ProcessExtendedHeader(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private bool ProcessExtendedHeader(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
+            bool encrypt,
             Stream reader,
             Stream writer)
         {
@@ -255,9 +268,9 @@ namespace NDecrypt.N3DS
                 reader.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
                 writer.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
 
-                Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
+                Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
-                var cipher = CreateAESCipher(NormalKey2C[partitionIndex], ncchHeader.PlainIV(), decryptArgs.Encrypt);
+                var cipher = CreateAESCipher(NormalKey2C[partitionIndex], ncchHeader.PlainIV(), encrypt);
                 writer.Write(cipher.ProcessBytes(reader.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
                 writer.Flush();
                 return true;
@@ -272,14 +285,16 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Process the extended header, if it exists
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessExeFSFileEntries(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void ProcessExeFSFileEntries(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
+            bool encrypt,
             Stream reader,
             Stream writer)
         {
@@ -308,8 +323,8 @@ namespace NDecrypt.N3DS
 
                 byte[] exefsIVWithOffsetForHeader = AddToByteArray(ncchHeader.ExeFSIV(), (int)ctroffset);
 
-                var firstCipher = CreateAESCipher(NormalKey[partitionIndex], exefsIVWithOffsetForHeader, decryptArgs.Encrypt);
-                var secondCipher = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffsetForHeader, !decryptArgs.Encrypt);
+                var firstCipher = CreateAESCipher(NormalKey[partitionIndex], exefsIVWithOffsetForHeader, encrypt);
+                var secondCipher = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffsetForHeader, !encrypt);
 
                 reader.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
                 writer.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -320,7 +335,7 @@ namespace NDecrypt.N3DS
                     {
                         writer.Write(secondCipher.ProcessBytes(firstCipher.ProcessBytes(reader.ReadBytes(1024 * 1024))));
                         writer.Flush();
-                        Console.Write($"\rPartition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {i} / {datalenM + 1} mb...");
+                        Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {i} / {datalenM + 1} mb...");
                     }
                 }
 
@@ -330,21 +345,23 @@ namespace NDecrypt.N3DS
                     writer.Flush();
                 }
 
-                Console.Write($"\rPartition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
+                Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
             }
         }
 
         /// <summary>
         /// Process the ExeFS Filename Table
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessExeFSFilenameTable(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void ProcessExeFSFilenameTable(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
+            bool encrypt,
             Stream reader,
             Stream writer)
         {
@@ -354,9 +371,9 @@ namespace NDecrypt.N3DS
             reader.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
 
-            Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
+            Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
-            var exeFSFilenameTable = CreateAESCipher(NormalKey2C[partitionIndex], ncchHeader.ExeFSIV(), decryptArgs.Encrypt);
+            var exeFSFilenameTable = CreateAESCipher(NormalKey2C[partitionIndex], ncchHeader.ExeFSIV(), encrypt);
             writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)mediaUnitSize)));
             writer.Flush();
         }
@@ -364,14 +381,16 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Process the ExeFS, if it exists
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessExeFS(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void ProcessExeFS(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
+            bool encrypt,
             Stream reader,
             Stream writer)
         {
@@ -384,7 +403,7 @@ namespace NDecrypt.N3DS
 
             byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV(), ctroffsetE);
 
-            var exeFS = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffset, decryptArgs.Encrypt);
+            var exeFS = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffset, encrypt);
 
             reader.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
             writer.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
@@ -394,7 +413,7 @@ namespace NDecrypt.N3DS
                 {
                     writer.Write(exeFS.ProcessBytes(reader.ReadBytes(1024 * 1024)));
                     writer.Flush();
-                    Console.Write($"\rPartition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
+                    Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
                 }
             }
             if (exefsSizeB > 0)
@@ -403,7 +422,7 @@ namespace NDecrypt.N3DS
                 writer.Flush();
             }
 
-            Console.Write($"\rPartition {partitionIndex} ExeFS: " + (decryptArgs.Encrypt ? "Encrypting" : "Decrypting") + $": {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
+            Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
         }
 
         #endregion
@@ -413,13 +432,13 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Decrypt the ExeFS, if it exists
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void DecryptExeFS(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void DecryptExeFS(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
             Stream reader,
             Stream writer)
@@ -432,27 +451,27 @@ namespace NDecrypt.N3DS
             }
 
             // Decrypt the filename table
-            ProcessExeFSFilenameTable(partitionIndex, ncchHeader, tableEntry, reader, writer);
+            ProcessExeFSFilenameTable(ncchHeader, partitionIndex, tableEntry, encrypt: false, reader, writer);
 
             // For all but the original crypto method, process each of the files in the table
             if (ncchHeader.Flags!.CryptoMethod != CryptoMethod.Original)
-                ProcessExeFSFileEntries(partitionIndex, ncchHeader, tableEntry, reader, writer);
+                ProcessExeFSFileEntries(ncchHeader, partitionIndex, tableEntry, encrypt: false, reader, writer);
 
             // Decrypt the rest of the ExeFS
-            ProcessExeFS(partitionIndex, ncchHeader, tableEntry, reader, writer);
+            ProcessExeFS(ncchHeader, partitionIndex, tableEntry, encrypt: false, reader, writer);
         }
 
         /// <summary>
         /// Decrypt the RomFS, if it exists
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Encrypt
-        private void DecryptRomFS(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void DecryptRomFS(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
             Stream reader,
             Stream writer)
@@ -470,7 +489,7 @@ namespace NDecrypt.N3DS
             long romfsSizeM = (int)((long)(ncchHeader.RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024));
             int romfsSizeB = (int)((long)(ncchHeader.RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024));
 
-            var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), decryptArgs.Encrypt);
+            var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), encrypt: false);
 
             reader.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
@@ -526,13 +545,13 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Encrypt the ExeFS, if it exists
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void EncryptExeFS(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void EncryptExeFS(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
             Stream reader,
             Stream writer)
@@ -550,23 +569,23 @@ namespace NDecrypt.N3DS
             //    ProcessExeFSFileEntries(ncchHeader, reader, writer);
 
             // Encrypt the filename table
-            ProcessExeFSFilenameTable(partitionIndex, ncchHeader, tableEntry, reader, writer);
+            ProcessExeFSFilenameTable(ncchHeader, partitionIndex, tableEntry, encrypt: true, reader, writer);
 
             // Encrypt the rest of the ExeFS
-            ProcessExeFS(partitionIndex, ncchHeader, tableEntry, reader, writer);
+            ProcessExeFS(ncchHeader, partitionIndex, tableEntry, encrypt: true, reader, writer);
         }
 
         /// <summary>
         /// Encrypt the RomFS, if it exists
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Decrypt
-        private void EncryptRomFS(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void EncryptRomFS(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
             Stream reader,
             Stream writer)
@@ -599,7 +618,7 @@ namespace NDecrypt.N3DS
                 //}
             }
 
-            var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), decryptArgs.Encrypt);
+            var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), encrypt: true);
 
             reader.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
@@ -624,12 +643,12 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Update the CryptoMethod and BitMasks for the encrypted partition
         /// </summary>
-        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="writer">Stream representing the output</param>
-        private void UpdateEncryptCryptoAndMasks(int partitionIndex,
-            NCCHHeader ncchHeader,
+        private void UpdateEncryptCryptoAndMasks(NCCHHeader ncchHeader,
+            int partitionIndex,
             PartitionTableEntry tableEntry,
             Stream writer)
         {

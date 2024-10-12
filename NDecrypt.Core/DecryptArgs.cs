@@ -11,11 +11,6 @@ namespace NDecrypt.Core
         #region Common Fields
 
         /// <summary>
-        /// Flag to indicate operation
-        /// </summary>
-        public bool Encrypt { get; set; } = true;
-
-        /// <summary>
         /// Flag to indicate forcing the operation
         /// </summary>
         public bool Force { get; set; } = false;

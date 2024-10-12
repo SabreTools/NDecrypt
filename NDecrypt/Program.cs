@@ -30,14 +30,15 @@ namespace NDecrypt
                 return;
             }
 
+            bool encrypt;
             var decryptArgs = new DecryptArgs();
             if (args[0] == "decrypt" || args[0] == "d")
             {
-                decryptArgs.Encrypt = false;
+                encrypt = false;
             }
             else if (args[0] == "encrypt" || args[0] == "e")
             {
-                decryptArgs.Encrypt = true;
+                encrypt = true;
             }
             else
             {
@@ -113,13 +114,13 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
-                    ProcessPath(args[i], decryptArgs, outputHashes);
+                    ProcessPath(args[i], encrypt, decryptArgs, outputHashes);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ProcessPath(file, decryptArgs, outputHashes);
+                        ProcessPath(file, encrypt, decryptArgs, outputHashes);
                     }
                 }
                 else
@@ -133,15 +134,29 @@ namespace NDecrypt
         /// Display a basic help text
         /// </summary>
         /// <param name="path">Path to the file to process</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="decryptArgs">DecryptArgs to use during processing</param>
         /// <param name="outputHashes">True to write out a hashfile, false otherwise</param>
-        private static void ProcessPath(string path, DecryptArgs decryptArgs, bool outputHashes)
+        private static void ProcessPath(string path, bool encrypt, DecryptArgs decryptArgs, bool outputHashes)
         {
             Console.WriteLine(path);
+
             ITool? tool = DeriveTool(path, decryptArgs);
-            if (tool?.ProcessFile() != true)
-                Console.WriteLine("Processing failed!");
-            else if (outputHashes)
+            if (tool == null)
+                return;
+
+            if (encrypt && !tool.EncryptFile())
+            {
+                Console.WriteLine("Encryption failed!");
+                return;
+            }
+            else if (!encrypt && !tool.DecryptFile())
+            {
+                Console.WriteLine("Decryption failed!");
+                return;
+            }
+
+            if (outputHashes)
                 WriteHashes(path);
         }
 

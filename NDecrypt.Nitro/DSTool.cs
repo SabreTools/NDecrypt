@@ -33,10 +33,17 @@ namespace NDecrypt.Nitro
             this.decryptArgs = decryptArgs;
         }
 
+        /// <inheritdoc/>
+        public bool EncryptFile() => ProcessFile(encrypt: true);
+
+        /// <inheritdoc/>
+        public bool DecryptFile() => ProcessFile(encrypt: false);
+
         /// <summary>
         /// Process an input file given the input values
         /// </summary>
-        public bool ProcessFile()
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        private bool ProcessFile(bool encrypt)
         {
             try
             {
@@ -53,7 +60,7 @@ namespace NDecrypt.Nitro
                 }
 
                 // Process the secure area
-                ProcessSecureArea(cart, reader, writer);
+                ProcessSecureArea(cart, encrypt, reader, writer);
 
                 return true;
             }
@@ -69,9 +76,10 @@ namespace NDecrypt.Nitro
         /// Process secure area in the DS/DSi file
         /// </summary>s
         /// <param name="cart">Cart representing the DS file</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessSecureArea(Cart cart, Stream reader, Stream writer)
+        private void ProcessSecureArea(Cart cart, bool encrypt, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
             if (decryptArgs.Force)
@@ -87,16 +95,16 @@ namespace NDecrypt.Nitro
                     Console.WriteLine("File has an empty secure area, cannot proceed");
                     return;
                 }
-                else if (decryptArgs.Encrypt ^ isDecrypted.Value)
+                else if (encrypt ^ isDecrypted.Value)
                 {
-                    Console.WriteLine("File is already " + (decryptArgs.Encrypt ? "encrypted" : "decrypted"));
+                    Console.WriteLine("File is already " + (encrypt ? "encrypted" : "decrypted"));
                     return;
                 }
             }
 
-            ProcessARM9(cart.CommonHeader!, reader, writer);
+            ProcessARM9(cart.CommonHeader!, encrypt, reader, writer);
 
-            Console.WriteLine("File has been " + (decryptArgs.Encrypt ? "encrypted" : "decrypted"));
+            Console.WriteLine("File has been " + (encrypt ? "encrypted" : "decrypted"));
         }
 
         /// <summary>
@@ -162,9 +170,10 @@ namespace NDecrypt.Nitro
         /// Process the secure ARM9 region of the file, if possible
         /// </summary>
         /// <param name="commonHeader">CommonHeader representing the DS header</param>
+        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessARM9(CommonHeader commonHeader, Stream reader, Stream writer)
+        private void ProcessARM9(CommonHeader commonHeader, bool encrypt, Stream reader, Stream writer)
         {
             // Seek to the beginning of the secure area
             reader.Seek(0x4000, SeekOrigin.Begin);
@@ -176,13 +185,13 @@ namespace NDecrypt.Nitro
 
             // Perform the initialization steps
             Init1(commonHeader);
-            if (!decryptArgs.Encrypt) Decrypt(ref p1, ref p0);
+            if (!encrypt) Decrypt(ref p1, ref p0);
             _arg2[1] <<= 1;
             _arg2[2] >>= 1;
             Init2();
 
             // If we're decrypting, set the proper flags
-            if (!decryptArgs.Encrypt)
+            if (!encrypt)
             {
                 Decrypt(ref p1, ref p0);
                 if (p0 == Constants.MAGIC30 && p1 == Constants.MAGIC34)
@@ -206,7 +215,7 @@ namespace NDecrypt.Nitro
                 p0 = reader.ReadUInt32();
                 p1 = reader.ReadUInt32();
 
-                if (decryptArgs.Encrypt)
+                if (encrypt)
                     Encrypt(ref p1, ref p0);
                 else
                     Decrypt(ref p1, ref p0);
@@ -218,7 +227,7 @@ namespace NDecrypt.Nitro
             }
 
             // Replace the header explicitly if we're encrypting
-            if (decryptArgs.Encrypt)
+            if (encrypt)
             {
                 reader.Seek(0x4000, SeekOrigin.Begin);
                 writer.Seek(0x4000, SeekOrigin.Begin);
