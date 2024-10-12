@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using NDecrypt.Core;
 using NDecrypt.N3DS;
@@ -21,6 +22,11 @@ namespace NDecrypt
             iQue3DS,
             N3DSCIA,
         }
+
+        /// <summary>
+        /// Mapping of reusable tools
+        /// </summary>
+        private static readonly Dictionary<FileType, ITool> _tools = new();
 
         public static void Main(string[] args)
         {
@@ -105,29 +111,22 @@ namespace NDecrypt
             // Initialize the decrypt args, if possible
             var decryptArgs = new DecryptArgs(keyfile, useAesKeysTxt);
 
+            // Create reusable tools
+            _tools[FileType.NDS] = new DSTool();
+            _tools[FileType.N3DS] = new ThreeDSTool(development, decryptArgs);
+            _tools[FileType.N3DSCIA] = new CIATool(development, decryptArgs);
+
             for (int i = start; i < args.Length; i++)
             {
                 if (File.Exists(args[i]))
                 {
-                    var tool = DeriveTool(args[i], development, decryptArgs);
-                    if (tool == null)
-                        continue;
-
-                    Console.WriteLine(args[i]);
-                    ProcessPath(args[i], tool, encrypt, force);
-                    if (outputHashes) WriteHashes(args[i]);
+                    ProcessPath(args[i], encrypt, force, outputHashes);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        var tool = DeriveTool(file, development, decryptArgs);
-                        if (tool == null)
-                            continue;
-
-                        Console.WriteLine(file);
-                        ProcessPath(file, tool, encrypt, force);
-                        if (outputHashes) WriteHashes(file);
+                        ProcessPath(file, encrypt, force, outputHashes);
                     }
                 }
                 else
@@ -138,18 +137,36 @@ namespace NDecrypt
         }
 
         /// <summary>
-        /// Display a basic help text
+        /// Process a single file path
         /// </summary>
-        /// <param name="path">Path to the file to process</param>
-        /// <param name="tool">Processing tool to use on the file path</param>
+        /// <param name="path">File path to process</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="force">Indicates if the operation should be forced</param>
-        private static void ProcessPath(string path, ITool tool, bool encrypt, bool force)
+        /// <param name="outputHashes">Indicates if hashes should be output after a successful operation</param>
+        private static void ProcessPath(string path, bool encrypt, bool force, bool outputHashes)
         {
+            // Attempt to derive the tool for the path
+            var tool = DeriveTool(path);
+            if (tool == null)
+                return;
+
+            Console.WriteLine($"Processing {path}");
+
+            // Encrypt or decrypt the file as requested
             if (encrypt && !tool.EncryptFile(path, force))
+            {
                 Console.WriteLine("Encryption failed!");
+                return;
+            }
             else if (!encrypt && !tool.DecryptFile(path, force))
+            {
                 Console.WriteLine("Decryption failed!");
+                return;
+            }
+
+            // Output the file hashes, if expected
+            if (outputHashes)
+                WriteHashes(path);
         }
 
         /// <summary>
@@ -209,10 +226,7 @@ More than one path can be specified at a time.");
         /// Derive the encryption tool to be used for the given file
         /// </summary>
         /// <param name="filename">Filename to derive the tool from</param>
-        /// <param name="development">Indicates if development images are expected</param>
-        /// <param name="decryptArgs">Arguments to pass to the tools on creation</param>
-        /// <returns></returns>
-        private static ITool? DeriveTool(string filename, bool development, DecryptArgs decryptArgs)
+        private static ITool? DeriveTool(string filename)
         {
             if (!File.Exists(filename))
             {
@@ -225,19 +239,19 @@ More than one path can be specified at a time.");
             {
                 case FileType.NDS:
                     Console.WriteLine("File recognized as Nintendo DS");
-                    return new DSTool();
+                    return _tools[FileType.NDS];
                 case FileType.NDSi:
                     Console.WriteLine("File recognized as Nintendo DS");
-                    return new DSTool();
+                    return _tools[FileType.NDS];
                 case FileType.iQueDS:
                     Console.WriteLine("File recognized as iQue DS");
-                    return new DSTool();
+                    return _tools[FileType.NDS];
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
-                    return new ThreeDSTool(development, decryptArgs);
+                    return _tools[FileType.N3DS];
                 case FileType.N3DSCIA:
                     Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
-                    return new CIATool(development, decryptArgs);
+                    return _tools[FileType.N3DSCIA];
                 case FileType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
