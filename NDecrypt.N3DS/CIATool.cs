@@ -286,7 +286,7 @@ namespace NDecrypt.N3DS
             uint mediaUnitSize = 0x200; // mediaUnitSize;
 
             reader.BaseStream.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            var exefsHeader = ReadExeFSHeader(reader);
+            var exefsHeader = N3DSDeserializer.ParseExeFSHeader(reader.BaseStream);
 
             // If the header failed to read, log and return
             if (exefsHeader?.FileHeaders == null)
@@ -674,39 +674,6 @@ namespace NDecrypt.N3DS
             try
             {
                 return CIADeserializer.DeserializeStream(reader.BaseStream);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Read from a stream and get an ExeFS header, if possible
-        /// </summary>
-        /// <param name="reader">BinaryReader representing the input stream</param>
-        /// <returns>ExeFS header object, null on error</returns>
-        private static ExeFSHeader? ReadExeFSHeader(BinaryReader reader)
-        {
-            var header = new ExeFSHeader();
-
-            try
-            {
-                header.FileHeaders = new ExeFSFileHeader[10];
-                for (int i = 0; i < 10; i++)
-                {
-                    header.FileHeaders[i] = N3DSDeserializer.ParseExeFSFileHeader(reader.BaseStream)!;
-                }
-
-                header.Reserved = reader.ReadBytes(0x20);
-
-                header.FileHashes = new byte[10][];
-                for (int i = 0; i < 10; i++)
-                {
-                    header.FileHashes[9 - i] = reader.ReadBytes(0x20);
-                }
-
-                return header;
             }
             catch
             {
