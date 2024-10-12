@@ -107,9 +107,6 @@ namespace NDecrypt
                 decryptArgs.Development = false;
             }
 
-            // Initialize the constants, if possible
-            decryptArgs.Initialize();
-
             for (int i = start; i < args.Length; i++)
             {
                 if (File.Exists(args[i]))
@@ -213,9 +210,11 @@ More than one path can be specified at a time.");
                     return new DSTool();
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
+                    decryptArgs.Initialize();
                     return new ThreeDSTool(decryptArgs);
                 case FileType.N3DSCIA:
                     Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
+                    decryptArgs.Initialize();
                     return new CIATool(decryptArgs);
                 case FileType.NULL:
                 default:
