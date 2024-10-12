@@ -181,7 +181,7 @@ More than one path can be specified at a time.");
         /// <summary>
         /// Derive the full path to the keyfile, if possible
         /// </summary>
-        private static string? DeriveKeyFile(string? keyfile, bool useCitraKeyFile)
+        private static string? DeriveKeyFile(string? keyfile, bool useAesKeysTxt)
         {
             // If a path is passed in
             if (!string.IsNullOrEmpty(keyfile))
@@ -195,8 +195,8 @@ More than one path can be specified at a time.");
             using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
             string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
 
-            // Citra has a unique keyfile format
-            if (useCitraKeyFile)
+            // Use the proper default name for the type
+            if (useAesKeysTxt)
                 keyfile = Path.Combine(applicationDirectory, "aes_keys.txt");
             else
                 keyfile = Path.Combine(applicationDirectory, "keys.bin");
