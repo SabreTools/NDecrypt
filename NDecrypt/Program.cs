@@ -96,7 +96,7 @@ namespace NDecrypt
             // If we are using a Citra keyfile, there are no development keys
             if (decryptArgs.Development && useAesKeysTxt)
             {
-                Console.WriteLine("Citra keyfiles don't contain development keys; disabling the option...");
+                Console.WriteLine("AES keyfiles don't contain development keys; disabling the option...");
                 decryptArgs.Development = false;
             }
 
