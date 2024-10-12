@@ -46,7 +46,7 @@ namespace NDecrypt
                 return;
             }
 
-            bool outputHashes = false;
+            bool force = false, outputHashes = false;
             int start = 1;
             for (; start < args.Length; start++)
             {
@@ -60,7 +60,7 @@ namespace NDecrypt
                 }
                 else if (args[start] == "-f" || args[start] == "--force")
                 {
-                    decryptArgs.Force = true;
+                    force = true;
                 }
                 else if (args[start] == "-h" || args[start] == "--hash")
                 {
@@ -114,13 +114,13 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
-                    ProcessPath(args[i], encrypt, decryptArgs, outputHashes);
+                    ProcessPath(args[i], encrypt, force, decryptArgs, outputHashes);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ProcessPath(file, encrypt, decryptArgs, outputHashes);
+                        ProcessPath(file, encrypt, force, decryptArgs, outputHashes);
                     }
                 }
                 else
@@ -135,9 +135,14 @@ namespace NDecrypt
         /// </summary>
         /// <param name="path">Path to the file to process</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="decryptArgs">DecryptArgs to use during processing</param>
         /// <param name="outputHashes">True to write out a hashfile, false otherwise</param>
-        private static void ProcessPath(string path, bool encrypt, DecryptArgs decryptArgs, bool outputHashes)
+        private static void ProcessPath(string path,
+            bool encrypt,
+            bool force,
+            DecryptArgs decryptArgs,
+            bool outputHashes)
         {
             Console.WriteLine(path);
 
@@ -145,12 +150,12 @@ namespace NDecrypt
             if (tool == null)
                 return;
 
-            if (encrypt && !tool.EncryptFile())
+            if (encrypt && !tool.EncryptFile(force))
             {
                 Console.WriteLine("Encryption failed!");
                 return;
             }
-            else if (!encrypt && !tool.DecryptFile())
+            else if (!encrypt && !tool.DecryptFile(force))
             {
                 Console.WriteLine("Decryption failed!");
                 return;

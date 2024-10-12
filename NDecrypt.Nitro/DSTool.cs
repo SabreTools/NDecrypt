@@ -36,7 +36,7 @@ namespace NDecrypt.Nitro
         #region Encrypt
 
         /// <inheritdoc/>
-        public bool EncryptFile()
+        public bool EncryptFile(bool force)
         {
             try
             {
@@ -53,7 +53,7 @@ namespace NDecrypt.Nitro
                 }
 
                 // Encrypt the secure area
-                EncryptSecureArea(cart, decryptArgs.Force, reader, writer);
+                EncryptSecureArea(cart, force, reader, writer);
                 return true;
             }
             catch
@@ -186,7 +186,7 @@ namespace NDecrypt.Nitro
         #region Decrypt
 
         /// <inheritdoc/>
-        public bool DecryptFile()
+        public bool DecryptFile(bool force)
         {
             try
             {
@@ -203,7 +203,7 @@ namespace NDecrypt.Nitro
                 }
 
                 // Decrypt the secure area
-                DecryptSecureArea(cart, decryptArgs.Force, reader, writer);
+                DecryptSecureArea(cart, force, reader, writer);
 
                 return true;
             }

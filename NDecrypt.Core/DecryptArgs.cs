@@ -11,11 +11,6 @@ namespace NDecrypt.Core
         #region Common Fields
 
         /// <summary>
-        /// Flag to indicate forcing the operation
-        /// </summary>
-        public bool Force { get; set; } = false;
-
-        /// <summary>
         /// Represents if all of the keys have been initialized properly
         /// </summary>
         public bool? IsReady { get; private set; }

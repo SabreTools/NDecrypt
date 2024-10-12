@@ -58,16 +58,17 @@ namespace NDecrypt.N3DS
         #region Common Methods
 
         /// <inheritdoc/>
-        public bool EncryptFile() => ProcessFile(encrypt: true);
+        public bool EncryptFile(bool force) => ProcessFile(encrypt: true, force);
 
         /// <inheritdoc/>
-        public bool DecryptFile() => ProcessFile(encrypt: false);
+        public bool DecryptFile(bool force) => ProcessFile(encrypt: false, force);
 
         /// <summary>
         /// Process an input file given the input values
         /// </summary>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        private bool ProcessFile(bool encrypt)
+        /// <param name="force">Indicates if the operation should be forced</param>
+        private bool ProcessFile(bool encrypt, bool force)
         {
             // Ensure the constants are all set
             if (decryptArgs.IsReady != true)
@@ -91,7 +92,7 @@ namespace NDecrypt.N3DS
                 }
 
                 // Process all NCCH partitions
-                ProcessAllPartitions(cia, encrypt, reader, writer);
+                ProcessAllPartitions(cia, encrypt, force, reader, writer);
 
                 return false;
             }
@@ -108,9 +109,14 @@ namespace NDecrypt.N3DS
         /// </summary>
         /// <param name="cia">CIA representing the 3DS CIA file</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessAllPartitions(CIA cia, bool encrypt, Stream reader, Stream writer)
+        private void ProcessAllPartitions(CIA cia,
+            bool encrypt,
+            bool force,
+            Stream reader,
+            Stream writer)
         {
             // Iterate over all NCCH partitions
             for (int p = 0; p < cia.Partitions!.Length; p++)
@@ -119,7 +125,7 @@ namespace NDecrypt.N3DS
                 if (ncchHeader == null)
                     continue;
 
-                ProcessPartition(ncchHeader, p, encrypt, decryptArgs.Force, reader, writer);
+                ProcessPartition(ncchHeader, p, encrypt, force, reader, writer);
             }
         }
 

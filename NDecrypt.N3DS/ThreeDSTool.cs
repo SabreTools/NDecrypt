@@ -56,16 +56,17 @@ namespace NDecrypt.N3DS
         #region Common Methods
 
         /// <inheritdoc/>
-        public bool EncryptFile() => ProcessFile(encrypt: true);
+        public bool EncryptFile(bool force) => ProcessFile(encrypt: true, force);
 
         /// <inheritdoc/>
-        public bool DecryptFile() => ProcessFile(encrypt: false);
+        public bool DecryptFile(bool force) => ProcessFile(encrypt: false, force);
 
         /// <summary>
         /// Process an input file given the input values
         /// </summary>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        private bool ProcessFile(bool encrypt)
+        /// <param name="force">Indicates if the operation should be forced</param>
+        private bool ProcessFile(bool encrypt, bool force)
         {
             // Ensure the constants are all set
             if (decryptArgs.IsReady != true)
@@ -89,7 +90,7 @@ namespace NDecrypt.N3DS
                 }
 
                 // Process all 8 NCCH partitions
-                ProcessAllPartitions(cart, encrypt, reader, writer);
+                ProcessAllPartitions(cart, encrypt, force, reader, writer);
 
                 return true;
             }
@@ -106,9 +107,14 @@ namespace NDecrypt.N3DS
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void ProcessAllPartitions(Cart cart, bool encrypt, Stream reader, Stream writer)
+        private void ProcessAllPartitions(Cart cart,
+            bool encrypt,
+            bool force,
+            Stream reader,
+            Stream writer)
         {
             // Check the partitions table
             if (cart.Header?.PartitionsTable == null)
@@ -127,7 +133,7 @@ namespace NDecrypt.N3DS
                     continue;
                 }
 
-                ProcessPartition(cart, partitionIndex, encrypt, decryptArgs.Force, reader, writer);
+                ProcessPartition(cart, partitionIndex, encrypt, force, reader, writer);
             }
         }
 
