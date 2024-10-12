@@ -114,7 +114,9 @@ namespace NDecrypt
                     if (tool == null)
                         continue;
 
-                    ProcessPath(args[i], tool, encrypt, force, outputHashes);
+                    Console.WriteLine(args[i]);
+                    ProcessPath(args[i], tool, encrypt, force);
+                    if (outputHashes) WriteHashes(args[i]);
                 }
                 else if (Directory.Exists(args[i]))
                 {
@@ -124,7 +126,9 @@ namespace NDecrypt
                         if (tool == null)
                             continue;
 
-                        ProcessPath(file, tool, encrypt, force, outputHashes);
+                        Console.WriteLine(file);
+                        ProcessPath(file, tool, encrypt, force);
+                        if (outputHashes) WriteHashes(file);
                     }
                 }
                 else
@@ -141,28 +145,12 @@ namespace NDecrypt
         /// <param name="tool">Processing tool to use on the file path</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="force">Indicates if the operation should be forced</param>
-        /// <param name="outputHashes">True to write out a hashfile, false otherwise</param>
-        private static void ProcessPath(string path,
-            ITool tool,
-            bool encrypt,
-            bool force,
-            bool outputHashes)
+        private static void ProcessPath(string path, ITool tool, bool encrypt, bool force)
         {
-            Console.WriteLine(path);
-
             if (encrypt && !tool.EncryptFile(path, force))
-            {
                 Console.WriteLine("Encryption failed!");
-                return;
-            }
             else if (!encrypt && !tool.DecryptFile(path, force))
-            {
                 Console.WriteLine("Decryption failed!");
-                return;
-            }
-
-            if (outputHashes)
-                WriteHashes(path);
         }
 
         /// <summary>
