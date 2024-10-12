@@ -15,11 +15,6 @@ namespace NDecrypt.Nitro
         /// </summary>
         private readonly string filename;
 
-        /// <summary>
-        /// Decryption args to use while processing
-        /// </summary>
-        private readonly DecryptArgs decryptArgs;
-
         #region Encryption process variables
 
         private uint[] _cardHash = new uint[0x412];
@@ -30,7 +25,6 @@ namespace NDecrypt.Nitro
         public DSTool(string filename, DecryptArgs decryptArgs)
         {
             this.filename = filename;
-            this.decryptArgs = decryptArgs;
         }
 
         #region Encrypt
