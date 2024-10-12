@@ -20,6 +20,11 @@ namespace NDecrypt.N3DS
         private readonly DecryptArgs _decryptArgs;
 
         /// <summary>
+        /// Indicates if development images are expected
+        /// </summary>
+        private readonly bool _development;
+
+        /// <summary>
         /// Set of all KeyX values
         /// </summary>
         private readonly BigInteger[] KeyX = new BigInteger[8];
@@ -44,8 +49,9 @@ namespace NDecrypt.N3DS
         /// </summary>
         private readonly BigInteger[] NormalKey2C = new BigInteger[8];
 
-        public CIATool(DecryptArgs decryptArgs)
+        public CIATool(bool development, DecryptArgs decryptArgs)
         {
+            _development = development;
             _decryptArgs = decryptArgs;
         }
 
@@ -188,7 +194,7 @@ namespace NDecrypt.N3DS
         private void SetEncryptionKeys(NCCHHeader ncchHeader, int partitionIndex, bool encrypt)
         {
             KeyX[partitionIndex] = 0;
-            KeyX2C[partitionIndex] = _decryptArgs.Development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+            KeyX2C[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
 
             // Backup headers can't have a KeyY value set
             if (ncchHeader.RSA2048Signature != null)
@@ -225,22 +231,22 @@ namespace NDecrypt.N3DS
             {
                 if (method == CryptoMethod.Original)
                 {
-                    KeyX[partitionIndex] = _decryptArgs.Development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
                     Console.WriteLine("Encryption Method: Key 0x2C");
                 }
                 else if (method == CryptoMethod.Seven)
                 {
-                    KeyX[partitionIndex] = _decryptArgs.Development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
+                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
                     Console.WriteLine("Encryption Method: Key 0x25");
                 }
                 else if (method == CryptoMethod.NineThree)
                 {
-                    KeyX[partitionIndex] = _decryptArgs.Development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
+                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
                     Console.WriteLine("Encryption Method: Key 0x18");
                 }
                 else if (method == CryptoMethod.NineSix)
                 {
-                    KeyX[partitionIndex] = _decryptArgs.Development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
+                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
                     Console.WriteLine("Encryption Method: Key 0x1B");
                 }
 
@@ -617,7 +623,7 @@ namespace NDecrypt.N3DS
                 //}
                 //else
                 //{
-                KeyX[partitionIndex] = (_decryptArgs.Development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
+                KeyX[partitionIndex] = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
                 NormalKey[partitionIndex] = RotateLeft((RotateLeft(KeyX[partitionIndex], 2, 128) ^ KeyY[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
                 //}
             }

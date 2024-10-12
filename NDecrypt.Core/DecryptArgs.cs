@@ -20,11 +20,6 @@ namespace NDecrypt.Core
         #region 3DS-Specific Fields
 
         /// <summary>
-        /// Flag to indicate key types to use [3DS only]
-        /// </summary>
-        public bool Development { get; set; } = false;
-
-        /// <summary>
         /// AES Hardware Constant
         /// </summary>
         public BigInteger AESHardwareConstant { get; private set; }

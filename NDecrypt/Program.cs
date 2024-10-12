@@ -46,7 +46,10 @@ namespace NDecrypt
                 return;
             }
 
-            bool force = false, outputHashes = false, useAesKeysTxt = false;
+            bool development = false,
+                force = false,
+                outputHashes = false,
+                useAesKeysTxt = false;
             string? keyfile = null;
             int start = 1;
             for (; start < args.Length; start++)
@@ -58,7 +61,7 @@ namespace NDecrypt
                 }
                 else if (args[start] == "-dev" || args[start] == "--development")
                 {
-                    decryptArgs.Development = true;
+                    development = true;
                 }
                 else if (args[start] == "-f" || args[start] == "--force")
                 {
@@ -94,10 +97,10 @@ namespace NDecrypt
             keyfile = DeriveKeyFile(keyfile, useAesKeysTxt);
 
             // If we are using a Citra keyfile, there are no development keys
-            if (decryptArgs.Development && useAesKeysTxt)
+            if (development && useAesKeysTxt)
             {
                 Console.WriteLine("AES keyfiles don't contain development keys; disabling the option...");
-                decryptArgs.Development = false;
+                development = false;
             }
 
             // Initialize the decrypt args, if possible
@@ -107,13 +110,21 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
-                    ProcessPath(args[i], encrypt, force, decryptArgs, outputHashes);
+                    var tool = DeriveTool(args[i], development, decryptArgs);
+                    if (tool == null)
+                        continue;
+
+                    ProcessPath(args[i], tool, encrypt, force, outputHashes);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ProcessPath(file, encrypt, force, decryptArgs, outputHashes);
+                        var tool = DeriveTool(file, development, decryptArgs);
+                        if (tool == null)
+                            continue;
+
+                        ProcessPath(file, tool, encrypt, force, outputHashes);
                     }
                 }
                 else
@@ -127,21 +138,17 @@ namespace NDecrypt
         /// Display a basic help text
         /// </summary>
         /// <param name="path">Path to the file to process</param>
+        /// <param name="tool">Processing tool to use on the file path</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="force">Indicates if the operation should be forced</param>
-        /// <param name="decryptArgs">DecryptArgs to use during processing</param>
         /// <param name="outputHashes">True to write out a hashfile, false otherwise</param>
         private static void ProcessPath(string path,
+            ITool tool,
             bool encrypt,
             bool force,
-            DecryptArgs decryptArgs,
             bool outputHashes)
         {
             Console.WriteLine(path);
-
-            ITool? tool = DeriveTool(path, decryptArgs);
-            if (tool == null)
-                return;
 
             if (encrypt && !tool.EncryptFile(path, force))
             {
@@ -215,10 +222,17 @@ More than one path can be specified at a time.");
         /// Derive the encryption tool to be used for the given file
         /// </summary>
         /// <param name="filename">Filename to derive the tool from</param>
+        /// <param name="development">Indicates if development images are expected</param>
         /// <param name="decryptArgs">Arguments to pass to the tools on creation</param>
         /// <returns></returns>
-        private static ITool? DeriveTool(string filename, DecryptArgs decryptArgs)
+        private static ITool? DeriveTool(string filename, bool development, DecryptArgs decryptArgs)
         {
+            if (!File.Exists(filename))
+            {
+                Console.WriteLine($"{filename} does not exist! Skipping...");
+                return null;
+            }
+
             FileType type = DetermineFileType(filename);
             switch (type)
             {
@@ -233,10 +247,10 @@ More than one path can be specified at a time.");
                     return new DSTool();
                 case FileType.N3DS:
                     Console.WriteLine("File recognized as Nintendo 3DS");
-                    return new ThreeDSTool(decryptArgs);
+                    return new ThreeDSTool(development, decryptArgs);
                 case FileType.N3DSCIA:
                     Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
-                    return new CIATool(decryptArgs);
+                    return new CIATool(development, decryptArgs);
                 case FileType.NULL:
                 default:
                     Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.nds.enc, *.srl, *.dsi, *.3ds");
