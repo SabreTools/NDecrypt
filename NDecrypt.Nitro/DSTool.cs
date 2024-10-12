@@ -53,7 +53,7 @@ namespace NDecrypt.Nitro
                 }
 
                 // Encrypt the secure area
-                EncryptSecureArea(cart, reader, writer);
+                EncryptSecureArea(cart, decryptArgs.Force, reader, writer);
                 return true;
             }
             catch
@@ -68,13 +68,13 @@ namespace NDecrypt.Nitro
         /// Encrypt secure area in the DS/DSi file
         /// </summary>s
         /// <param name="cart">Cart representing the DS file</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void EncryptSecureArea(Cart cart, Stream reader, Stream writer)
+        private void EncryptSecureArea(Cart cart, bool force, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
-            if (decryptArgs.Force)
+            if (force)
             {
                 Console.WriteLine("File is not verified due to force flag being set.");
             }
@@ -203,7 +203,7 @@ namespace NDecrypt.Nitro
                 }
 
                 // Decrypt the secure area
-                DecryptSecureArea(cart, reader, writer);
+                DecryptSecureArea(cart, decryptArgs.Force, reader, writer);
 
                 return true;
             }
@@ -219,12 +219,13 @@ namespace NDecrypt.Nitro
         /// Decrypt secure area in the DS/DSi file
         /// </summary>s
         /// <param name="cart">Cart representing the DS file</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void DecryptSecureArea(Cart cart, Stream reader, Stream writer)
+        private void DecryptSecureArea(Cart cart, bool force, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
-            if (decryptArgs.Force)
+            if (force)
             {
                 Console.WriteLine("File is not verified due to force flag being set.");
             }
