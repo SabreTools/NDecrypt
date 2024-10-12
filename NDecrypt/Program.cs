@@ -89,16 +89,7 @@ namespace NDecrypt
             }
 
             // Derive the keyfile path based on the runtime folder if not already set
-            if (string.IsNullOrWhiteSpace(decryptArgs.KeyFile))
-            {
-                using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
-                string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
-
-                if (decryptArgs.UseCitraKeyFile)
-                    decryptArgs.KeyFile = Path.Combine(applicationDirectory, "aes_keys.txt");
-                else
-                    decryptArgs.KeyFile = Path.Combine(applicationDirectory, "keys.bin");
-            }
+            decryptArgs.KeyFile = DeriveKeyFile(decryptArgs.KeyFile, decryptArgs.UseCitraKeyFile);
 
             // If we are using a Citra keyfile, there are no development keys
             if (decryptArgs.Development && decryptArgs.UseCitraKeyFile)
@@ -186,6 +177,33 @@ Possible values for [flags] (one or more can be used):
 
 <path> can be any file or folder that contains uncompressed items.
 More than one path can be specified at a time.");
+        }
+
+        /// <summary>
+        /// Derive the full path to the keyfile, if possible
+        /// </summary>
+        private static string? DeriveKeyFile(string? keyfile, bool useCitraKeyFile)
+        {
+            // If a path is passed in
+            if (!string.IsNullOrEmpty(keyfile))
+            {
+                keyfile = Path.GetFullPath(keyfile);
+                if (File.Exists(keyfile))
+                    return keyfile;
+            }
+
+            // Derive the keyfile path based on the runtime folder if not already set
+            using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
+            string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
+
+            // Citra has a unique keyfile format
+            if (useCitraKeyFile)
+                keyfile = Path.Combine(applicationDirectory, "aes_keys.txt");
+            else
+                keyfile = Path.Combine(applicationDirectory, "keys.bin");
+
+            // Only return the path if the file exists
+            return File.Exists(keyfile) ? keyfile : null;
         }
 
         /// <summary>
