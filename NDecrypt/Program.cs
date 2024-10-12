@@ -240,7 +240,7 @@ More than one path can be specified at a time.");
                     return new CIATool(development, decryptArgs);
                 case FileType.NULL:
                 default:
-                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.nds.enc, *.srl, *.dsi, *.3ds");
+                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
                     return null;
             }
         }
@@ -253,7 +253,8 @@ More than one path can be specified at a time.");
         private static FileType DetermineFileType(string filename)
         {
             if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)        // Standard carts
-                || filename.EndsWith(".nds.enc", StringComparison.OrdinalIgnoreCase) // carts/images with secure area encrypted
+                || filename.EndsWith(".nds.dec", StringComparison.OrdinalIgnoreCase) // Carts/images with secure area decrypted
+                || filename.EndsWith(".nds.enc", StringComparison.OrdinalIgnoreCase) // Carts/images with secure area encrypted
                 || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase))    // Development carts/images
                 return FileType.NDS;
 
@@ -263,7 +264,9 @@ More than one path can be specified at a time.");
             else if (filename.EndsWith(".ids", StringComparison.OrdinalIgnoreCase))
                 return FileType.iQueDS;
 
-            else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase))
+            else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase)    // Standard carts
+                || filename.EndsWith(".3ds.dec", StringComparison.OrdinalIgnoreCase)  // Decrypted carts/images
+                || filename.EndsWith(".3ds.enc", StringComparison.OrdinalIgnoreCase)) // Encrypted carts/images
                 return FileType.N3DS;
 
             else if (filename.EndsWith(".cia", StringComparison.OrdinalIgnoreCase))
