@@ -10,23 +10,9 @@ namespace NDecrypt
     class Program
     {
         /// <summary>
-        /// Type of the detected file
-        /// </summary>
-        private enum FileType
-        {
-            NULL,
-            NDS,
-            NDSi,
-            iQueDS,
-            N3DS,
-            iQue3DS,
-            N3DSCIA,
-        }
-
-        /// <summary>
         /// Mapping of reusable tools
         /// </summary>
-        private static readonly Dictionary<FileType, ITool> _tools = new();
+        private static readonly Dictionary<FileType, ITool> _tools = [];
 
         public static void Main(string[] args)
         {
