@@ -27,27 +27,27 @@ namespace NDecrypt.N3DS
         /// <summary>
         /// Set of all KeyX values
         /// </summary>
-        private readonly BigInteger[] KeyX = new BigInteger[8];
+        private readonly BigInteger[] KeyXMap = new BigInteger[8];
 
         /// <summary>
         /// Set of all KeyX2C values
         /// </summary>
-        private readonly BigInteger[] KeyX2C = new BigInteger[8];
+        private readonly BigInteger[] KeyX2CMap = new BigInteger[8];
 
         /// <summary>
         /// Set of all KeyY values
         /// </summary>
-        private readonly BigInteger[] KeyY = new BigInteger[8];
+        private readonly BigInteger[] KeyYMap = new BigInteger[8];
 
         /// <summary>
         /// Set of all KeyY values
         /// </summary>
-        private readonly BigInteger[] NormalKey = new BigInteger[8];
+        private readonly BigInteger[] NormalKeyMap = new BigInteger[8];
 
         /// <summary>
         /// Set of all KeyY values
         /// </summary>
-        private readonly BigInteger[] NormalKey2C = new BigInteger[8];
+        private readonly BigInteger[] NormalKey2CMap = new BigInteger[8];
 
         public CIATool(bool development, DecryptArgs decryptArgs)
         {
@@ -193,17 +193,17 @@ namespace NDecrypt.N3DS
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         private void SetEncryptionKeys(NCCHHeader ncchHeader, int partitionIndex, bool encrypt)
         {
-            KeyX[partitionIndex] = 0;
-            KeyX2C[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+            KeyXMap[partitionIndex] = 0;
+            KeyX2CMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
 
             // Backup headers can't have a KeyY value set
             if (ncchHeader.RSA2048Signature != null)
-                KeyY[partitionIndex] = new BigInteger(ncchHeader.RSA2048Signature.Take(16).Reverse().ToArray());
+                KeyYMap[partitionIndex] = new BigInteger(ncchHeader.RSA2048Signature.Take(16).Reverse().ToArray());
             else
-                KeyY[partitionIndex] = new BigInteger(0);
+                KeyYMap[partitionIndex] = new BigInteger(0);
 
-            NormalKey[partitionIndex] = 0x00;
-            NormalKey2C[partitionIndex] = RotateLeft((RotateLeft(KeyX2C[partitionIndex], 2, 128) ^ KeyY[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
+            NormalKeyMap[partitionIndex] = 0x00;
+            NormalKey2CMap[partitionIndex] = RotateLeft((RotateLeft(KeyX2CMap[partitionIndex], 2, 128) ^ KeyYMap[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
 
             // TODO: Figure out what sane defaults for these values are
             // Set the header to use based on mode
@@ -223,34 +223,34 @@ namespace NDecrypt.N3DS
 
             if (masks.HasFlag(BitMasks.FixedCryptoKey))
             {
-                NormalKey[partitionIndex] = 0x00;
-                NormalKey2C[partitionIndex] = 0x00;
+                NormalKeyMap[partitionIndex] = 0x00;
+                NormalKey2CMap[partitionIndex] = 0x00;
                 Console.WriteLine("Encryption Method: Zero Key");
             }
             else
             {
                 if (method == CryptoMethod.Original)
                 {
-                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
                     Console.WriteLine("Encryption Method: Key 0x2C");
                 }
                 else if (method == CryptoMethod.Seven)
                 {
-                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
+                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
                     Console.WriteLine("Encryption Method: Key 0x25");
                 }
                 else if (method == CryptoMethod.NineThree)
                 {
-                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
+                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
                     Console.WriteLine("Encryption Method: Key 0x18");
                 }
                 else if (method == CryptoMethod.NineSix)
                 {
-                    KeyX[partitionIndex] = _development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
+                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
                     Console.WriteLine("Encryption Method: Key 0x1B");
                 }
 
-                NormalKey[partitionIndex] = RotateLeft((RotateLeft(KeyX[partitionIndex], 2, 128) ^ KeyY[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
+                NormalKeyMap[partitionIndex] = RotateLeft((RotateLeft(KeyXMap[partitionIndex], 2, 128) ^ KeyYMap[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
             }
         }
 
@@ -280,7 +280,7 @@ namespace NDecrypt.N3DS
 
                 Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
-                var cipher = CreateAESCipher(NormalKey2C[partitionIndex], ncchHeader.PlainIV(), encrypt);
+                var cipher = CreateAESCipher(NormalKey2CMap[partitionIndex], ncchHeader.PlainIV(), encrypt);
                 writer.Write(cipher.ProcessBytes(reader.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
                 writer.Flush();
                 return true;
@@ -333,8 +333,8 @@ namespace NDecrypt.N3DS
 
                 byte[] exefsIVWithOffsetForHeader = AddToByteArray(ncchHeader.ExeFSIV(), (int)ctroffset);
 
-                var firstCipher = CreateAESCipher(NormalKey[partitionIndex], exefsIVWithOffsetForHeader, encrypt);
-                var secondCipher = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffsetForHeader, !encrypt);
+                var firstCipher = CreateAESCipher(NormalKeyMap[partitionIndex], exefsIVWithOffsetForHeader, encrypt);
+                var secondCipher = CreateAESCipher(NormalKey2CMap[partitionIndex], exefsIVWithOffsetForHeader, !encrypt);
 
                 reader.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
                 writer.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -383,7 +383,7 @@ namespace NDecrypt.N3DS
 
             Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
-            var exeFSFilenameTable = CreateAESCipher(NormalKey2C[partitionIndex], ncchHeader.ExeFSIV(), encrypt);
+            var exeFSFilenameTable = CreateAESCipher(NormalKey2CMap[partitionIndex], ncchHeader.ExeFSIV(), encrypt);
             writer.Write(exeFSFilenameTable.ProcessBytes(reader.ReadBytes((int)mediaUnitSize)));
             writer.Flush();
         }
@@ -413,7 +413,7 @@ namespace NDecrypt.N3DS
 
             byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV(), ctroffsetE);
 
-            var exeFS = CreateAESCipher(NormalKey2C[partitionIndex], exefsIVWithOffset, encrypt);
+            var exeFS = CreateAESCipher(NormalKey2CMap[partitionIndex], exefsIVWithOffset, encrypt);
 
             reader.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
             writer.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
@@ -499,7 +499,7 @@ namespace NDecrypt.N3DS
             long romfsSizeM = (int)((long)(ncchHeader.RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024));
             int romfsSizeB = (int)((long)(ncchHeader.RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024));
 
-            var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), encrypt: false);
+            var cipher = CreateAESCipher(NormalKeyMap[partitionIndex], ncchHeader.RomFSIV(), encrypt: false);
 
             reader.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
@@ -623,12 +623,12 @@ namespace NDecrypt.N3DS
                 //}
                 //else
                 //{
-                KeyX[partitionIndex] = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
-                NormalKey[partitionIndex] = RotateLeft((RotateLeft(KeyX[partitionIndex], 2, 128) ^ KeyY[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
+                KeyXMap[partitionIndex] = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
+                NormalKeyMap[partitionIndex] = RotateLeft((RotateLeft(KeyXMap[partitionIndex], 2, 128) ^ KeyYMap[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
                 //}
             }
 
-            var cipher = CreateAESCipher(NormalKey[partitionIndex], ncchHeader.RomFSIV(), encrypt: true);
+            var cipher = CreateAESCipher(NormalKeyMap[partitionIndex], ncchHeader.RomFSIV(), encrypt: true);
 
             reader.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
             writer.Seek((tableEntry.Offset + ncchHeader.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
