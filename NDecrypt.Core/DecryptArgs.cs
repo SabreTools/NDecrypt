@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using SabreTools.IO.Extensions;
 using SabreTools.IO.Readers;
 
 namespace NDecrypt.Core
@@ -87,7 +88,7 @@ namespace NDecrypt.Core
             else
                 InitKeysBin(keyfile);
         }
-        
+
         /// <summary>
         /// Setup all of the necessary constants from aes_keys.txt
         /// </summary>
@@ -102,100 +103,99 @@ namespace NDecrypt.Core
 
             try
             {
-                using (var reader = new IniReader(keyfile))
-                {
-                    // This is required to preserve sign for BigInteger
-                    byte[] signByte = new byte[] { 0x00 };
+                using var reader = new IniReader(keyfile);
 
-                    while (reader.ReadNextLine())
+                // This is required to preserve sign for BigInteger
+                byte[] signByte = [0x00];
+
+                while (reader.ReadNextLine())
+                {
+                    // Ignore comments in the file
+                    if (reader.RowType == IniRowType.Comment)
+                        continue;
+                    if (reader.KeyValuePair == null || string.IsNullOrWhiteSpace(reader.KeyValuePair?.Key))
+                        break;
+
+                    var kvp = reader.KeyValuePair!.Value;
+                    byte[] value = StringToByteArray(kvp.Value).Reverse().ToArray();
+                    byte[] valueWithSign = value.Concat(signByte).ToArray();
+
+                    switch (kvp.Key)
                     {
-                        // Ignore comments in the file
-                        if (reader.RowType == IniRowType.Comment)
-                            continue;
-                        if (reader.KeyValuePair == null || string.IsNullOrWhiteSpace(reader.KeyValuePair?.Key))
+                        // Hardware constant
+                        case "generator":
+                            AESHardwareConstant = new BigInteger(value);
                             break;
 
-                        var kvp = reader.KeyValuePair!.Value;
-                        byte[] value = StringToByteArray(kvp.Value).Reverse().ToArray();
-                        byte[] valueWithSign = value.Concat(signByte).ToArray();
+                        // Retail Keys
+                        case "slot0x18KeyX":
+                            KeyX0x18 = new BigInteger(valueWithSign);
+                            break;
+                        case "slot0x1BKeyX":
+                            KeyX0x1B = new BigInteger(valueWithSign);
+                            break;
+                        case "slot0x25KeyX":
+                            KeyX0x25 = new BigInteger(valueWithSign);
+                            break;
+                        case "slot0x2CKeyX":
+                            KeyX0x2C = new BigInteger(valueWithSign);
+                            break;
 
-                        switch (kvp.Key)
-                        {
-                            // Hardware constant
-                            case "generator":
-                                AESHardwareConstant = new BigInteger(value);
-                                break;
+                        // Currently Unused KeyX
+                        case "slot0x03KeyX":
+                        case "slot0x19KeyX":
+                        case "slot0x1AKeyX":
+                        case "slot0x1CKeyX":
+                        case "slot0x1DKeyX":
+                        case "slot0x1EKeyX":
+                        case "slot0x1FKeyX":
+                        case "slot0x2DKeyX":
+                        case "slot0x2EKeyX":
+                        case "slot0x2FKeyX":
+                        case "slot0x30KeyX":
+                        case "slot0x31KeyX":
+                        case "slot0x32KeyX":
+                        case "slot0x33KeyX":
+                        case "slot0x34KeyX":
+                        case "slot0x35KeyX":
+                        case "slot0x36KeyX":
+                        case "slot0x37KeyX":
+                        case "slot0x38KeyX":
+                        case "slot0x3AKeyX":
+                        case "slot0x3BKeyX":
+                            break;
 
-                            // Retail Keys
-                            case "slot0x18KeyX":
-                                 KeyX0x18 = new BigInteger(valueWithSign);
-                                 break;
-                            case "slot0x1BKeyX":
-                                KeyX0x1B = new BigInteger(valueWithSign);
-                                break;
-                            case "slot0x25KeyX":
-                                KeyX0x25 = new BigInteger(valueWithSign);
-                                break;
-                            case "slot0x2CKeyX":
-                                KeyX0x2C = new BigInteger(valueWithSign);
-                                break;
+                        // Currently Unused KeyY
+                        case "slot0x03KeyY":
+                        case "slot0x06KeyY":
+                        case "slot0x07KeyY":
+                        case "slot0x2EKeyY":
+                        case "slot0x2FKeyY":
+                        case "slot0x31KeyY":
+                            break;
 
-                            // Currently Unused KeyX
-                            case "slot0x03KeyX":
-                            case "slot0x19KeyX":
-                            case "slot0x1AKeyX":
-                            case "slot0x1CKeyX":
-                            case "slot0x1DKeyX":
-                            case "slot0x1EKeyX":
-                            case "slot0x1FKeyX":
-                            case "slot0x2DKeyX":
-                            case "slot0x2EKeyX":
-                            case "slot0x2FKeyX":
-                            case "slot0x30KeyX":
-                            case "slot0x31KeyX":
-                            case "slot0x32KeyX":
-                            case "slot0x33KeyX":
-                            case "slot0x34KeyX":
-                            case "slot0x35KeyX":
-                            case "slot0x36KeyX":
-                            case "slot0x37KeyX":
-                            case "slot0x38KeyX":
-                            case "slot0x3AKeyX":
-                            case "slot0x3BKeyX":
-                                break;
-
-                            // Currently Unused KeyY
-                            case "slot0x03KeyY":
-                            case "slot0x06KeyY":
-                            case "slot0x07KeyY":
-                            case "slot0x2EKeyY":
-                            case "slot0x2FKeyY":
-                            case "slot0x31KeyY":
-                                break;
-
-                            // Currently Unused KeyN
-                            case "slot0x0DKeyN":
-                            case "slot0x15KeyN":
-                            case "slot0x16KeyN":
-                            case "slot0x19KeyN":
-                            case "slot0x1AKeyN":
-                            case "slot0x1BKeyN":
-                            case "slot0x1CKeyN":
-                            case "slot0x1DKeyN":
-                            case "slot0x1EKeyN":
-                            case "slot0x1FKeyN":
-                            case "slot0x24KeyN":
-                            case "slot0x2DKeyN":
-                            case "slot0x2EKeyN":
-                            case "slot0x2FKeyN":
-                            case "slot0x31KeyN":
-                            case "slot0x32KeyN":
-                            case "slot0x36KeyN":
-                            case "slot0x37KeyN":
-                            case "slot0x38KeyN":
-                            case "slot0x3BKeyN":
-                                break;
-                        }
+                        // Currently Unused KeyN
+                        case "slot0x0DKeyN":
+                        case "slot0x15KeyN":
+                        case "slot0x16KeyN":
+                        case "slot0x19KeyN":
+                        case "slot0x1AKeyN":
+                        case "slot0x1BKeyN":
+                        case "slot0x1CKeyN":
+                        case "slot0x1DKeyN":
+                        case "slot0x1EKeyN":
+                        case "slot0x1FKeyN":
+                        case "slot0x24KeyN":
+                        case "slot0x2DKeyN":
+                        case "slot0x2EKeyN":
+                        case "slot0x2FKeyN":
+                        case "slot0x31KeyN":
+                        case "slot0x32KeyN":
+                        case "slot0x36KeyN":
+                        case "slot0x37KeyN":
+                        case "slot0x38KeyN":
+                        case "slot0x3BKeyN":
+                            break;
                     }
                 }
             }
@@ -207,7 +207,7 @@ namespace NDecrypt.Core
 
             IsReady = true;
         }
-    
+
         /// <summary>
         /// Setup all of the necessary constants from keys.bin
         /// </summary>
@@ -223,26 +223,25 @@ namespace NDecrypt.Core
 
             try
             {
-                using (BinaryReader reader = new BinaryReader(File.Open(keyfile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
-                {
-                    // This is required to preserve sign for BigInteger
-                    byte[] signByte = new byte[] { 0x00 };
+                using Stream reader = File.Open(keyfile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-                    // Hardware constant
-                    AESHardwareConstant = new BigInteger(reader.ReadBytes(16));
+                // This is required to preserve sign for BigInteger
+                byte[] signByte = [0x00];
 
-                    // Retail keys
-                    KeyX0x18 = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
-                    KeyX0x1B = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
-                    KeyX0x25 = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
-                    KeyX0x2C = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
+                // Hardware constant
+                AESHardwareConstant = new BigInteger(reader.ReadBytes(16));
 
-                    // Development keys
-                    DevKeyX0x18 = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
-                    DevKeyX0x1B = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
-                    DevKeyX0x25 = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
-                    DevKeyX0x2C = new BigInteger(reader.ReadBytes(16).Concat(signByte).ToArray());
-                }
+                // Retail keys
+                KeyX0x18 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                KeyX0x1B = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                KeyX0x25 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                KeyX0x2C = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+
+                // Development keys
+                DevKeyX0x18 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                DevKeyX0x1B = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                DevKeyX0x25 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                DevKeyX0x2C = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
             }
             catch
             {
