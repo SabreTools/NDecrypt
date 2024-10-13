@@ -235,28 +235,15 @@ More than one path can be specified at a time.");
             }
 
             FileType type = DetermineFileType(filename);
-            switch (type)
+            return type switch
             {
-                case FileType.NDS:
-                    Console.WriteLine("File recognized as Nintendo DS");
-                    return _tools[FileType.NDS];
-                case FileType.NDSi:
-                    Console.WriteLine("File recognized as Nintendo DS");
-                    return _tools[FileType.NDS];
-                case FileType.iQueDS:
-                    Console.WriteLine("File recognized as iQue DS");
-                    return _tools[FileType.NDS];
-                case FileType.N3DS:
-                    Console.WriteLine("File recognized as Nintendo 3DS");
-                    return _tools[FileType.N3DS];
-                case FileType.N3DSCIA:
-                    Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
-                    return _tools[FileType.N3DSCIA];
-                case FileType.NULL:
-                default:
-                    Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
-                    return null;
-            }
+                FileType.NDS => _tools[FileType.NDS],
+                FileType.NDSi => _tools[FileType.NDS],
+                FileType.iQueDS => _tools[FileType.NDS],
+                FileType.N3DS => _tools[FileType.N3DS],
+                FileType.N3DSCIA => _tools[FileType.N3DSCIA],
+                _ => null,
+            };
         }
 
         /// <summary>
@@ -270,22 +257,34 @@ More than one path can be specified at a time.");
                 || filename.EndsWith(".nds.dec", StringComparison.OrdinalIgnoreCase) // Carts/images with secure area decrypted
                 || filename.EndsWith(".nds.enc", StringComparison.OrdinalIgnoreCase) // Carts/images with secure area encrypted
                 || filename.EndsWith(".srl", StringComparison.OrdinalIgnoreCase))    // Development carts/images
+            {
+                Console.WriteLine("File recognized as Nintendo DS");
                 return FileType.NDS;
-
+            }
             else if (filename.EndsWith(".dsi", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("File recognized as Nintendo DSi");
                 return FileType.NDSi;
-
+            }
             else if (filename.EndsWith(".ids", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("File recognized as iQue DS");
                 return FileType.iQueDS;
-
+            }
             else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase)    // Standard carts
                 || filename.EndsWith(".3ds.dec", StringComparison.OrdinalIgnoreCase)  // Decrypted carts/images
                 || filename.EndsWith(".3ds.enc", StringComparison.OrdinalIgnoreCase)) // Encrypted carts/images
+            {
+                Console.WriteLine("File recognized as Nintendo 3DS");
                 return FileType.N3DS;
-
+            }
             else if (filename.EndsWith(".cia", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
                 return FileType.N3DSCIA;
+            }
 
+            Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
             return FileType.NULL;
         }
 
