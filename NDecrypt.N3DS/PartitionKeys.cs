@@ -12,15 +12,15 @@ namespace NDecrypt.N3DS
     /// </summary>
     public class PartitionKeys
     {
-        public BigInteger KeyX { get; }
+        public BigInteger KeyX { get; set; }
 
-        public BigInteger KeyX2C { get; }
+        public BigInteger KeyX2C { get; set; }
 
-        public BigInteger KeyY { get; }
+        public BigInteger KeyY { get; set; }
 
-        public BigInteger NormalKey { get; }
+        public BigInteger NormalKey { get; set; }
 
-        public BigInteger NormalKey2C { get; }
+        public BigInteger NormalKey2C { get; set; }
 
         /// <summary>
         /// Create a new set of keys for a given partition

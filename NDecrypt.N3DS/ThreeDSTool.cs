@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using System.Numerics;
 using NDecrypt.Core;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
@@ -23,29 +21,9 @@ namespace NDecrypt.N3DS
         private readonly bool _development;
 
         /// <summary>
-        /// Set of all KeyX values
+        /// Set of all partition keys
         /// </summary>
-        private readonly BigInteger[] KeyXMap = new BigInteger[8];
-
-        /// <summary>
-        /// Set of all KeyX2C values
-        /// </summary>
-        private readonly BigInteger[] KeyX2CMap = new BigInteger[8];
-
-        /// <summary>
-        /// Set of all KeyY values
-        /// </summary>
-        private readonly BigInteger[] KeyYMap = new BigInteger[8];
-
-        /// <summary>
-        /// Set of all KeyY values
-        /// </summary>
-        private readonly BigInteger[] NormalKeyMap = new BigInteger[8];
-
-        /// <summary>
-        /// Set of all KeyY values
-        /// </summary>
-        private readonly BigInteger[] NormalKey2CMap = new BigInteger[8];
+        private readonly PartitionKeys[] KeysMap = new PartitionKeys[8];
 
         public ThreeDSTool(bool development, DecryptArgs decryptArgs)
         {
@@ -198,67 +176,31 @@ namespace NDecrypt.N3DS
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         private void SetEncryptionKeys(Cart cart, int partitionIndex, bool encrypt)
         {
-            // Get the backup header
-            var backupHeader = cart.CardInfoHeader!.InitialData!.BackupHeader;
+            // Get the partition
+            var partition = cart.Partitions?[partitionIndex];
+            if (partition == null)
+                return;
 
-            KeyXMap[partitionIndex] = 0;
-            KeyX2CMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
-
-            // Backup headers can't have a KeyY value set
-            byte[]? rsaSignature = cart.Partitions![partitionIndex]!.RSA2048Signature;
-            if (rsaSignature != null)
-                KeyYMap[partitionIndex] = new BigInteger(rsaSignature.Take(16).Reverse().ToArray());
-            else
-                KeyYMap[partitionIndex] = new BigInteger(0);
-
-            NormalKeyMap[partitionIndex] = 0x00;
-            NormalKey2CMap[partitionIndex] = RotateLeft((RotateLeft(KeyX2CMap[partitionIndex], 2, 128) ^ KeyYMap[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
+            // Get partition-specific values
+            byte[]? rsaSignature = partition.RSA2048Signature;
 
             // Set the header to use based on mode
             BitMasks masks;
             CryptoMethod method;
             if (encrypt)
             {
+                var backupHeader = cart.CardInfoHeader!.InitialData!.BackupHeader;
                 masks = backupHeader!.Flags!.BitMasks;
                 method = backupHeader.Flags.CryptoMethod;
             }
             else
             {
-                masks = cart.Partitions![partitionIndex]!.Flags!.BitMasks;
-                method = cart.Partitions![partitionIndex]!.Flags!.CryptoMethod;
+                masks = partition.Flags!.BitMasks;
+                method = partition.Flags!.CryptoMethod;
             }
 
-            if (masks.HasFlag(BitMasks.FixedCryptoKey))
-            {
-                NormalKeyMap[partitionIndex] = 0x00;
-                NormalKey2CMap[partitionIndex] = 0x00;
-                Console.WriteLine("Encryption Method: Zero Key");
-            }
-            else
-            {
-                if (method == CryptoMethod.Original)
-                {
-                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
-                    Console.WriteLine("Encryption Method: Key 0x2C");
-                }
-                else if (method == CryptoMethod.Seven)
-                {
-                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
-                    Console.WriteLine("Encryption Method: Key 0x25");
-                }
-                else if (method == CryptoMethod.NineThree)
-                {
-                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
-                    Console.WriteLine("Encryption Method: Key 0x18");
-                }
-                else if (method == CryptoMethod.NineSix)
-                {
-                    KeyXMap[partitionIndex] = _development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
-                    Console.WriteLine("Encryption Method: Key 0x1B");
-                }
-
-                NormalKeyMap[partitionIndex] = RotateLeft((RotateLeft(KeyXMap[partitionIndex], 2, 128) ^ KeyYMap[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
-            }
+            // Get the partition keys
+            KeysMap[partitionIndex] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
         }
 
         /// <summary>
@@ -288,7 +230,7 @@ namespace NDecrypt.N3DS
                 Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
                 // Create the Plain AES cipher for this partition
-                var cipher = CreateAESCipher(NormalKey2CMap[partitionIndex], cart.PlainIV(partitionIndex), encrypt);
+                var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, cart.PlainIV(partitionIndex), encrypt);
 
                 // Process the extended header
                 byte[] readBytes = reader.ReadBytes(Constants.CXTExtendedDataHeaderLength);
@@ -352,8 +294,8 @@ namespace NDecrypt.N3DS
 
                 // Create the ExeFS AES ciphers for this partition
                 byte[] exefsIVWithOffsetForHeader = AddToByteArray(cart.ExeFSIV(partitionIndex), (int)ctroffset);
-                var firstCipher = CreateAESCipher(NormalKeyMap[partitionIndex], exefsIVWithOffsetForHeader, encrypt);
-                var secondCipher = CreateAESCipher(NormalKey2CMap[partitionIndex], exefsIVWithOffsetForHeader, !encrypt);
+                var firstCipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey, exefsIVWithOffsetForHeader, encrypt);
+                var secondCipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
 
                 // Seek to the file entry
                 reader.Seek(exeFsOffset + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -413,7 +355,7 @@ namespace NDecrypt.N3DS
             Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
             // Create the ExeFS AES cipher for this partition
-            var cipher = CreateAESCipher(NormalKey2CMap[partitionIndex], cart.ExeFSIV(partitionIndex), encrypt);
+            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, cart.ExeFSIV(partitionIndex), encrypt);
 
             // Process the filename table
             byte[] readBytes = reader.ReadBytes((int)cart.MediaUnitSize());
@@ -461,7 +403,7 @@ namespace NDecrypt.N3DS
 
             // Create the ExeFS AES cipher for this partition
             byte[] exefsIVWithOffset = AddToByteArray(cart.ExeFSIV(partitionIndex), ctroffsetE);
-            var cipher = CreateAESCipher(NormalKey2CMap[partitionIndex], exefsIVWithOffset, encrypt);
+            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, exefsIVWithOffset, encrypt);
 
             // Seek to the ExeFS
             reader.Seek(exeFsOffset, SeekOrigin.Begin);
@@ -558,7 +500,7 @@ namespace NDecrypt.N3DS
             int romfsSizeB = (int)((long)romFsSize % (1024 * 1024));
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESCipher(NormalKeyMap[partitionIndex], cart.RomFSIV(partitionIndex), encrypt: false);
+            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey, cart.RomFSIV(partitionIndex), encrypt: false);
 
             // Seek to the RomFS
             reader.Seek(romFsOffset, SeekOrigin.Begin);
@@ -696,17 +638,17 @@ namespace NDecrypt.N3DS
                 // Except if using zero-key
                 if (backupHeader!.Flags!.BitMasks.HasFlag(BitMasks.FixedCryptoKey))
                 {
-                    NormalKeyMap[partitionIndex] = 0x00;
+                    KeysMap[partitionIndex].NormalKey = 0x00;
                 }
                 else
                 {
-                    KeyXMap[partitionIndex] = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
-                    NormalKeyMap[partitionIndex] = RotateLeft((RotateLeft(KeyXMap[partitionIndex], 2, 128) ^ KeyYMap[partitionIndex]) + _decryptArgs.AESHardwareConstant, 87, 128);
+                    KeysMap[partitionIndex].KeyX = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
+                    KeysMap[partitionIndex].NormalKey = RotateLeft((RotateLeft(KeysMap[partitionIndex].KeyX, 2, 128) ^ KeysMap[partitionIndex].KeyY) + _decryptArgs.AESHardwareConstant, 87, 128);
                 }
             }
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESCipher(NormalKeyMap[partitionIndex], cart.RomFSIV(partitionIndex), encrypt: true);
+            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey, cart.RomFSIV(partitionIndex), encrypt: true);
 
             // Seek to the RomFS
             reader.Seek(romFsOffset, SeekOrigin.Begin);
