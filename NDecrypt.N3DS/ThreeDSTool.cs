@@ -182,12 +182,12 @@ namespace NDecrypt.N3DS
         /// Determine the set of keys to be used for encryption or decryption
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        private void SetEncryptionKeys(Cart cart, int partitionIndex, bool encrypt)
+        private void SetEncryptionKeys(Cart cart, int index, bool encrypt)
         {
             // Get the partition
-            var partition = cart.Partitions?[partitionIndex];
+            var partition = cart.Partitions?[index];
             if (partition == null)
                 return;
 
@@ -210,37 +210,37 @@ namespace NDecrypt.N3DS
             }
 
             // Get the partition keys
-            KeysMap[partitionIndex] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
+            KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
         }
 
         /// <summary>
         /// Process the extended header, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private bool ProcessExtendedHeader(Cart cart,
-            int partitionIndex,
+            int index,
             bool encrypt,
             Stream input,
             Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
             uint partitionOffset = partitionOffsetMU * cart.MediaUnitSize();
 
-            if (cart.Partitions![partitionIndex]!.ExtendedHeaderSizeInBytes > 0)
+            if (cart.Partitions![index]!.ExtendedHeaderSizeInBytes > 0)
             {
                 // Seek to the extended header
                 input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
                 output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
 
-                Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
+                Console.WriteLine($"Partition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
 
                 // Create the Plain AES cipher for this partition
-                var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, cart.PlainIV(partitionIndex), encrypt);
+                var cipher = CreateAESCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index), encrypt);
 
                 // Process the extended header
                 byte[] readBytes = input.ReadBytes(Constants.CXTExtendedDataHeaderLength);
@@ -256,7 +256,7 @@ namespace NDecrypt.N3DS
             }
             else
             {
-                Console.WriteLine($"Partition {partitionIndex} ExeFS: No Extended Header... Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS: No Extended Header... Skipping...");
                 return false;
             }
         }
@@ -265,19 +265,19 @@ namespace NDecrypt.N3DS
         /// Process the extended header, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private void ProcessExeFSFileEntries(Cart cart,
-            int partitionIndex,
+            int index,
             bool encrypt,
             Stream input,
             Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
-            uint exeFsOffsetMU = cart.Partitions![partitionIndex]!.ExeFSOffsetInMediaUnits;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
+            uint exeFsOffsetMU = cart.Partitions![index]!.ExeFSOffsetInMediaUnits;
             uint exeFsHeaderOffset = (partitionOffsetMU + exeFsOffsetMU) * cart.MediaUnitSize();
             uint exeFsOffset = (partitionOffsetMU + exeFsOffsetMU + 1) * cart.MediaUnitSize();
 
@@ -287,7 +287,7 @@ namespace NDecrypt.N3DS
             // If the header failed to read, log and return
             if (exefsHeader == null)
             {
-                Console.WriteLine($"Partition {partitionIndex} ExeFS header could not be read. Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
                 return;
             }
 
@@ -303,9 +303,9 @@ namespace NDecrypt.N3DS
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize()) / 0x10;
 
                 // Create the ExeFS AES ciphers for this partition
-                byte[] exefsIVWithOffsetForHeader = AddToByteArray(cart.ExeFSIV(partitionIndex), (int)ctroffset);
-                var firstCipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey, exefsIVWithOffsetForHeader, encrypt);
-                var secondCipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
+                byte[] exefsIVWithOffsetForHeader = AddToByteArray(cart.ExeFSIV(index), (int)ctroffset);
+                var firstCipher = CreateAESCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader, encrypt);
+                var secondCipher = CreateAESCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
 
                 // Seek to the file entry
                 input.Seek(exeFsOffset + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -321,7 +321,7 @@ namespace NDecrypt.N3DS
                         byte[] secondProcessedBytes = secondCipher.ProcessBytes(firstProcessedBytes);
                         output.Write(secondProcessedBytes);
                         output.Flush();
-                        Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {i} / {datalenM + 1} mb...");
+                        Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {i} / {datalenM + 1} mb...");
                     }
                 }
 
@@ -335,7 +335,7 @@ namespace NDecrypt.N3DS
                     output.Flush();
                 }
 
-                Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
+                Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
             }
         }
 
@@ -343,29 +343,29 @@ namespace NDecrypt.N3DS
         /// Process the ExeFS Filename Table
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private void ProcessExeFSFilenameTable(Cart cart,
-            int partitionIndex,
+            int index,
             bool encrypt,
             Stream input,
             Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
-            uint exeFsOffsetMU = cart.Partitions![partitionIndex]!.ExeFSOffsetInMediaUnits;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
+            uint exeFsOffsetMU = cart.Partitions![index]!.ExeFSOffsetInMediaUnits;
             uint exeFsHeaderOffset = (partitionOffsetMU + exeFsOffsetMU) * cart.MediaUnitSize();
 
             // Seek to the ExeFS header
             input.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
             output.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
 
-            Console.WriteLine($"Partition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
+            Console.WriteLine($"Partition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
 
             // Create the ExeFS AES cipher for this partition
-            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, cart.ExeFSIV(partitionIndex), encrypt);
+            var cipher = CreateAESCipher(KeysMap[index].NormalKey2C, cart.ExeFSIV(index), encrypt);
 
             // Process the filename table
             byte[] readBytes = input.ReadBytes((int)cart.MediaUnitSize());
@@ -383,37 +383,37 @@ namespace NDecrypt.N3DS
         /// Process the ExeFS, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private bool ProcessExeFS(Cart cart,
-            int partitionIndex,
+            int index,
             bool encrypt,
             Stream input,
             Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
-            uint exeFsOffsetMU = cart.Partitions![partitionIndex]!.ExeFSOffsetInMediaUnits;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
+            uint exeFsOffsetMU = cart.Partitions![index]!.ExeFSOffsetInMediaUnits;
             uint exeFsOffset = (partitionOffsetMU + exeFsOffsetMU + 1) * cart.MediaUnitSize();
 
             // If the RomFS offset is 0, we log and return
             if (exeFsOffsetMU == 0)
             {
-                Console.WriteLine($"Partition {partitionIndex} RomFS: No Data... Skipping...");
+                Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
                 return false;
             }
 
             // Get MiB-aligned block count and extra byte count
-            uint exeFsSize = (cart.Partitions![partitionIndex]!.ExeFSSizeInMediaUnits - 1) * cart.MediaUnitSize();
+            uint exeFsSize = (cart.Partitions![index]!.ExeFSSizeInMediaUnits - 1) * cart.MediaUnitSize();
             int exefsSizeM = (int)((long)exeFsSize / (1024 * 1024));
             int exefsSizeB = (int)((long)exeFsSize % (1024 * 1024));
             int ctroffsetE = (int)(cart.MediaUnitSize() / 0x10);
 
             // Create the ExeFS AES cipher for this partition
-            byte[] exefsIVWithOffset = AddToByteArray(cart.ExeFSIV(partitionIndex), ctroffsetE);
-            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey2C, exefsIVWithOffset, encrypt);
+            byte[] exefsIVWithOffset = AddToByteArray(cart.ExeFSIV(index), ctroffsetE);
+            var cipher = CreateAESCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset, encrypt);
 
             // Seek to the ExeFS
             input.Seek(exeFsOffset, SeekOrigin.Begin);
@@ -428,7 +428,7 @@ namespace NDecrypt.N3DS
                     byte[] processedBytes = cipher.ProcessBytes(readBytes);
                     output.Write(processedBytes);
                     output.Flush();
-                    Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
+                    Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
                 }
             }
 
@@ -441,7 +441,7 @@ namespace NDecrypt.N3DS
                 output.Flush();
             }
 
-            Console.Write($"\rPartition {partitionIndex} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
+            Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
             return true;
         }
 
@@ -453,64 +453,64 @@ namespace NDecrypt.N3DS
         /// Decrypt the ExeFS, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private void DecryptExeFS(Cart cart,
-            int partitionIndex,
+            int index,
             Stream input,
             Stream output)
         {
             // If the ExeFS size is 0, we log and return
-            if (cart.Partitions![partitionIndex]!.ExeFSSizeInMediaUnits == 0)
+            if (cart.Partitions![index]!.ExeFSSizeInMediaUnits == 0)
             {
-                Console.WriteLine($"Partition {partitionIndex} ExeFS: No Data... Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return;
             }
 
             // Decrypt the filename table
-            ProcessExeFSFilenameTable(cart, partitionIndex, encrypt: false, input, output);
+            ProcessExeFSFilenameTable(cart, index, encrypt: false, input, output);
 
             // For all but the original crypto method, process each of the files in the table
-            if (cart.Partitions![partitionIndex]!.Flags!.CryptoMethod != CryptoMethod.Original)
-                ProcessExeFSFileEntries(cart, partitionIndex, encrypt: false, input, output);
+            if (cart.Partitions![index]!.Flags!.CryptoMethod != CryptoMethod.Original)
+                ProcessExeFSFileEntries(cart, index, encrypt: false, input, output);
 
             // Decrypt the rest of the ExeFS
-            ProcessExeFS(cart, partitionIndex, encrypt: false, input, output);
+            ProcessExeFS(cart, index, encrypt: false, input, output);
         }
 
         /// <summary>
         /// Decrypt the RomFS, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Encrypt
         private bool DecryptRomFS(Cart cart,
-            int partitionIndex,
+            int index,
             Stream input,
             Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
-            uint romFsOffsetMU = cart.Partitions![partitionIndex]!.RomFSOffsetInMediaUnits;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
+            uint romFsOffsetMU = cart.Partitions![index]!.RomFSOffsetInMediaUnits;
             uint romFsOffset = (partitionOffsetMU + romFsOffsetMU) * cart.MediaUnitSize();
 
             // If the RomFS offset is 0, we log and return
             if (romFsOffsetMU == 0)
             {
-                Console.WriteLine($"Partition {partitionIndex} RomFS: No Data... Skipping...");
+                Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
                 return false;
             }
 
             // Get MiB-aligned block count and extra byte count
-            uint romFsSize = cart.Partitions![partitionIndex]!.RomFSSizeInMediaUnits * cart.MediaUnitSize();
+            uint romFsSize = cart.Partitions![index]!.RomFSSizeInMediaUnits * cart.MediaUnitSize();
             long romfsSizeM = (int)((long)romFsSize / (1024 * 1024));
             int romfsSizeB = (int)((long)romFsSize % (1024 * 1024));
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey, cart.RomFSIV(partitionIndex), encrypt: false);
+            var cipher = CreateAESCipher(KeysMap[index].NormalKey, cart.RomFSIV(index), encrypt: false);
 
             // Seek to the RomFS
             input.Seek(romFsOffset, SeekOrigin.Begin);
@@ -525,7 +525,7 @@ namespace NDecrypt.N3DS
                     byte[] processedBytes = cipher.ProcessBytes(readBytes);
                     output.Write(processedBytes);
                     output.Flush();
-                    Console.Write($"\rPartition {partitionIndex} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
+                    Console.Write($"\rPartition {index} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
                 }
             }
 
@@ -538,7 +538,7 @@ namespace NDecrypt.N3DS
                 output.Flush();
             }
 
-            Console.Write($"\rPartition {partitionIndex} RomFS: Decrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
+            Console.Write($"\rPartition {index} RomFS: Decrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
             return true;
         }
 
@@ -546,12 +546,12 @@ namespace NDecrypt.N3DS
         /// Update the CryptoMethod and BitMasks for the decrypted partition
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="output">Stream representing the output</param>
-        private static void UpdateDecryptCryptoAndMasks(Cart cart, int partitionIndex, Stream output)
+        private static void UpdateDecryptCryptoAndMasks(Cart cart, int index, Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
             uint partitionOffset = partitionOffsetMU * cart.MediaUnitSize();
 
             // Seek to the CryptoMethod location
@@ -565,7 +565,7 @@ namespace NDecrypt.N3DS
             output.Seek(partitionOffset + 0x18F, SeekOrigin.Begin);
 
             // Write the new BitMasks flag
-            BitMasks flag = cart.Partitions![partitionIndex]!.Flags!.BitMasks;
+            BitMasks flag = cart.Partitions![index]!.Flags!.BitMasks;
             flag &= (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
             flag |= BitMasks.NoCrypto;
             output.Write((byte)flag);
@@ -580,18 +580,18 @@ namespace NDecrypt.N3DS
         /// Encrypt the ExeFS, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private void EncryptExeFS(Cart cart,
-            int partitionIndex,
+            int index,
             Stream input,
             Stream output)
         {
             // If the ExeFS size is 0, we log and return
-            if (cart.Partitions![partitionIndex]!.ExeFSSizeInMediaUnits == 0)
+            if (cart.Partitions![index]!.ExeFSSizeInMediaUnits == 0)
             {
-                Console.WriteLine($"Partition {partitionIndex} ExeFS: No Data... Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return;
             }
 
@@ -600,31 +600,31 @@ namespace NDecrypt.N3DS
 
             // For all but the original crypto method, process each of the files in the table
             if (backupHeader!.Flags!.CryptoMethod != CryptoMethod.Original)
-                ProcessExeFSFileEntries(cart, partitionIndex, encrypt: true, input, output);
+                ProcessExeFSFileEntries(cart, index, encrypt: true, input, output);
 
             // Encrypt the filename table
-            ProcessExeFSFilenameTable(cart, partitionIndex, encrypt: true, input, output);
+            ProcessExeFSFilenameTable(cart, index, encrypt: true, input, output);
 
             // Encrypt the rest of the ExeFS
-            ProcessExeFS(cart, partitionIndex, encrypt: true, input, output);
+            ProcessExeFS(cart, index, encrypt: true, input, output);
         }
 
         /// <summary>
         /// Encrypt the RomFS, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Decrypt
         private bool EncryptRomFS(Cart cart,
-            int partitionIndex,
+            int index,
             Stream input,
             Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
-            uint romFsOffsetMU = cart.Partitions![partitionIndex]!.RomFSOffsetInMediaUnits;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
+            uint romFsOffsetMU = cart.Partitions![index]!.RomFSOffsetInMediaUnits;
             uint romFsOffset = (partitionOffsetMU + romFsOffsetMU) * cart.MediaUnitSize();
 
             // Get the backup header
@@ -633,32 +633,32 @@ namespace NDecrypt.N3DS
             // If the RomFS offset is 0, we log and return
             if (romFsOffsetMU == 0)
             {
-                Console.WriteLine($"Partition {partitionIndex} RomFS: No Data... Skipping...");
+                Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
                 return false;
             }
 
             // Get MiB-aligned block count and extra byte count
-            uint romFsSize = cart.Partitions![partitionIndex]!.RomFSSizeInMediaUnits * cart.MediaUnitSize();
+            uint romFsSize = cart.Partitions![index]!.RomFSSizeInMediaUnits * cart.MediaUnitSize();
             long romfsSizeM = (int)((long)romFsSize / (1024 * 1024));
             int romfsSizeB = (int)((long)romFsSize % (1024 * 1024));
 
             // Encrypting RomFS for partitions 1 and up always use Key0x2C
-            if (partitionIndex > 0)
+            if (index > 0)
             {
                 // Except if using zero-key
                 if (backupHeader!.Flags!.BitMasks.HasFlag(BitMasks.FixedCryptoKey))
                 {
-                    KeysMap[partitionIndex].NormalKey = 0x00;
+                    KeysMap[index].NormalKey = 0x00;
                 }
                 else
                 {
-                    KeysMap[partitionIndex].KeyX = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
-                    KeysMap[partitionIndex].NormalKey = RotateLeft((RotateLeft(KeysMap[partitionIndex].KeyX, 2, 128) ^ KeysMap[partitionIndex].KeyY) + _decryptArgs.AESHardwareConstant, 87, 128);
+                    KeysMap[index].KeyX = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
+                    KeysMap[index].NormalKey = RotateLeft((RotateLeft(KeysMap[index].KeyX, 2, 128) ^ KeysMap[index].KeyY) + _decryptArgs.AESHardwareConstant, 87, 128);
                 }
             }
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESCipher(KeysMap[partitionIndex].NormalKey, cart.RomFSIV(partitionIndex), encrypt: true);
+            var cipher = CreateAESCipher(KeysMap[index].NormalKey, cart.RomFSIV(index), encrypt: true);
 
             // Seek to the RomFS
             input.Seek(romFsOffset, SeekOrigin.Begin);
@@ -673,7 +673,7 @@ namespace NDecrypt.N3DS
                     byte[] processedBytes = cipher.ProcessBytes(readBytes);
                     output.Write(processedBytes);
                     output.Flush();
-                    Console.Write($"\rPartition {partitionIndex} RomFS: Encrypting: {i} / {romfsSizeM + 1} mb");
+                    Console.Write($"\rPartition {index} RomFS: Encrypting: {i} / {romfsSizeM + 1} mb");
                 }
             }
 
@@ -686,7 +686,7 @@ namespace NDecrypt.N3DS
                 output.Flush();
             }
 
-            Console.Write($"\rPartition {partitionIndex} RomFS: Encrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
+            Console.Write($"\rPartition {index} RomFS: Encrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
             return true;
         }
 
@@ -694,12 +694,12 @@ namespace NDecrypt.N3DS
         /// Update the CryptoMethod and BitMasks for the encrypted partition
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="output">Stream representing the output</param>
-        private static void UpdateEncryptCryptoAndMasks(Cart cart, int partitionIndex, Stream output)
+        private static void UpdateEncryptCryptoAndMasks(Cart cart, int index, Stream output)
         {
             // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![partitionIndex]!.Offset;
+            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
             uint partitionOffset = partitionOffsetMU * cart.MediaUnitSize();
 
             // Get the backup header
@@ -711,7 +711,7 @@ namespace NDecrypt.N3DS
             // Write the new CryptoMethod
             // - For partitions 1 and up, set crypto-method to 0x00
             // - If partition 0, restore crypto-method from backup flags
-            byte cryptoMethod = partitionIndex > 0 ? (byte)CryptoMethod.Original : (byte)backupHeader!.Flags!.CryptoMethod;
+            byte cryptoMethod = index > 0 ? (byte)CryptoMethod.Original : (byte)backupHeader!.Flags!.CryptoMethod;
             output.Write(cryptoMethod);
             output.Flush();
 
@@ -719,7 +719,7 @@ namespace NDecrypt.N3DS
             output.Seek(partitionOffset + 0x18F, SeekOrigin.Begin);
 
             // Write the new BitMasks flag
-            BitMasks flag = cart.Partitions![partitionIndex]!.Flags!.BitMasks;
+            BitMasks flag = cart.Partitions![index]!.Flags!.BitMasks;
             flag &= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF;
             flag |= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & backupHeader!.Flags!.BitMasks;
             output.Write((byte)flag);
