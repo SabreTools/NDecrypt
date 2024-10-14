@@ -100,15 +100,50 @@ namespace NDecrypt.N3DS
             Stream input,
             Stream output)
         {
-            // Iterate over all NCCH partitions
-            for (int p = 0; p < cia.Partitions!.Length; p++)
+            // Check the partitions table
+            if (cia.Partitions == null)
             {
+                Console.WriteLine("Invalid partitions table!");
+                return;
+            }
+
+            // Iterate over all 8 NCCH partitions
+            for (int p = 0; p < cia.Partitions.Length; p++)
+            {
+                // Check the partition exists
                 var ncchHeader = cia.Partitions[0];
                 if (ncchHeader == null)
+                {
+                    Console.WriteLine($"Partition {p} Not found... Skipping...");
                     continue;
+                }
 
-                ProcessPartition(ncchHeader, p, encrypt, force, input, output);
+                // Process the partition, if possible
+                if (ShouldProcessPartition(cia, p, encrypt, force))
+                    ProcessPartition(ncchHeader, p, encrypt, input, output);
             }
+        }
+
+        /// <summary>
+        /// Determine if the current partition should be processed
+        /// </summary>
+        private static bool ShouldProcessPartition(CIA cia, int index, bool encrypt, bool force)
+        {
+            // If we're forcing the operation, tell the user
+            if (force)
+            {
+                Console.WriteLine($"Partition {index} is not verified due to force flag being set.");
+                return true;
+            }
+            // If we're not forcing the operation, check if the 'NoCrypto' bit is set
+            else if (cia.Partitions![index]!.Flags!.PossblyDecrypted() ^ encrypt)
+            {
+                Console.WriteLine($"Partition {index}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
+                return false;
+            }
+
+            // By default, it passes
+            return true;
         }
 
         /// <summary>
@@ -117,28 +152,14 @@ namespace NDecrypt.N3DS
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="partitionIndex">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private void ProcessPartition(NCCHHeader ncchHeader,
             int partitionIndex,
             bool encrypt,
-            bool force,
             Stream input,
             Stream output)
         {
-            // If we're forcing the operation, tell the user
-            if (force)
-            {
-                Console.WriteLine($"Partition {partitionIndex} is not verified due to force flag being set.");
-            }
-            // If we're not forcing the operation, check if the 'NoCrypto' bit is set
-            else if (ncchHeader.Flags!.PossblyDecrypted() ^ encrypt)
-            {
-                Console.WriteLine($"Partition {partitionIndex}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
-                return;
-            }
-
             // Get the table entry -- TODO: Fix this to get the real entry
             var tableEntry = new PartitionTableEntry();
 

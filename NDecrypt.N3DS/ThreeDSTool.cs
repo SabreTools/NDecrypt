@@ -97,74 +97,84 @@ namespace NDecrypt.N3DS
             Stream output)
         {
             // Check the partitions table
-            if (cart.Header?.PartitionsTable == null)
+            if (cart.Header?.PartitionsTable == null || cart.Partitions == null)
             {
                 Console.WriteLine("Invalid partitions table!");
                 return;
             }
 
             // Iterate over all 8 NCCH partitions
-            for (int partitionIndex = 0; partitionIndex < 8; partitionIndex++)
+            for (int p = 0; p < 8; p++)
             {
                 // Check the partition exists
-                if (cart.Partitions![partitionIndex] == null)
+                if (cart.Partitions[p] == null)
                 {
-                    Console.WriteLine($"Partition {partitionIndex} Not found... Skipping...");
+                    Console.WriteLine($"Partition {p} Not found... Skipping...");
                     continue;
                 }
 
-                ProcessPartition(cart, partitionIndex, encrypt, force, input, output);
+                // Process the partition, if possible
+                if (ShouldProcessPartition(cart, p, encrypt, force))
+                    ProcessPartition(cart, p, encrypt, input, output);
             }
+        }
+
+        /// <summary>
+        /// Determine if the current partition should be processed
+        /// </summary>
+        private static bool ShouldProcessPartition(Cart cart, int index, bool encrypt, bool force)
+        {
+            // If we're forcing the operation, tell the user
+            if (force)
+            {
+                Console.WriteLine($"Partition {index} is not verified due to force flag being set.");
+                return true;
+            }
+            // If we're not forcing the operation, check if the 'NoCrypto' bit is set
+            else if (cart.Partitions![index]!.Flags!.PossblyDecrypted() ^ encrypt)
+            {
+                Console.WriteLine($"Partition {index}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
+                return false;
+            }
+
+            // By default, it passes
+            return true;
         }
 
         /// <summary>
         /// Process a single partition
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="partitionIndex">Index of the partition</param>
+        /// <param name="index">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private void ProcessPartition(Cart cart,
-            int partitionIndex,
+            int index,
             bool encrypt,
-            bool force,
             Stream input,
             Stream output)
         {
-            // If we're forcing the operation, tell the user
-            if (force)
-            {
-                Console.WriteLine($"Partition {partitionIndex} is not verified due to force flag being set.");
-            }
-            // If we're not forcing the operation, check if the 'NoCrypto' bit is set
-            else if (cart.Partitions![partitionIndex]!.Flags!.PossblyDecrypted() ^ encrypt)
-            {
-                Console.WriteLine($"Partition {partitionIndex}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
-                return;
-            }
-
             // Determine the Keys to be used
-            SetEncryptionKeys(cart, partitionIndex, encrypt);
+            SetEncryptionKeys(cart, index, encrypt);
 
             // Process the extended header
-            ProcessExtendedHeader(cart, partitionIndex, encrypt, input, output);
+            ProcessExtendedHeader(cart, index, encrypt, input, output);
 
             // If we're encrypting, encrypt the filesystems and update the flags
             if (encrypt)
             {
-                EncryptExeFS(cart, partitionIndex, input, output);
-                EncryptRomFS(cart, partitionIndex, input, output);
-                UpdateEncryptCryptoAndMasks(cart, partitionIndex, output);
+                EncryptExeFS(cart, index, input, output);
+                EncryptRomFS(cart, index, input, output);
+                UpdateEncryptCryptoAndMasks(cart, index, output);
             }
 
             // If we're decrypting, decrypt the filesystems and update the flags
             else
             {
-                DecryptExeFS(cart, partitionIndex, input, output);
-                DecryptRomFS(cart, partitionIndex, input, output);
-                UpdateDecryptCryptoAndMasks(cart, partitionIndex, output);
+                DecryptExeFS(cart, index, input, output);
+                DecryptRomFS(cart, index, input, output);
+                UpdateDecryptCryptoAndMasks(cart, index, output);
             }
         }
 
