@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Numerics;
 using NDecrypt.Core;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;

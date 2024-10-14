@@ -90,11 +90,7 @@ namespace NDecrypt.N3DS
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void ProcessAllPartitions(Cart cart,
-            bool encrypt,
-            bool force,
-            Stream input,
-            Stream output)
+        private void ProcessAllPartitions(Cart cart, bool encrypt, bool force, Stream input, Stream output)
         {
             // Check the partitions table
             if (cart.Header?.PartitionsTable == null || cart.Partitions == null)
@@ -149,11 +145,7 @@ namespace NDecrypt.N3DS
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void ProcessPartition(Cart cart,
-            int index,
-            bool encrypt,
-            Stream input,
-            Stream output)
+        private void ProcessPartition(Cart cart, int index, bool encrypt, Stream input, Stream output)
         {
             // Determine the Keys to be used
             SetEncryptionKeys(cart, index, encrypt);
@@ -221,11 +213,7 @@ namespace NDecrypt.N3DS
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private bool ProcessExtendedHeader(Cart cart,
-            int index,
-            bool encrypt,
-            Stream input,
-            Stream output)
+        private bool ProcessExtendedHeader(Cart cart, int index, bool encrypt, Stream input, Stream output)
         {
             // Get required offsets
             uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
@@ -269,11 +257,7 @@ namespace NDecrypt.N3DS
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void ProcessExeFSFileEntries(Cart cart,
-            int index,
-            bool encrypt,
-            Stream input,
-            Stream output)
+        private void ProcessExeFSFileEntries(Cart cart, int index, bool encrypt, Stream input, Stream output)
         {
             // Get required offsets
             uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
@@ -347,11 +331,7 @@ namespace NDecrypt.N3DS
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void ProcessExeFSFilenameTable(Cart cart,
-            int index,
-            bool encrypt,
-            Stream input,
-            Stream output)
+        private void ProcessExeFSFilenameTable(Cart cart, int index, bool encrypt, Stream input, Stream output)
         {
             // Get required offsets
             uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
@@ -387,11 +367,7 @@ namespace NDecrypt.N3DS
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private bool ProcessExeFS(Cart cart,
-            int index,
-            bool encrypt,
-            Stream input,
-            Stream output)
+        private bool ProcessExeFS(Cart cart, int index, bool encrypt, Stream input, Stream output)
         {
             // Get required offsets
             uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
@@ -456,10 +432,7 @@ namespace NDecrypt.N3DS
         /// <param name="index">Index of the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void DecryptExeFS(Cart cart,
-            int index,
-            Stream input,
-            Stream output)
+        private void DecryptExeFS(Cart cart, int index, Stream input, Stream output)
         {
             // If the ExeFS size is 0, we log and return
             if (cart.Partitions![index]!.ExeFSSizeInMediaUnits == 0)
@@ -487,10 +460,7 @@ namespace NDecrypt.N3DS
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Encrypt
-        private bool DecryptRomFS(Cart cart,
-            int index,
-            Stream input,
-            Stream output)
+        private bool DecryptRomFS(Cart cart, int index, Stream input, Stream output)
         {
             // Get required offsets
             uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
@@ -583,10 +553,7 @@ namespace NDecrypt.N3DS
         /// <param name="index">Index of the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void EncryptExeFS(Cart cart,
-            int index,
-            Stream input,
-            Stream output)
+        private void EncryptExeFS(Cart cart, int index, Stream input, Stream output)
         {
             // If the ExeFS size is 0, we log and return
             if (cart.Partitions![index]!.ExeFSSizeInMediaUnits == 0)
@@ -617,10 +584,7 @@ namespace NDecrypt.N3DS
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         /// TODO: See how much can be extracted into a common method with Decrypt
-        private bool EncryptRomFS(Cart cart,
-            int index,
-            Stream input,
-            Stream output)
+        private bool EncryptRomFS(Cart cart, int index, Stream input, Stream output)
         {
             // Get required offsets
             uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
