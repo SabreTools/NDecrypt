@@ -31,22 +31,8 @@ namespace NDecrypt.N3DS
             _decryptArgs = decryptArgs;
         }
 
-        #region Common Methods
-
         /// <inheritdoc/>
         public bool EncryptFile(string filename, bool force)
-            => ProcessFile(filename, encrypt: true, force);
-
-        /// <inheritdoc/>
-        public bool DecryptFile(string filename, bool force)
-            => ProcessFile(filename, encrypt: false, force);
-
-        /// <summary>
-        /// Process an input file given the input values
-        /// </summary>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="force">Indicates if the operation should be forced</param>
-        private bool ProcessFile(string filename, bool encrypt, bool force)
         {
             // Ensure the constants are all set
             if (_decryptArgs.IsReady != true)
@@ -69,10 +55,8 @@ namespace NDecrypt.N3DS
                     return false;
                 }
 
-                // Process all 8 NCCH partitions
-                if (encrypt) EncryptAllPartitions(cart, force, input, output);
-                else         DecryptAllPartitions(cart, force, input, output);
-
+                // Encrypt all 8 NCCH partitions
+                EncryptAllPartitions(cart, force, input, output);
                 return true;
             }
             catch
@@ -83,7 +67,41 @@ namespace NDecrypt.N3DS
             }
         }
 
-        #endregion
+        /// <inheritdoc/>
+        public bool DecryptFile(string filename, bool force)
+        {
+            // Ensure the constants are all set
+            if (_decryptArgs.IsReady != true)
+            {
+                Console.WriteLine("Could not read keys. Please make sure the file exists and try again.");
+                return false;
+            }
+
+            try
+            {
+                // Open the read and write on the same file for inplace processing
+                using var input = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var output = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+
+                // Deserialize the cart information
+                var cart = N3DSDeserializer.DeserializeStream(input);
+                if (cart?.Header == null || cart?.CardInfoHeader?.InitialData?.BackupHeader == null)
+                {
+                    Console.WriteLine("Error: Not a 3DS cart image!");
+                    return false;
+                }
+
+                // Decrypt all 8 NCCH partitions
+                DecryptAllPartitions(cart, force, input, output);
+                return true;
+            }
+            catch
+            {
+                Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
+                Console.WriteLine("Please check that the file was a valid 3DS or New 3DS cart image and try again.");
+                return false;
+            }
+        }
 
         #region Decrypt
 

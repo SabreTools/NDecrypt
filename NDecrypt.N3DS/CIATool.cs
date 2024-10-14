@@ -37,18 +37,6 @@ namespace NDecrypt.N3DS
 
         /// <inheritdoc/>
         public bool EncryptFile(string filename, bool force)
-            => ProcessFile(filename, encrypt: true, force);
-
-        /// <inheritdoc/>
-        public bool DecryptFile(string filename, bool force)
-            => ProcessFile(filename, encrypt: false, force);
-
-        /// <summary>
-        /// Process an input file given the input values
-        /// </summary>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="force">Indicates if the operation should be forced</param>
-        private bool ProcessFile(string filename, bool encrypt, bool force)
         {
             // Ensure the constants are all set
             if (_decryptArgs.IsReady != true)
@@ -71,10 +59,44 @@ namespace NDecrypt.N3DS
                     return false;
                 }
 
-                // Process all 8 NCCH partitions
-                if (encrypt) EncryptAllPartitions(cia, force, input, output);
-                else         DecryptAllPartitions(cia, force, input, output);
+                // Encrypt all 8 NCCH partitions
+                EncryptAllPartitions(cia, force, input, output);
+                return false;
+            }
+            catch
+            {
+                Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
+                Console.WriteLine("Please check that the file was a valid 3DS CIA file and try again.");
+                return false;
+            }
+        }
 
+        /// <inheritdoc/>
+        public bool DecryptFile(string filename, bool force)
+        {
+            // Ensure the constants are all set
+            if (_decryptArgs.IsReady != true)
+            {
+                Console.WriteLine("Could not read keys. Please make sure the file exists and try again.");
+                return false;
+            }
+
+            try
+            {
+                // Open the read and write on the same file for inplace processing
+                using var input = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var output = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+
+                // Deserialize the CIA information
+                var cia = ReadCIA(input);
+                if (cia == null)
+                {
+                    Console.WriteLine("Error: Not a 3DS CIA!");
+                    return false;
+                }
+
+                // Decrypt all 8 NCCH partitions
+                DecryptAllPartitions(cia, force, input, output);
                 return false;
             }
             catch
