@@ -1,13 +1,13 @@
 using System;
 using System.IO;
-using NDecrypt.Core;
+using NDecrypt.N3DS;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
 using static NDecrypt.N3DS.CommonOperations;
 using CIADeserializer = SabreTools.Serialization.Deserializers.CIA;
 using N3DSDeserializer = SabreTools.Serialization.Deserializers.N3DS;
 
-namespace NDecrypt.N3DS
+namespace NDecrypt.Core
 {
     // https://www.3dbrew.org/wiki/CIA
     public class CIATool : ITool

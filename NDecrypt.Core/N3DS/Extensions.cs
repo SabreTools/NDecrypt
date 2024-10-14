@@ -1,11 +1,19 @@
 using System;
-using System.Numerics;
 using SabreTools.Models.N3DS;
 
 namespace NDecrypt.N3DS
 {
     internal static class Extensions
     {
+        #region Constants
+
+        // Setup Keys and IVs
+        public static byte[] PlainCounter = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        public static byte[] ExefsCounter = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        public static byte[] RomfsCounter = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+
+        #endregion
+
         #region ExeFSFileHeader
 
         /// <summary>
@@ -46,7 +54,7 @@ namespace NDecrypt.N3DS
                 return [];
 
             byte[] partitionIdBytes = BitConverter.GetBytes(header.PartitionId);
-            return [.. partitionIdBytes, .. Constants.PlainCounter];
+            return [.. partitionIdBytes, .. PlainCounter];
         }
 
         /// <summary>
@@ -72,7 +80,7 @@ namespace NDecrypt.N3DS
                 return [];
 
             byte[] partitionIdBytes = BitConverter.GetBytes(header.PartitionId);
-            return [.. partitionIdBytes, .. Constants.ExefsCounter];
+            return [.. partitionIdBytes, .. ExefsCounter];
         }
 
         /// <summary>
@@ -98,7 +106,7 @@ namespace NDecrypt.N3DS
                 return [];
 
             byte[] partitionIdBytes = BitConverter.GetBytes(header.PartitionId);
-            return [.. partitionIdBytes, .. Constants.RomfsCounter];
+            return [.. partitionIdBytes, .. RomfsCounter];
         }
 
         #endregion

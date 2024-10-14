@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using NDecrypt.Core;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.Nitro;
+using ModelConstants = SabreTools.Models.Nitro.Constants;
 using NitroDeserializer = SabreTools.Serialization.Deserializers.Nitro;
 
-namespace NDecrypt.Nitro
+namespace NDecrypt.Core
 {
     public class DSTool : ITool
     {
@@ -139,8 +139,8 @@ namespace NDecrypt.Nitro
 
             if (p0 == 0xE7FFDEFF && p1 == 0xE7FFDEFF)
             {
-                p0 = Constants.MAGIC30;
-                p1 = Constants.MAGIC34;
+                p0 = ModelConstants.MAGIC30;
+                p1 = ModelConstants.MAGIC34;
             }
 
             Encrypt(ref p1, ref p0);
@@ -269,7 +269,7 @@ namespace NDecrypt.Nitro
 
             // Set the proper flags
             Decrypt(ref p1, ref p0);
-            if (p0 == Constants.MAGIC30 && p1 == Constants.MAGIC34)
+            if (p0 == ModelConstants.MAGIC30 && p1 == ModelConstants.MAGIC34)
             {
                 p0 = 0xE7FFDEFF;
                 p1 = 0xE7FFDEFF;
@@ -387,7 +387,7 @@ namespace NDecrypt.Nitro
         /// <param name="commonHeader">CommonHeader representing the DS file</param>
         private void Init1(CommonHeader commonHeader)
         {
-            Buffer.BlockCopy(Constants.NDSEncryptionData, 0, _cardHash, 0, 4 * (1024 + 18));
+            Buffer.BlockCopy(Nitro.Constants.NDSEncryptionData, 0, _cardHash, 0, 4 * (1024 + 18));
             _arg2 = [commonHeader.GameCode, commonHeader.GameCode >> 1, commonHeader.GameCode << 1];
             Init2();
             Init2();
