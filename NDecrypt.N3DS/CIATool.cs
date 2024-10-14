@@ -161,15 +161,11 @@ namespace NDecrypt.N3DS
             // Get the table entry -- TODO: Fix this to get the real entry
             var tableEntry = new PartitionTableEntry();
 
-            // Determine the Keys to be used
-            SetEncryptionKeys(ncchHeader, index, encrypt);
-
-            // Process the extended header
-            ProcessExtendedHeader(ncchHeader, index, tableEntry, encrypt, input, output);
-
             // If we're encrypting, encrypt the filesystems and update the flags
             if (encrypt)
             {
+                SetEncryptionKeys(ncchHeader, index);
+                EncryptExtendedHeader(ncchHeader, index, tableEntry, input, output);
                 EncryptExeFS(ncchHeader, index, tableEntry, input, output);
                 EncryptRomFS(ncchHeader, index, tableEntry, input, output);
                 UpdateEncryptCryptoAndMasks(ncchHeader, index, tableEntry, output);
@@ -178,227 +174,85 @@ namespace NDecrypt.N3DS
             // If we're decrypting, decrypt the filesystems and update the flags
             else
             {
+                SetDecryptionKeys(ncchHeader, index);
+                DecryptExtendedHeader(ncchHeader, index, tableEntry, input, output);
                 DecryptExeFS(ncchHeader, index, tableEntry, input, output);
                 DecryptRomFS(ncchHeader, index, tableEntry, input, output);
                 UpdateDecryptCryptoAndMasks(ncchHeader, tableEntry, output);
             }
         }
 
+        #endregion
+
+        #region Decrypt
+
         /// <summary>
-        /// Determine the set of keys to be used for encryption or decryption
+        /// Determine the set of keys to be used for decryption
         /// </summary>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="index">Index of the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        private void SetEncryptionKeys(NCCHHeader ncchHeader, int index, bool encrypt)
+        private void SetDecryptionKeys(NCCHHeader ncchHeader, int index)
         {
             // Get partition-specific values
             byte[]? rsaSignature = ncchHeader.RSA2048Signature;
 
-            // TODO: Figure out what sane defaults for these values are
             // Set the header to use based on mode
-            BitMasks masks = BitMasks.NoCrypto;
-            CryptoMethod method = CryptoMethod.Original;
-            if (encrypt)
-            {
-                // TODO: Can we actually re-encrypt a CIA?
-                //masks = ciaHeader.BackupHeader.Flags.BitMasks;
-                //method = ciaHeader.BackupHeader.Flags.CryptoMethod;
-            }
-            else
-            {
-                masks = ncchHeader.Flags!.BitMasks;
-                method = ncchHeader.Flags.CryptoMethod;
-            }
+            BitMasks masks = ncchHeader.Flags!.BitMasks;
+            CryptoMethod method = ncchHeader.Flags.CryptoMethod;
 
             // Get the partition keys
             KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
         }
 
         /// <summary>
-        /// Process the extended header, if it exists
+        /// Decrypt the extended header, if it exists
         /// </summary>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
         /// <param name="index">Index of the partition</param>
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private bool ProcessExtendedHeader(NCCHHeader ncchHeader,
+        private bool DecryptExtendedHeader(NCCHHeader ncchHeader,
             int index,
             PartitionTableEntry tableEntry,
-            bool encrypt,
             Stream input,
             Stream output)
         {
-            // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
-            uint mediaUnitSize = 0x200; // mediaUnitSize;
-
-            if (ncchHeader.ExtendedHeaderSizeInBytes > 0)
+            // Get required offsets
+            uint mediaUnitSize = 0x200;
+            uint partitionOffset = GetPartitionOffset(tableEntry, mediaUnitSize);
+            if (partitionOffset == 0)
             {
-                input.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
-                output.Seek((tableEntry.Offset * mediaUnitSize) + 0x200, SeekOrigin.Begin);
-
-                Console.WriteLine($"Partition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
-
-                var cipher = CreateAESCipher(KeysMap[index].NormalKey2C, ncchHeader.PlainIV(), encrypt);
-                output.Write(cipher.ProcessBytes(input.ReadBytes(Constants.CXTExtendedDataHeaderLength)));
-                output.Flush();
-                return true;
-            }
-            else
-            {
-                Console.WriteLine($"Partition {index} ExeFS: No Extended Header... Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return false;
             }
-        }
 
-        /// <summary>
-        /// Process the extended header, if it exists
-        /// </summary>
-        /// <param name="ncchHeader">NCCH header representing the partition</param>
-        /// <param name="index">Index of the partition</param>
-        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="input">Stream representing the input</param>
-        /// <param name="output">Stream representing the output</param>
-        private void ProcessExeFSFileEntries(NCCHHeader ncchHeader,
-            int index,
-            PartitionTableEntry tableEntry,
-            bool encrypt,
-            Stream input,
-            Stream output)
-        {
-            // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
-            uint mediaUnitSize = 0x200; // mediaUnitSize;
-
-            input.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            var exefsHeader = N3DSDeserializer.ParseExeFSHeader(input);
-
-            // If the header failed to read, log and return
-            if (exefsHeader?.FileHeaders == null)
+            uint extHeaderSize = GetExtendedHeaderSize(ncchHeader);
+            if (extHeaderSize == 0)
             {
-                Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
-                return;
+                Console.WriteLine($"Partition {index} RomFS: No Extended Header... Skipping...");
+                return false;
             }
 
-            foreach (var fileHeader in exefsHeader.FileHeaders)
-            {
-                // Only decrypt a file if it's a code binary
-                if (fileHeader == null || !fileHeader.IsCodeBinary())
-                    continue;
+            // Seek to the extended header
+            input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
+            output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
 
-                uint datalenM = ((fileHeader.FileSize) / (1024 * 1024));
-                uint datalenB = ((fileHeader.FileSize) % (1024 * 1024));
-                uint ctroffset = ((fileHeader.FileOffset + mediaUnitSize) / 0x10);
+            Console.WriteLine($"Partition {index} ExeFS: Decrypting: ExHeader");
 
-                byte[] exefsIVWithOffsetForHeader = AddToByteArray(ncchHeader.ExeFSIV(), (int)ctroffset);
+            // Create the Plain AES cipher for this partition
+            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, ncchHeader.PlainIV());
 
-                var firstCipher = CreateAESCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader, encrypt);
-                var secondCipher = CreateAESCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader, !encrypt);
+            // Process the extended header
+            PerformAESOperation(Constants.CXTExtendedDataHeaderLength, cipher, input, output, null);
 
-                input.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-                output.Seek((((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) + 1) * mediaUnitSize) + fileHeader.FileOffset, SeekOrigin.Begin);
-
-                if (datalenM > 0)
-                {
-                    for (int i = 0; i < datalenM; i++)
-                    {
-                        output.Write(secondCipher.ProcessBytes(firstCipher.ProcessBytes(input.ReadBytes(1024 * 1024))));
-                        output.Flush();
-                        Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {i} / {datalenM + 1} mb...");
-                    }
-                }
-
-                if (datalenB > 0)
-                {
-                    output.Write(secondCipher.DoFinal(firstCipher.DoFinal(input.ReadBytes((int)datalenB))));
-                    output.Flush();
-                }
-
-                Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {fileHeader.FileName}... {datalenM + 1} / {datalenM + 1} mb... Done!\r\n");
-            }
-        }
-
-        /// <summary>
-        /// Process the ExeFS Filename Table
-        /// </summary>
-        /// <param name="ncchHeader">NCCH header representing the partition</param>
-        /// <param name="index">Index of the partition</param>
-        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="input">Stream representing the input</param>
-        /// <param name="output">Stream representing the output</param>
-        private void ProcessExeFSFilenameTable(NCCHHeader ncchHeader,
-            int index,
-            PartitionTableEntry tableEntry,
-            bool encrypt,
-            Stream input,
-            Stream output)
-        {
-            // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
-            uint mediaUnitSize = 0x200; // mediaUnitSize;
-
-            input.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            output.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-
-            Console.WriteLine($"Partition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": ExeFS Filename Table");
-
-            var exeFSFilenameTable = CreateAESCipher(KeysMap[index].NormalKey2C, ncchHeader.ExeFSIV(), encrypt);
-            output.Write(exeFSFilenameTable.ProcessBytes(input.ReadBytes((int)mediaUnitSize)));
+#if NET6_0_OR_GREATER
+            // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
+            input.Seek(0, SeekOrigin.Begin);
+#endif
             output.Flush();
+            return true;
         }
-
-        /// <summary>
-        /// Process the ExeFS, if it exists
-        /// </summary>
-        /// <param name="ncchHeader">NCCH header representing the partition</param>
-        /// <param name="index">Index of the partition</param>
-        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="input">Stream representing the input</param>
-        /// <param name="output">Stream representing the output</param>
-        private void ProcessExeFS(NCCHHeader ncchHeader,
-            int index,
-            PartitionTableEntry tableEntry,
-            bool encrypt,
-            Stream input,
-            Stream output)
-        {
-            // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
-            uint mediaUnitSize = 0x200; // mediaUnitSize;
-
-            int exefsSizeM = (int)((long)((ncchHeader.ExeFSSizeInMediaUnits - 1) * mediaUnitSize) / (1024 * 1024));
-            int exefsSizeB = (int)((long)((ncchHeader.ExeFSSizeInMediaUnits - 1) * mediaUnitSize) % (1024 * 1024));
-            int ctroffsetE = (int)(mediaUnitSize / 0x10);
-
-            byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV(), ctroffsetE);
-
-            var exeFS = CreateAESCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset, encrypt);
-
-            input.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
-            output.Seek((tableEntry.Offset + ncchHeader.ExeFSOffsetInMediaUnits + 1) * mediaUnitSize, SeekOrigin.Begin);
-            if (exefsSizeM > 0)
-            {
-                for (int i = 0; i < exefsSizeM; i++)
-                {
-                    output.Write(exeFS.ProcessBytes(input.ReadBytes(1024 * 1024)));
-                    output.Flush();
-                    Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {i} / {exefsSizeM + 1} mb");
-                }
-            }
-            if (exefsSizeB > 0)
-            {
-                output.Write(exeFS.DoFinal(input.ReadBytes(exefsSizeB)));
-                output.Flush();
-            }
-
-            Console.Write($"\rPartition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + $": {exefsSizeM + 1} / {exefsSizeM + 1} mb... Done!\r\n");
-        }
-
-        #endregion
-
-        #region Decrypt
 
         /// <summary>
         /// Decrypt the ExeFS, if it exists
@@ -408,28 +262,156 @@ namespace NDecrypt.N3DS
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void DecryptExeFS(NCCHHeader ncchHeader,
+        private bool DecryptExeFS(NCCHHeader ncchHeader,
             int index,
             PartitionTableEntry tableEntry,
             Stream input,
             Stream output)
         {
-            // If the ExeFS size is 0, we log and return
-            if (ncchHeader.ExeFSSizeInMediaUnits == 0)
+            // Validate the ExeFS
+            uint mediaUnitSize = 0x200;
+            uint exeFsOffset = GetExeFSOffset(ncchHeader, tableEntry, mediaUnitSize) - mediaUnitSize;
+            if (exeFsOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint exeFsSize = GetExeFSSize(ncchHeader, mediaUnitSize);
+            if (exeFsSize == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
+            }
+
+            // Decrypt the filename table
+            DecryptExeFSFilenameTable(ncchHeader, index, tableEntry, input, output);
+
+            // For all but the original crypto method, process each of the files in the table
+            if (ncchHeader.Flags!.CryptoMethod != CryptoMethod.Original)
+                DecryptExeFSFileEntries(ncchHeader, index, tableEntry, input, output);
+
+            // Seek to the ExeFS
+            input.Seek(exeFsOffset, SeekOrigin.Begin);
+            output.Seek(exeFsOffset, SeekOrigin.Begin);
+
+            // Create the ExeFS AES cipher for this partition
+            int ctroffsetE = (int)(mediaUnitSize / 0x10);
+            byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV(), ctroffsetE);
+            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
+
+            // Setup and perform the decryption
+            PerformAESOperation(exeFsSize - mediaUnitSize,
+                cipher,
+                input,
+                output,
+                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting: {s}"));
+
+            return true;
+        }
+
+        /// <summary>
+        /// Decrypt the ExeFS Filename Table
+        /// </summary>
+        /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private void DecryptExeFSFilenameTable(NCCHHeader ncchHeader,
+            int index,
+            PartitionTableEntry tableEntry,
+            Stream input,
+            Stream output)
+        {
+            // Get ExeFS offset
+            uint mediaUnitSize = 0x200;
+            uint exeFsOffset = GetExeFSOffset(ncchHeader, tableEntry, mediaUnitSize);
+            if (exeFsOffset == 0)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return;
             }
 
-            // Decrypt the filename table
-            ProcessExeFSFilenameTable(ncchHeader, index, tableEntry, encrypt: false, input, output);
+            // Seek to the ExeFS header
+            input.Seek(exeFsOffset, SeekOrigin.Begin);
+            output.Seek(exeFsOffset, SeekOrigin.Begin);
 
-            // For all but the original crypto method, process each of the files in the table
-            if (ncchHeader.Flags!.CryptoMethod != CryptoMethod.Original)
-                ProcessExeFSFileEntries(ncchHeader, index, tableEntry, encrypt: false, input, output);
+            Console.WriteLine($"Partition {index} ExeFS: Decrypting: ExeFS Filename Table");
 
-            // Decrypt the rest of the ExeFS
-            ProcessExeFS(ncchHeader, index, tableEntry, encrypt: false, input, output);
+            // Create the ExeFS AES cipher for this partition
+            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, ncchHeader.ExeFSIV());
+
+            // Process the filename table
+            PerformAESOperation(mediaUnitSize, cipher, input, output, null);
+
+#if NET6_0_OR_GREATER
+            // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
+            input.Seek(0, SeekOrigin.Begin);
+#endif
+            output.Flush();
+        }
+
+        /// <summary>
+        /// Decrypt the ExeFS file entries
+        /// </summary>
+        /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private void DecryptExeFSFileEntries(NCCHHeader ncchHeader,
+            int index,
+            PartitionTableEntry tableEntry,
+            Stream input,
+            Stream output)
+        {
+            // Get ExeFS offset
+            uint mediaUnitSize = 0x200;
+            uint exeFsHeaderOffset = GetExeFSOffset(ncchHeader, tableEntry, mediaUnitSize);
+            if (exeFsHeaderOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return;
+            }
+
+            // Get to the start of the files
+            uint exeFsFilesOffset = exeFsHeaderOffset + mediaUnitSize;
+            input.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
+            var exefsHeader = N3DSDeserializer.ParseExeFSHeader(input);
+
+            // If the header failed to read, log and return
+            if (exefsHeader == null)
+            {
+                Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
+                return;
+            }
+
+            foreach (var fileHeader in exefsHeader.FileHeaders!)
+            {
+                // Only decrypt a file if it's a code binary
+                if (fileHeader == null || !fileHeader.IsCodeBinary())
+                    continue;
+
+                // Create the ExeFS AES ciphers for this partition
+                uint ctroffset = (fileHeader.FileOffset + mediaUnitSize) / 0x10;
+                byte[] exefsIVWithOffsetForHeader = AddToByteArray(ncchHeader.ExeFSIV(), (int)ctroffset);
+                var firstCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
+                var secondCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
+
+                // Seek to the file entry
+                input.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
+                output.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
+
+                // Setup and perform the encryption
+                uint exeFsSize = GetExeFSSize(ncchHeader, mediaUnitSize);
+                PerformAESOperation(exeFsSize,
+                    firstCipher,
+                    secondCipher,
+                    input,
+                    output,
+                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting: {fileHeader.FileName}...{s}"));
+            }
         }
 
         /// <summary>
@@ -440,7 +422,6 @@ namespace NDecrypt.N3DS
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        /// TODO: See how much can be extracted into a common method with Encrypt
         private void DecryptRomFS(NCCHHeader ncchHeader,
             int index,
             PartitionTableEntry tableEntry,
@@ -514,6 +495,77 @@ namespace NDecrypt.N3DS
         #region Encrypt
 
         /// <summary>
+        /// Determine the set of keys to be used for encryption
+        /// </summary>
+        /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="index">Index of the partition</param>
+        private void SetEncryptionKeys(NCCHHeader ncchHeader, int index)
+        {
+            // Get partition-specific values
+            byte[]? rsaSignature = ncchHeader.RSA2048Signature;
+
+            // TODO: Figure out what sane defaults for these values are
+            // TODO: Can we actually re-encrypt a CIA?
+
+            // Set the header to use based on mode
+            BitMasks masks = BitMasks.NoCrypto; // ciaHeader.BackupHeader.Flags.BitMasks;
+            CryptoMethod method = CryptoMethod.Original; // ciaHeader.BackupHeader.Flags.CryptoMethod;
+
+            // Get the partition keys
+            KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
+        }
+
+        /// <summary>
+        /// Encrypt the extended header, if it exists
+        /// </summary>
+        /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private bool EncryptExtendedHeader(NCCHHeader ncchHeader,
+            int index,
+            PartitionTableEntry tableEntry,
+            Stream input,
+            Stream output)
+        {
+            // Get required offsets
+            uint mediaUnitSize = 0x200;
+            uint partitionOffset = GetPartitionOffset(tableEntry, mediaUnitSize);
+            if (partitionOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint extHeaderSize = GetExtendedHeaderSize(ncchHeader);
+            if (extHeaderSize == 0)
+            {
+                Console.WriteLine($"Partition {index} RomFS: No Extended Header... Skipping...");
+                return false;
+            }
+
+            // Seek to the extended header
+            input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
+            output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
+
+            Console.WriteLine($"Partition {index} ExeFS: Encrypting: ExHeader");
+
+            // Create the Plain AES cipher for this partition
+            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, ncchHeader.PlainIV());
+
+            // Process the extended header
+            PerformAESOperation(Constants.CXTExtendedDataHeaderLength, cipher, input, output, null);
+
+#if NET6_0_OR_GREATER
+            // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
+            input.Seek(0, SeekOrigin.Begin);
+#endif
+            output.Flush();
+            return true;
+        }
+
+        /// <summary>
         /// Encrypt the ExeFS, if it exists
         /// </summary>
         /// <param name="ncchHeader">NCCH header representing the partition</param>
@@ -521,29 +573,157 @@ namespace NDecrypt.N3DS
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void EncryptExeFS(NCCHHeader ncchHeader,
+        private bool EncryptExeFS(NCCHHeader ncchHeader,
             int index,
             PartitionTableEntry tableEntry,
             Stream input,
             Stream output)
         {
-            // If the ExeFS size is 0, we log and return
-            if (ncchHeader.ExeFSSizeInMediaUnits == 0)
+            // Validate the ExeFS
+            uint mediaUnitSize = 0x200;
+            uint exeFsOffset = GetExeFSOffset(ncchHeader, tableEntry, mediaUnitSize) - mediaUnitSize;
+            if (exeFsOffset == 0)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
-                return;
+                return false;
+            }
+
+            uint exeFsSize = GetExeFSSize(ncchHeader, mediaUnitSize);
+            if (exeFsSize == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
             }
 
             // TODO: Determine how to figure out the original crypto method, if possible
             // For all but the original crypto method, process each of the files in the table
             //if (ciaHeader.BackupHeader.Flags.CryptoMethod != CryptoMethod.Original)
-            //    ProcessExeFSFileEntries(ncchHeader, reader, writer);
+            //    EncryptExeFSFileEntries(ncchHeader, index, tableEntry, reader, writer);
 
             // Encrypt the filename table
-            ProcessExeFSFilenameTable(ncchHeader, index, tableEntry, encrypt: true, input, output);
+            EncryptExeFSFilenameTable(ncchHeader, index, tableEntry, input, output);
 
-            // Encrypt the rest of the ExeFS
-            ProcessExeFS(ncchHeader, index, tableEntry, encrypt: true, input, output);
+            // Seek to the ExeFS
+            input.Seek(exeFsOffset, SeekOrigin.Begin);
+            output.Seek(exeFsOffset, SeekOrigin.Begin);
+
+            // Create the ExeFS AES cipher for this partition
+            int ctroffsetE = (int)(mediaUnitSize / 0x10);
+            byte[] exefsIVWithOffset = AddToByteArray(ncchHeader.ExeFSIV(), ctroffsetE);
+            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
+
+            // Setup and perform the decryption
+            PerformAESOperation(exeFsSize - mediaUnitSize,
+                cipher,
+                input,
+                output,
+                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting: {s}"));
+
+            return true;
+        }
+
+        /// <summary>
+        /// Encrypt the ExeFS Filename Table
+        /// </summary>
+        /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private void EncryptExeFSFilenameTable(NCCHHeader ncchHeader,
+            int index,
+            PartitionTableEntry tableEntry,
+            Stream input,
+            Stream output)
+        {
+            // Get ExeFS offset
+            uint mediaUnitSize = 0x200;
+            uint exeFsOffset = GetExeFSOffset(ncchHeader, tableEntry, mediaUnitSize);
+            if (exeFsOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return;
+            }
+
+            // Seek to the ExeFS header
+            input.Seek(exeFsOffset, SeekOrigin.Begin);
+            output.Seek(exeFsOffset, SeekOrigin.Begin);
+
+            Console.WriteLine($"Partition {index} ExeFS: Encrypting: ExeFS Filename Table");
+
+            // Create the ExeFS AES cipher for this partition
+            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, ncchHeader.ExeFSIV());
+
+            // Process the filename table
+            PerformAESOperation(mediaUnitSize, cipher, input, output, null);
+
+#if NET6_0_OR_GREATER
+            // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
+            input.Seek(0, SeekOrigin.Begin);
+#endif
+            output.Flush();
+        }
+
+        /// <summary>
+        /// Encrypt the ExeFS file entries
+        /// </summary>
+        /// <param name="ncchHeader">NCCH header representing the partition</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private void EncryptExeFSFileEntries(NCCHHeader ncchHeader,
+            int index,
+            PartitionTableEntry tableEntry,
+            Stream input,
+            Stream output)
+        {
+            // Get ExeFS offset
+            uint mediaUnitSize = 0x200;
+            uint exeFsHeaderOffset = GetExeFSOffset(ncchHeader, tableEntry, mediaUnitSize);
+            if (exeFsHeaderOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return;
+            }
+
+            // Get to the start of the files
+            uint exeFsFilesOffset = exeFsHeaderOffset + mediaUnitSize;
+            input.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
+            var exefsHeader = N3DSDeserializer.ParseExeFSHeader(input);
+
+            // If the header failed to read, log and return
+            if (exefsHeader == null)
+            {
+                Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
+                return;
+            }
+
+            foreach (var fileHeader in exefsHeader.FileHeaders!)
+            {
+                // Only decrypt a file if it's a code binary
+                if (fileHeader == null || !fileHeader.IsCodeBinary())
+                    continue;
+
+                // Create the ExeFS AES ciphers for this partition
+                uint ctroffset = (fileHeader.FileOffset + mediaUnitSize) / 0x10;
+                byte[] exefsIVWithOffsetForHeader = AddToByteArray(ncchHeader.ExeFSIV(), (int)ctroffset);
+                var firstCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
+                var secondCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
+
+                // Seek to the file entry
+                input.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
+                output.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
+
+                // Setup and perform the encryption
+                uint exeFsSize = GetExeFSSize(ncchHeader, mediaUnitSize);
+                PerformAESOperation(exeFsSize,
+                    firstCipher,
+                    secondCipher,
+                    input,
+                    output,
+                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting: {fileHeader.FileName}...{s}"));
+            }
         }
 
         /// <summary>
@@ -554,7 +734,6 @@ namespace NDecrypt.N3DS
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        /// TODO: See how much can be extracted into a common method with Decrypt
         private void EncryptRomFS(NCCHHeader ncchHeader,
             int index,
             PartitionTableEntry tableEntry,

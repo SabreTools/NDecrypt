@@ -238,6 +238,24 @@ namespace NDecrypt.N3DS
         }
 
         /// <summary>
+        /// Get the offset of a partition ExeFS
+        /// </summary>
+        /// <returns>Offset to the ExeFS of the partition, 0 on error</returns>
+        public static uint GetExeFSOffset(NCCHHeader header,
+            PartitionTableEntry entry,
+            uint mediaUnitSize)
+        {
+            // If the offset is 0, return 0
+            uint exeFsOffsetMU = header.ExeFSOffsetInMediaUnits;
+            if (exeFsOffsetMU == 0)
+                return 0;
+
+            // Return the adjusted offset
+            uint partitionOffsetMU = entry.Offset;
+            return (partitionOffsetMU + exeFsOffsetMU) * mediaUnitSize;
+        }
+
+        /// <summary>
         /// Get the offset of a partition
         /// </summary>
         /// <returns>Offset to the partition, 0 on error</returns>
@@ -256,6 +274,22 @@ namespace NDecrypt.N3DS
             // Return the adjusted offset
             uint partitionOffsetMU = entry.Offset;
             return partitionOffsetMU * cart.MediaUnitSize();
+        }
+
+        /// <summary>
+        /// Get the offset of a partition
+        /// </summary>
+        /// <returns>Offset to the partition, 0 on error</returns>
+        public static uint GetPartitionOffset(PartitionTableEntry entry,
+            uint mediaUnitSize)
+        {
+            // Invalid partition table entry means no size is available
+            if (entry.Offset == 0)
+                return 0;
+
+            // Return the adjusted offset
+            uint partitionOffsetMU = entry.Offset;
+            return partitionOffsetMU * mediaUnitSize;
         }
 
         /// <summary>
@@ -292,6 +326,24 @@ namespace NDecrypt.N3DS
             // Return the adjusted offset
             uint partitionOffsetMU = entry.Offset;
             return (partitionOffsetMU + romFsOffsetMU) * cart.MediaUnitSize();
+        }
+
+        /// <summary>
+        /// Get the offset of a partition RomFS
+        /// </summary>
+        /// <returns>Offset to the RomFS of the partition, 0 on error</returns>
+        public static uint GetRomFSOffset(NCCHHeader header,
+            PartitionTableEntry entry,
+            uint mediaUnitSize)
+        {
+            // If the offset is 0, return 0
+            uint romFsOffsetMU = header.RomFSOffsetInMediaUnits;
+            if (romFsOffsetMU == 0)
+                return 0;
+
+            // Return the adjusted offset
+            uint partitionOffsetMU = entry.Offset;
+            return (partitionOffsetMU + romFsOffsetMU - 1) * mediaUnitSize;
         }
 
         #endregion

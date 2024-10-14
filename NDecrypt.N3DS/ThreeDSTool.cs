@@ -147,12 +147,10 @@ namespace NDecrypt.N3DS
         /// <param name="output">Stream representing the output</param>
         private void ProcessPartition(Cart cart, int index, bool encrypt, Stream input, Stream output)
         {
-            // Determine the Keys to be used
-            SetEncryptionKeys(cart, index, encrypt);
-
             // If we're encrypting, encrypt the filesystems and update the flags
             if (encrypt)
             {
+                SetEncryptionKeys(cart, index);
                 EncryptExtendedHeader(cart, index, input, output);
                 EncryptExeFS(cart, index, input, output);
                 EncryptRomFS(cart, index, input, output);
@@ -162,6 +160,7 @@ namespace NDecrypt.N3DS
             // If we're decrypting, decrypt the filesystems and update the flags
             else
             {
+                SetDecryptionKeys(cart, index);
                 DecryptExtendedHeader(cart, index, input, output);
                 DecryptExeFS(cart, index, input, output);
                 DecryptRomFS(cart, index, input, output);
@@ -169,13 +168,16 @@ namespace NDecrypt.N3DS
             }
         }
 
+        #endregion
+
+        #region Decrypt
+
         /// <summary>
-        /// Determine the set of keys to be used for encryption or decryption
+        /// Determine the set of keys to be used for decryption
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
         /// <param name="index">Index of the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        private void SetEncryptionKeys(Cart cart, int index, bool encrypt)
+        private void SetDecryptionKeys(Cart cart, int index)
         {
             // Get the partition
             var partition = cart.Partitions?[index];
@@ -186,27 +188,12 @@ namespace NDecrypt.N3DS
             byte[]? rsaSignature = partition.RSA2048Signature;
 
             // Set the header to use based on mode
-            BitMasks masks;
-            CryptoMethod method;
-            if (encrypt)
-            {
-                var backupHeader = cart.CardInfoHeader!.InitialData!.BackupHeader;
-                masks = backupHeader!.Flags!.BitMasks;
-                method = backupHeader.Flags.CryptoMethod;
-            }
-            else
-            {
-                masks = partition.Flags!.BitMasks;
-                method = partition.Flags!.CryptoMethod;
-            }
+            BitMasks masks = partition.Flags!.BitMasks;
+            CryptoMethod method = partition.Flags!.CryptoMethod;
 
             // Get the partition keys
             KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
         }
-
-        #endregion
-
-        #region Decrypt
 
         /// <summary>
         /// Decrypt the extended header, if it exists
@@ -261,9 +248,16 @@ namespace NDecrypt.N3DS
         /// <param name="output">Stream representing the output</param>
         private bool DecryptExeFS(Cart cart, int index, Stream input, Stream output)
         {
-            // Get ExeFS offset
+            // Validate the ExeFS
             uint exeFsOffset = GetExeFSOffset(cart, index);
             if (exeFsOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint exeFsSize = GetExeFSSize(cart, index);
+            if (exeFsSize == 0)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return false;
@@ -286,7 +280,6 @@ namespace NDecrypt.N3DS
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the decryption
-            uint exeFsSize = GetExeFSSize(cart, index);
             PerformAESOperation(exeFsSize,
                 cipher,
                 input,
@@ -463,6 +456,30 @@ namespace NDecrypt.N3DS
         #region Encrypt
 
         /// <summary>
+        /// Determine the set of keys to be used for encryption
+        /// </summary>
+        /// <param name="cart">Cart representing the 3DS file</param>
+        /// <param name="index">Index of the partition</param>
+        private void SetEncryptionKeys(Cart cart, int index)
+        {
+            // Get the partition
+            var partition = cart.Partitions?[index];
+            if (partition == null)
+                return;
+
+            // Get partition-specific values
+            byte[]? rsaSignature = partition.RSA2048Signature;
+
+            // Set the header to use based on mode
+            var backupHeader = cart.CardInfoHeader!.InitialData!.BackupHeader;
+            BitMasks masks = backupHeader!.Flags!.BitMasks;
+            CryptoMethod method = backupHeader.Flags.CryptoMethod;
+
+            // Get the partition keys
+            KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
+        }
+
+        /// <summary>
         /// Encrypt the extended header, if it exists
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
@@ -515,9 +532,16 @@ namespace NDecrypt.N3DS
         /// <param name="output">Stream representing the output</param>
         private bool EncryptExeFS(Cart cart, int index, Stream input, Stream output)
         {
-            // Get ExeFS offset
+            // Validate the ExeFS
             uint exeFsOffset = GetExeFSOffset(cart, index);
             if (exeFsOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint exeFsSize = GetExeFSSize(cart, index);
+            if (exeFsSize == 0)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return false;
@@ -541,7 +565,6 @@ namespace NDecrypt.N3DS
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the encryption
-            uint exeFsSize = GetExeFSSize(cart, index);
             PerformAESOperation(exeFsSize,
                 cipher,
                 input,
