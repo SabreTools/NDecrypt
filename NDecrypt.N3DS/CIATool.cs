@@ -429,45 +429,43 @@ namespace NDecrypt.N3DS
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void DecryptRomFS(NCCHHeader header,
+        private bool DecryptRomFS(NCCHHeader header,
             int index,
             PartitionTableEntry tableEntry,
             Stream input,
             Stream output)
         {
-            // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
-            uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
-
-            // If the RomFS offset is 0, we log and return
-            if (header.RomFSOffsetInMediaUnits == 0)
+            // Validate the RomFS
+            uint mediaUnitSize = 0x200;
+            uint romFsOffset = GetRomFSOffset(header, tableEntry, mediaUnitSize);
+            if (romFsOffset == 0)
             {
                 Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
-                return;
+                return false;
             }
 
-            long romfsSizeM = (int)((long)(header.RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024));
-            int romfsSizeB = (int)((long)(header.RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024));
-
-            var cipher = CreateAESCipher(KeysMap[index].NormalKey, header.RomFSIV(), encrypt: false);
-
-            input.Seek((tableEntry.Offset + header.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            output.Seek((tableEntry.Offset + header.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            if (romfsSizeM > 0)
+            uint romFsSize = GetRomFSSize(header, mediaUnitSize);
+            if (romFsSize == 0)
             {
-                for (int i = 0; i < romfsSizeM; i++)
-                {
-                    output.Write(cipher.ProcessBytes(input.ReadBytes(1024 * 1024)));
-                    output.Flush();
-                    Console.Write($"\rPartition {index} RomFS: Decrypting: {i} / {romfsSizeM + 1} mb");
-                }
-            }
-            if (romfsSizeB > 0)
-            {
-                output.Write(cipher.DoFinal(input.ReadBytes(romfsSizeB)));
-                output.Flush();
+                Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
+                return false;
             }
 
-            Console.Write($"\rPartition {index} RomFS: Decrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
+            // Seek to the RomFS
+            input.Seek(romFsOffset, SeekOrigin.Begin);
+            output.Seek(romFsOffset, SeekOrigin.Begin);
+
+            // Create the RomFS AES cipher for this partition
+            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, header.RomFSIV());
+
+            // Setup and perform the decryption
+            PerformAESOperation(romFsSize,
+                cipher,
+                input,
+                output,
+                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Decrypting: {s}"));
+
+            return true;
         }
 
         /// <summary>
@@ -820,60 +818,50 @@ namespace NDecrypt.N3DS
         /// <param name="tableEntry">PartitionTableEntry header representing the partition</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void EncryptRomFS(NCCHHeader header,
+        private bool EncryptRomFS(NCCHHeader header,
             int index,
             PartitionTableEntry tableEntry,
             Stream input,
             Stream output)
         {
-            // TODO: Determine how to figure out the MediaUnitSize without an NCSD header. Is it a default value?
-            uint mediaUnitSize = 0x200; // ncsdHeader.MediaUnitSize;
-
-            // If the RomFS offset is 0, we log and return
-            if (header.RomFSOffsetInMediaUnits == 0)
+            // Validate the RomFS
+            uint mediaUnitSize = 0x200;
+            uint romFsOffset = GetRomFSOffset(header, tableEntry, mediaUnitSize);
+            if (romFsOffset == 0)
             {
                 Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
-                return;
+                return false;
             }
 
-            long romfsSizeM = (int)((long)(header.RomFSSizeInMediaUnits * mediaUnitSize) / (1024 * 1024));
-            int romfsSizeB = (int)((long)(header.RomFSSizeInMediaUnits * mediaUnitSize) % (1024 * 1024));
+            uint romFsSize = GetRomFSSize(header, mediaUnitSize);
+            if (romFsSize == 0)
+            {
+                Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
+                return false;
+            }
 
-            // Encrypting RomFS for partitions 1 and up always use Key0x2C
+            // Seek to the RomFS
+            input.Seek(romFsOffset, SeekOrigin.Begin);
+            output.Seek(romFsOffset, SeekOrigin.Begin);
+
+            // Force setting encryption keys for partitions 1 and above
             if (index > 0)
             {
-                // TODO: Determine how to figure out the original crypto method, if possible
-                //if (ciaHeader.BackupHeader.Flags?.BitMasks.HasFlag(BitMasks.FixedCryptoKey) == true) // except if using zero-key
-                //{
-                //    header.NormalKey = 0x00;
-                //}
-                //else
-                //{
-                KeysMap[index].KeyX = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
-                KeysMap[index].NormalKey = RotateLeft((RotateLeft(KeysMap[index].KeyX, 2, 128) ^ KeysMap[index].KeyY) + _decryptArgs.AESHardwareConstant, 87, 128);
-                //}
+                //var backupHeader = ciaHeader.BackupHeader;
+                KeysMap[index].SetRomFSValues((BitMasks)0x00);
             }
 
-            var cipher = CreateAESCipher(KeysMap[index].NormalKey, header.RomFSIV(), encrypt: true);
+            // Create the RomFS AES cipher for this partition
+            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, header.RomFSIV());
 
-            input.Seek((tableEntry.Offset + header.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            output.Seek((tableEntry.Offset + header.RomFSOffsetInMediaUnits) * mediaUnitSize, SeekOrigin.Begin);
-            if (romfsSizeM > 0)
-            {
-                for (int i = 0; i < romfsSizeM; i++)
-                {
-                    output.Write(cipher.ProcessBytes(input.ReadBytes(1024 * 1024)));
-                    output.Flush();
-                    Console.Write($"\rPartition {index} RomFS: Encrypting: {i} / {romfsSizeM + 1} mb");
-                }
-            }
-            if (romfsSizeB > 0)
-            {
-                output.Write(cipher.DoFinal(input.ReadBytes(romfsSizeB)));
-                output.Flush();
-            }
+            // Setup and perform the decryption
+            PerformAESOperation(romFsSize,
+                cipher,
+                input,
+                output,
+                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Encrypting: {s}"));
 
-            Console.Write($"\rPartition {index} RomFS: Encrypting: {romfsSizeM + 1} / {romfsSizeM + 1} mb... Done!\r\n");
+            return true;
         }
 
         /// <summary>

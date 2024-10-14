@@ -777,20 +777,11 @@ namespace NDecrypt.N3DS
             input.Seek(romFsOffset, SeekOrigin.Begin);
             output.Seek(romFsOffset, SeekOrigin.Begin);
 
-            // Encrypting RomFS for partitions 1 and up always use Key0x2C
+            // Force setting encryption keys for partitions 1 and above
             if (index > 0)
             {
-                // Except if using zero-key
                 var backupHeader = cart.CardInfoHeader!.InitialData!.BackupHeader;
-                if (backupHeader!.Flags!.BitMasks.HasFlag(BitMasks.FixedCryptoKey))
-                {
-                    KeysMap[index].NormalKey = 0x00;
-                }
-                else
-                {
-                    KeysMap[index].KeyX = (_development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
-                    KeysMap[index].NormalKey = RotateLeft((RotateLeft(KeysMap[index].KeyX, 2, 128) ^ KeysMap[index].KeyY) + _decryptArgs.AESHardwareConstant, 87, 128);
-                }
+                KeysMap[index].SetRomFSValues(backupHeader!.Flags!.BitMasks);
             }
 
             // Create the RomFS AES cipher for this partition

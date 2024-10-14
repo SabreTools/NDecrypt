@@ -12,15 +12,25 @@ namespace NDecrypt.N3DS
     /// </summary>
     public class PartitionKeys
     {
-        public BigInteger KeyX { get; set; }
+        public BigInteger KeyX { get; private set; }
 
-        public BigInteger KeyX2C { get; set; }
+        public BigInteger KeyX2C { get; private set; }
 
-        public BigInteger KeyY { get; set; }
+        public BigInteger KeyY { get; private set; }
 
-        public BigInteger NormalKey { get; set; }
+        public BigInteger NormalKey { get; private set; }
 
-        public BigInteger NormalKey2C { get; set; }
+        public BigInteger NormalKey2C { get; private set; }
+
+        /// <summary>
+        /// Decryption args to use while processing
+        /// </summary>
+        private readonly DecryptArgs _decryptArgs;
+
+        /// <summary>
+        /// Indicates if development images are expected
+        /// </summary>
+        private readonly bool _development;
 
         /// <summary>
         /// Create a new set of keys for a given partition
@@ -32,6 +42,10 @@ namespace NDecrypt.N3DS
         /// <param name="development">Determine if development keys are used</param>
         public PartitionKeys(DecryptArgs args, byte[]? signature, BitMasks masks, CryptoMethod method, bool development)
         {
+            // Set fields for future use
+            _decryptArgs = args;
+            _development = development;
+
             KeyX = 0;
             KeyX2C = development ? args.DevKeyX0x2C : args.KeyX0x2C;
 
@@ -75,6 +89,23 @@ namespace NDecrypt.N3DS
 
                 NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + args.AESHardwareConstant, 87, 128);
             }
+        }
+
+        /// <summary>
+        /// Set RomFS values based on the bit masks
+        /// </summary>
+        public void SetRomFSValues(BitMasks masks)
+        {
+            // NormalKey has a constant value for zero-key
+            if (masks.HasFlag(BitMasks.FixedCryptoKey))
+            {
+                NormalKey = 0x00;
+                return;
+            }
+
+            // Encrypting RomFS for partitions 1 and up always use Key0x2C
+            KeyX = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+            NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + _decryptArgs.AESHardwareConstant, 87, 128);
         }
     }
 }
