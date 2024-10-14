@@ -5,7 +5,6 @@ using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
 using static NDecrypt.N3DS.CommonOperations;
 using N3DSDeserializer = SabreTools.Serialization.Deserializers.N3DS;
-using Constants = SabreTools.Models.N3DS.Constants;
 
 namespace NDecrypt.Core
 {

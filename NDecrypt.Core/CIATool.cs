@@ -4,7 +4,6 @@ using NDecrypt.N3DS;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
 using static NDecrypt.N3DS.CommonOperations;
-using CIADeserializer = SabreTools.Serialization.Deserializers.CIA;
 using N3DSDeserializer = SabreTools.Serialization.Deserializers.N3DS;
 
 namespace NDecrypt.Core
@@ -914,7 +913,7 @@ namespace NDecrypt.Core
         {
             try
             {
-                return CIADeserializer.DeserializeStream(input);
+                return SabreTools.Serialization.Deserializers.CIA.DeserializeStream(input);
             }
             catch
             {
