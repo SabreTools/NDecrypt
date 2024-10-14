@@ -111,7 +111,10 @@ namespace NDecrypt.N3DS
 
                 // Process the partition, if possible
                 if (ShouldProcessPartition(cart, p, encrypt, force))
-                    ProcessPartition(cart, p, encrypt, input, output);
+                {
+                    if (encrypt) EncryptPartition(cart, p, input, output);
+                    else         DecryptPartition(cart, p, input, output);
+                }
             }
         }
 
@@ -137,40 +140,31 @@ namespace NDecrypt.N3DS
             return true;
         }
 
+        #endregion
+
+        #region Decrypt
+
         /// <summary>
-        /// Process a single partition
+        /// Decrypt a single partition
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
         /// <param name="index">Index of the partition</param>
         /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void ProcessPartition(Cart cart, int index, bool encrypt, Stream input, Stream output)
+        private void DecryptPartition(Cart cart, int index, Stream input, Stream output)
         {
-            // If we're encrypting, encrypt the filesystems and update the flags
-            if (encrypt)
-            {
-                SetEncryptionKeys(cart, index);
-                EncryptExtendedHeader(cart, index, input, output);
-                EncryptExeFS(cart, index, input, output);
-                EncryptRomFS(cart, index, input, output);
-                UpdateEncryptCryptoAndMasks(cart, index, output);
-            }
+            // Determine the keys needed for this partition
+            SetDecryptionKeys(cart, index);
 
-            // If we're decrypting, decrypt the filesystems and update the flags
-            else
-            {
-                SetDecryptionKeys(cart, index);
-                DecryptExtendedHeader(cart, index, input, output);
-                DecryptExeFS(cart, index, input, output);
-                DecryptRomFS(cart, index, input, output);
-                UpdateDecryptCryptoAndMasks(cart, index, output);
-            }
+            // Decrypt the parts of the partition
+            DecryptExtendedHeader(cart, index, input, output);
+            DecryptExeFS(cart, index, input, output);
+            DecryptRomFS(cart, index, input, output);
+
+            // Update the flags
+            UpdateDecryptCryptoAndMasks(cart, index, output);
         }
-
-        #endregion
-
-        #region Decrypt
 
         /// <summary>
         /// Determine the set of keys to be used for decryption
@@ -454,6 +448,27 @@ namespace NDecrypt.N3DS
         #endregion
 
         #region Encrypt
+
+        /// <summary>
+        /// Encrypt a single partition
+        /// </summary>
+        /// <param name="cart">Cart representing the 3DS file</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private void EncryptPartition(Cart cart, int index, Stream input, Stream output)
+        {
+            // Determine the keys needed for this partition
+            SetEncryptionKeys(cart, index);
+
+            // Encrypt the parts of the partition
+            EncryptExtendedHeader(cart, index, input, output);
+            EncryptExeFS(cart, index, input, output);
+            EncryptRomFS(cart, index, input, output);
+
+            // Update the flags
+            UpdateEncryptCryptoAndMasks(cart, index, output);
+        }
 
         /// <summary>
         /// Determine the set of keys to be used for encryption
