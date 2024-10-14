@@ -31,8 +31,6 @@ namespace NDecrypt.Core
             _decryptArgs = decryptArgs;
         }
 
-        #region Common Methods
-
         /// <inheritdoc/>
         public bool EncryptFile(string filename, bool force)
         {
@@ -104,8 +102,6 @@ namespace NDecrypt.Core
                 return false;
             }
         }
-
-        #endregion
 
         #region Decrypt
 
