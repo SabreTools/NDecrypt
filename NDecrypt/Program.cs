@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using NDecrypt.Core;
-using NDecrypt.N3DS;
 
 namespace NDecrypt
 {

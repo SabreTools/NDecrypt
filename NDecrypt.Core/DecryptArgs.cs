@@ -5,7 +5,7 @@ using System.Numerics;
 using SabreTools.IO.Extensions;
 using SabreTools.IO.Readers;
 
-namespace NDecrypt.N3DS
+namespace NDecrypt.Core
 {
     public class DecryptArgs
     {

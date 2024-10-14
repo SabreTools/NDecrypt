@@ -1,9 +1,8 @@
 ﻿using System;
 using System.IO;
-using NDecrypt.N3DS;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
-using static NDecrypt.N3DS.CommonOperations;
+using static NDecrypt.Core.CommonOperations;
 using N3DSDeserializer = SabreTools.Serialization.Deserializers.N3DS;
 
 namespace NDecrypt.Core

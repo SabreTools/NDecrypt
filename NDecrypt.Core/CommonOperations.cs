@@ -8,7 +8,7 @@ using Org.BouncyCastle.Security;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
 
-namespace NDecrypt.N3DS
+namespace NDecrypt.Core
 {
     internal static class CommonOperations
     {

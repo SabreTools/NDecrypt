@@ -3,9 +3,9 @@ using System.Linq;
 using System.Numerics;
 using Org.BouncyCastle.Crypto;
 using SabreTools.Models.N3DS;
-using static NDecrypt.N3DS.CommonOperations;
+using static NDecrypt.Core.CommonOperations;
 
-namespace NDecrypt.N3DS
+namespace NDecrypt.Core
 {
     /// <summary>
     /// Set of all keys associated with a partition

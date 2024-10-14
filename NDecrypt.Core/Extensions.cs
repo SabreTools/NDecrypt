@@ -1,7 +1,7 @@
 using System;
 using SabreTools.Models.N3DS;
 
-namespace NDecrypt.N3DS
+namespace NDecrypt.Core
 {
     internal static class Extensions
     {
