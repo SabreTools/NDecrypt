@@ -71,8 +71,9 @@ namespace NDecrypt.N3DS
                     return false;
                 }
 
-                // Process all NCCH partitions
-                ProcessAllPartitions(cia, encrypt, force, input, output);
+                // Process all 8 NCCH partitions
+                if (encrypt) EncryptAllPartitions(cia, force, input, output);
+                else         DecryptAllPartitions(cia, force, input, output);
 
                 return false;
             }
@@ -84,16 +85,18 @@ namespace NDecrypt.N3DS
             }
         }
 
+        #endregion
+
+        #region Decrypt
+
         /// <summary>
-        /// Process all partitions in the content file data of a CIA header
+        /// Decrypt all partitions in the content file data of a CIA header
         /// </summary>
         /// <param name="cia">CIA representing the 3DS CIA file</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void ProcessAllPartitions(CIA cia,
-            bool encrypt,
+        private void DecryptAllPartitions(CIA cia,
             bool force,
             Stream input,
             Stream output)
@@ -116,17 +119,11 @@ namespace NDecrypt.N3DS
                     continue;
                 }
 
-                // Process the partition, if possible
-                if (encrypt && ShouldEncryptPartition(cia, p, force))
-                    EncryptPartition(header, p, input, output);
-                else if (!encrypt && ShouldDecryptPartition(cia, p, force))
+                // Decrypt the partition, if possible
+                if (ShouldDecryptPartition(cia, p, force))
                     DecryptPartition(header, p, input, output);
             }
         }
-
-        #endregion
-
-        #region Decrypt
 
         /// <summary>
         /// Determine if the current partition should be decrypted
@@ -481,6 +478,39 @@ namespace NDecrypt.N3DS
         #endregion
 
         #region Encrypt
+
+        /// <summary>
+        /// Encrypt all partitions in the content file data of a CIA header
+        /// </summary>
+        /// <param name="cia">CIA representing the 3DS CIA file</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private void EncryptAllPartitions(CIA cia, bool force, Stream input, Stream output)
+        {
+            // Check the partitions table
+            if (cia.Partitions == null)
+            {
+                Console.WriteLine("Invalid partitions table!");
+                return;
+            }
+
+            // Iterate over all 8 NCCH partitions
+            for (int p = 0; p < cia.Partitions.Length; p++)
+            {
+                // Check the partition exists
+                var header = cia.Partitions[0];
+                if (header == null)
+                {
+                    Console.WriteLine($"Partition {p} Not found... Skipping...");
+                    continue;
+                }
+
+                // Encrypt the partition, if possible
+                if (ShouldEncryptPartition(cia, p, force))
+                    EncryptPartition(header, p, input, output);
+            }
+        }
 
         /// <summary>
         /// Determine if the current partition should be encrypted

@@ -70,7 +70,8 @@ namespace NDecrypt.N3DS
                 }
 
                 // Process all 8 NCCH partitions
-                ProcessAllPartitions(cart, encrypt, force, input, output);
+                if (encrypt) EncryptAllPartitions(cart, force, input, output);
+                else         DecryptAllPartitions(cart, force, input, output);
 
                 return true;
             }
@@ -82,15 +83,18 @@ namespace NDecrypt.N3DS
             }
         }
 
+        #endregion
+
+        #region Decrypt
+
         /// <summary>
-        /// Process all partitions in the partition table of an NCSD header
+        /// Decrypt all partitions in the partition table of an NCSD header
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void ProcessAllPartitions(Cart cart, bool encrypt, bool force, Stream input, Stream output)
+        private void DecryptAllPartitions(Cart cart, bool force, Stream input, Stream output)
         {
             // Check the partitions table
             if (cart.Header?.PartitionsTable == null || cart.Partitions == null)
@@ -109,17 +113,11 @@ namespace NDecrypt.N3DS
                     continue;
                 }
 
-                // Process the partition, if possible
-                if (encrypt && ShouldEncryptPartition(cart, p, force))
-                    EncryptPartition(cart, p, input, output);
-                else if (!encrypt && ShouldDecryptPartition(cart, p, force))
+                // Decrypt the partition, if possible
+                if (ShouldDecryptPartition(cart, p, force))
                     DecryptPartition(cart, p, input, output);
             }
         }
-
-        #endregion
-
-        #region Decrypt
 
         /// <summary>
         /// Determine if the current partition should be decrypted
@@ -447,6 +445,38 @@ namespace NDecrypt.N3DS
         #endregion
 
         #region Encrypt
+
+        /// <summary>
+        /// Encrypt all partitions in the partition table of an NCSD header
+        /// </summary>
+        /// <param name="cart">Cart representing the 3DS file</param>
+        /// <param name="force">Indicates if the operation should be forced</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private void EncryptAllPartitions(Cart cart, bool force, Stream input, Stream output)
+        {
+            // Check the partitions table
+            if (cart.Header?.PartitionsTable == null || cart.Partitions == null)
+            {
+                Console.WriteLine("Invalid partitions table!");
+                return;
+            }
+
+            // Iterate over all 8 NCCH partitions
+            for (int p = 0; p < 8; p++)
+            {
+                // Check the partition exists
+                if (cart.Partitions[p] == null)
+                {
+                    Console.WriteLine($"Partition {p} Not found... Skipping...");
+                    continue;
+                }
+
+                // Encrypt the partition, if possible
+                if (ShouldEncryptPartition(cart, p, force))
+                    EncryptPartition(cart, p, input, output);
+            }
+        }
 
         /// <summary>
         /// Determine if the current partition should be encrypted
