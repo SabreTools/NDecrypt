@@ -110,18 +110,21 @@ namespace NDecrypt.N3DS
                 }
 
                 // Process the partition, if possible
-                if (ShouldProcessPartition(cart, p, encrypt, force))
-                {
-                    if (encrypt) EncryptPartition(cart, p, input, output);
-                    else         DecryptPartition(cart, p, input, output);
-                }
+                if (encrypt && ShouldEncryptPartition(cart, p, force))
+                    EncryptPartition(cart, p, input, output);
+                else if (!encrypt && ShouldDecryptPartition(cart, p, force))
+                    DecryptPartition(cart, p, input, output);
             }
         }
 
+        #endregion
+
+        #region Decrypt
+
         /// <summary>
-        /// Determine if the current partition should be processed
-        /// </summary>
-        private static bool ShouldProcessPartition(Cart cart, int index, bool encrypt, bool force)
+        /// Determine if the current partition should be decrypted
+        /// </summary>s
+        private static bool ShouldDecryptPartition(Cart cart, int index, bool force)
         {
             // If we're forcing the operation, tell the user
             if (force)
@@ -130,19 +133,15 @@ namespace NDecrypt.N3DS
                 return true;
             }
             // If we're not forcing the operation, check if the 'NoCrypto' bit is set
-            else if (cart.Partitions![index]!.Flags!.PossblyDecrypted() ^ encrypt)
+            else if (cart.Partitions![index]!.Flags!.PossblyDecrypted())
             {
-                Console.WriteLine($"Partition {index}: Already " + (encrypt ? "Encrypted" : "Decrypted") + "?...");
+                Console.WriteLine($"Partition {index}: Already Decrypted?...");
                 return false;
             }
 
             // By default, it passes
             return true;
         }
-
-        #endregion
-
-        #region Decrypt
 
         /// <summary>
         /// Decrypt a single partition
@@ -448,6 +447,28 @@ namespace NDecrypt.N3DS
         #endregion
 
         #region Encrypt
+
+        /// <summary>
+        /// Determine if the current partition should be encrypted
+        /// </summary>
+        private static bool ShouldEncryptPartition(Cart cart, int index, bool force)
+        {
+            // If we're forcing the operation, tell the user
+            if (force)
+            {
+                Console.WriteLine($"Partition {index} is not verified due to force flag being set.");
+                return true;
+            }
+            // If we're not forcing the operation, check if the 'NoCrypto' bit is set
+            else if (!cart.Partitions![index]!.Flags!.PossblyDecrypted())
+            {
+                Console.WriteLine($"Partition {index}: Already Encrypted?...");
+                return false;
+            }
+
+            // By default, it passes
+            return true;
+        }
 
         /// <summary>
         /// Encrypt a single partition
