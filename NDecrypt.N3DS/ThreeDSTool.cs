@@ -164,7 +164,6 @@ namespace NDecrypt.N3DS
         /// </summary>
         /// <param name="cart">Cart representing the 3DS file</param>
         /// <param name="index">Index of the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
         private void DecryptPartition(Cart cart, int index, Stream input, Stream output)
