@@ -326,6 +326,33 @@ namespace NDecrypt.N3DS
             => header.ExeFSSizeInMediaUnits * mediaUnitSize;
 
         /// <summary>
+        /// Get the size of a partition extended header
+        /// </summary>
+        /// <returns>Size of the partition extended header in bytes, 0 on error</returns>
+        public static uint GetExtendedHeaderSize(Cart cart, int index)
+        {
+            // Empty partitions array means no size is available
+            var partitions = cart.Partitions;
+            if (partitions == null)
+                return 0;
+
+            // Invalid partition header means no size is available
+            var header = partitions[index];
+            if (header == null)
+                return 0;
+
+            // Return the adjusted size
+            return GetExtendedHeaderSize(header);
+        }
+
+        /// <summary>
+        /// Get the size of a partition extended header
+        /// </summary>
+        /// <returns>Size of the partition extended header in bytes, 0 on error</returns>
+        public static uint GetExtendedHeaderSize(NCCHHeader header)
+            => header.ExtendedHeaderSizeInBytes;
+
+        /// <summary>
         /// Get the size of a partition RomFS
         /// </summary>
         /// <returns>Size of the partition RomFS in bytes, 0 on error</returns>

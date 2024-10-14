@@ -150,12 +150,10 @@ namespace NDecrypt.N3DS
             // Determine the Keys to be used
             SetEncryptionKeys(cart, index, encrypt);
 
-            // Process the extended header
-            ProcessExtendedHeader(cart, index, encrypt, input, output);
-
             // If we're encrypting, encrypt the filesystems and update the flags
             if (encrypt)
             {
+                EncryptExtendedHeader(cart, index, input, output);
                 EncryptExeFS(cart, index, input, output);
                 EncryptRomFS(cart, index, input, output);
                 UpdateEncryptCryptoAndMasks(cart, index, output);
@@ -164,6 +162,7 @@ namespace NDecrypt.N3DS
             // If we're decrypting, decrypt the filesystems and update the flags
             else
             {
+                DecryptExtendedHeader(cart, index, input, output);
                 DecryptExeFS(cart, index, input, output);
                 DecryptRomFS(cart, index, input, output);
                 UpdateDecryptCryptoAndMasks(cart, index, output);
@@ -205,53 +204,53 @@ namespace NDecrypt.N3DS
             KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
         }
 
-        /// <summary>
-        /// Process the extended header, if it exists
-        /// </summary>
-        /// <param name="cart">Cart representing the 3DS file</param>
-        /// <param name="index">Index of the partition</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="input">Stream representing the input</param>
-        /// <param name="output">Stream representing the output</param>
-        private bool ProcessExtendedHeader(Cart cart, int index, bool encrypt, Stream input, Stream output)
-        {
-            // Get required offsets
-            uint partitionOffsetMU = cart.Header!.PartitionsTable![index]!.Offset;
-            uint partitionOffset = partitionOffsetMU * cart.MediaUnitSize();
-
-            if (cart.Partitions![index]!.ExtendedHeaderSizeInBytes > 0)
-            {
-                // Seek to the extended header
-                input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
-                output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
-
-                Console.WriteLine($"Partition {index} ExeFS: " + (encrypt ? "Encrypting" : "Decrypting") + ": ExHeader");
-
-                // Create the Plain AES cipher for this partition
-                var cipher = CreateAESCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index), encrypt);
-
-                // Process the extended header
-                byte[] readBytes = input.ReadBytes(Constants.CXTExtendedDataHeaderLength);
-                byte[] processedBytes = cipher.ProcessBytes(readBytes);
-                output.Write(processedBytes);
-
-#if NET6_0_OR_GREATER
-                // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
-                input.Seek(0, SeekOrigin.Begin);
-#endif
-                output.Flush();
-                return true;
-            }
-            else
-            {
-                Console.WriteLine($"Partition {index} ExeFS: No Extended Header... Skipping...");
-                return false;
-            }
-        }
-
         #endregion
 
         #region Decrypt
+
+        /// <summary>
+        /// Decrypt the extended header, if it exists
+        /// </summary>
+        /// <param name="cart">Cart representing the 3DS file</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private bool DecryptExtendedHeader(Cart cart, int index, Stream input, Stream output)
+        {
+            // Get required offsets
+            uint partitionOffset = GetPartitionOffset(cart, index);
+            if (partitionOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint extHeaderSize = GetExtendedHeaderSize(cart, index);
+            if (extHeaderSize == 0)
+            {
+                Console.WriteLine($"Partition {index} RomFS: No Extended Header... Skipping...");
+                return false;
+            }
+
+            // Seek to the extended header
+            input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
+            output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
+
+            Console.WriteLine($"Partition {index} ExeFS: Decrypting: ExHeader");
+
+            // Create the Plain AES cipher for this partition
+            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index));
+
+            // Process the extended header
+            PerformAESOperation(Constants.CXTExtendedDataHeaderLength, cipher, input, output, null);
+
+#if NET6_0_OR_GREATER
+            // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
+            input.Seek(0, SeekOrigin.Begin);
+#endif
+            output.Flush();
+            return true;
+        }
 
         /// <summary>
         /// Decrypt the ExeFS, if it exists
@@ -398,9 +397,16 @@ namespace NDecrypt.N3DS
         /// <param name="output">Stream representing the output</param>
         private bool DecryptRomFS(Cart cart, int index, Stream input, Stream output)
         {
-            // Get required offsets
+            // Validate the RomFS
             uint romFsOffset = GetRomFSOffset(cart, index);
             if (romFsOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint romFsSize = GetRomFSSize(cart, index);
+            if (romFsSize == 0)
             {
                 Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
                 return false;
@@ -414,7 +420,6 @@ namespace NDecrypt.N3DS
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, cart.RomFSIV(index));
 
             // Setup and perform the decryption
-            uint romFsSize = GetRomFSSize(cart, index);
             PerformAESOperation(romFsSize,
                 cipher,
                 input,
@@ -456,6 +461,50 @@ namespace NDecrypt.N3DS
         #endregion
 
         #region Encrypt
+
+        /// <summary>
+        /// Encrypt the extended header, if it exists
+        /// </summary>
+        /// <param name="cart">Cart representing the 3DS file</param>
+        /// <param name="index">Index of the partition</param>
+        /// <param name="input">Stream representing the input</param>
+        /// <param name="output">Stream representing the output</param>
+        private bool EncryptExtendedHeader(Cart cart, int index, Stream input, Stream output)
+        {
+            // Get required offsets
+            uint partitionOffset = GetPartitionOffset(cart, index);
+            if (partitionOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint extHeaderSize = GetExtendedHeaderSize(cart, index);
+            if (extHeaderSize == 0)
+            {
+                Console.WriteLine($"Partition {index} RomFS: No Extended Header... Skipping...");
+                return false;
+            }
+
+            // Seek to the extended header
+            input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
+            output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
+
+            Console.WriteLine($"Partition {index} ExeFS: Encrypting: ExHeader");
+
+            // Create the Plain AES cipher for this partition
+            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index));
+
+            // Process the extended header
+            PerformAESOperation(Constants.CXTExtendedDataHeaderLength, cipher, input, output, null);
+
+#if NET6_0_OR_GREATER
+            // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
+            input.Seek(0, SeekOrigin.Begin);
+#endif
+            output.Flush();
+            return true;
+        }
 
         /// <summary>
         /// Encrypt the ExeFS, if it exists
@@ -603,9 +652,16 @@ namespace NDecrypt.N3DS
         /// <param name="output">Stream representing the output</param>
         private bool EncryptRomFS(Cart cart, int index, Stream input, Stream output)
         {
-            // Get required offset
+            // Validate the RomFS
             uint romFsOffset = GetRomFSOffset(cart, index);
             if (romFsOffset == 0)
+            {
+                Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
+                return false;
+            }
+
+            uint romFsSize = GetRomFSSize(cart, index);
+            if (romFsSize == 0)
             {
                 Console.WriteLine($"Partition {index} RomFS: No Data... Skipping...");
                 return false;
@@ -635,7 +691,6 @@ namespace NDecrypt.N3DS
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, cart.RomFSIV(index));
 
             // Setup and perform the decryption
-            uint romFsSize = GetRomFSSize(cart, index);
             PerformAESOperation(romFsSize,
                 cipher,
                 input,
