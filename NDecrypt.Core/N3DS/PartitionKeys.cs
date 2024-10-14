@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Numerics;
-using NDecrypt.Core;
 using Org.BouncyCastle.Crypto;
 using SabreTools.Models.N3DS;
 using static NDecrypt.N3DS.CommonOperations;
