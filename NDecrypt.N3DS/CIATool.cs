@@ -118,10 +118,7 @@ namespace NDecrypt.N3DS
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="input">Stream representing the input</param>
         /// <param name="output">Stream representing the output</param>
-        private void DecryptAllPartitions(CIA cia,
-            bool force,
-            Stream input,
-            Stream output)
+        private void DecryptAllPartitions(CIA cia, bool force, Stream input, Stream output)
         {
             // Check the partitions table
             if (cia.Partitions == null)
