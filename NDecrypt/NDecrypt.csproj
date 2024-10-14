@@ -39,8 +39,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NDecrypt.Core\NDecrypt.Core.csproj" />
-    <ProjectReference Include="..\NDecrypt.N3DS\NDecrypt.N3DS.csproj" />
-    <ProjectReference Include="..\NDecrypt.Nitro\NDecrypt.Nitro.csproj" />
   </ItemGroup>
 
 </Project>

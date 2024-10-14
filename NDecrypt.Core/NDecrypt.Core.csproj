@@ -39,6 +39,8 @@
     <PackageReference Include="BouncyCastle.NetCore" Version="1.9.0" />
     <PackageReference Include="SabreTools.Hashing" Version="1.2.1" />
     <PackageReference Include="SabreTools.IO" Version="1.4.12" />
+    <PackageReference Include="SabreTools.Models" Version="1.4.10" />
+    <PackageReference Include="SabreTools.Serialization" Version="1.6.8" />
   </ItemGroup>
 
 </Project>
