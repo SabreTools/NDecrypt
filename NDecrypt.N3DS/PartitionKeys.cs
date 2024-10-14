@@ -3,7 +3,7 @@ using System.Linq;
 using System.Numerics;
 using NDecrypt.Core;
 using SabreTools.Models.N3DS;
-using static NDecrypt.Core.Helper;
+using static NDecrypt.N3DS.CommonOperations;
 
 namespace NDecrypt.N3DS
 {

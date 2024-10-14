@@ -3,7 +3,7 @@ using System.IO;
 using NDecrypt.Core;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
-using static NDecrypt.Core.Helper;
+using static NDecrypt.N3DS.CommonOperations;
 using CIADeserializer = SabreTools.Serialization.Deserializers.CIA;
 using N3DSDeserializer = SabreTools.Serialization.Deserializers.N3DS;
 
