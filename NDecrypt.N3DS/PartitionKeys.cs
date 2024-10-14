@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using NDecrypt.Core;
+using Org.BouncyCastle.Crypto;
 using SabreTools.Models.N3DS;
 using static NDecrypt.N3DS.CommonOperations;
 
@@ -42,10 +43,17 @@ namespace NDecrypt.N3DS
         /// <param name="development">Determine if development keys are used</param>
         public PartitionKeys(DecryptArgs args, byte[]? signature, BitMasks masks, CryptoMethod method, bool development)
         {
+            // Validate inputs
+            if (args.IsReady != true)
+                throw new InvalidOperationException($"{nameof(args)} must be initialized before use");
+            if (signature != null && signature.Length < 16)
+                throw new DataLengthException($"{nameof(signature)} must be at least 16 bytes");
+
             // Set fields for future use
             _decryptArgs = args;
             _development = development;
 
+            // Set the standard KeyX values
             KeyX = 0;
             KeyX2C = development ? args.DevKeyX0x2C : args.KeyX0x2C;
 
@@ -55,40 +63,45 @@ namespace NDecrypt.N3DS
             else
                 KeyY = new BigInteger(0);
 
+            // Set the standard normal key values
             NormalKey = 0x00;
             NormalKey2C = RotateLeft((RotateLeft(KeyX2C, 2, 128) ^ KeyY) + args.AESHardwareConstant, 87, 128);
 
+            // Special case for zero-key
             if (masks.HasFlag(BitMasks.FixedCryptoKey))
             {
+                Console.WriteLine("Encryption Method: Zero Key");
                 NormalKey = 0x00;
                 NormalKey2C = 0x00;
-                Console.WriteLine("Encryption Method: Zero Key");
+                return;
             }
-            else
-            {
-                if (method == CryptoMethod.Original)
-                {
-                    KeyX = development ? args.DevKeyX0x2C : args.KeyX0x2C;
-                    Console.WriteLine("Encryption Method: Key 0x2C");
-                }
-                else if (method == CryptoMethod.Seven)
-                {
-                    KeyX = development ? args.DevKeyX0x25 : args.KeyX0x25;
-                    Console.WriteLine("Encryption Method: Key 0x25");
-                }
-                else if (method == CryptoMethod.NineThree)
-                {
-                    KeyX = development ? args.DevKeyX0x18 : args.KeyX0x18;
-                    Console.WriteLine("Encryption Method: Key 0x18");
-                }
-                else if (method == CryptoMethod.NineSix)
-                {
-                    KeyX = development ? args.DevKeyX0x1B : args.KeyX0x1B;
-                    Console.WriteLine("Encryption Method: Key 0x1B");
-                }
 
-                NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + args.AESHardwareConstant, 87, 128);
+            // Set KeyX values based on crypto method
+            switch (method)
+            {
+                case CryptoMethod.Original:
+                    Console.WriteLine("Encryption Method: Key 0x2C");
+                    KeyX = development ? args.DevKeyX0x2C : args.KeyX0x2C;
+                    break;
+
+                case CryptoMethod.Seven:
+                    Console.WriteLine("Encryption Method: Key 0x25");
+                    KeyX = development ? args.DevKeyX0x25 : args.KeyX0x25;
+                    break;
+
+                case CryptoMethod.NineThree:
+                    Console.WriteLine("Encryption Method: Key 0x18");
+                    KeyX = development ? args.DevKeyX0x18 : args.KeyX0x18;
+                    break;
+
+                case CryptoMethod.NineSix:
+                    Console.WriteLine("Encryption Method: Key 0x1B");
+                    KeyX = development ? args.DevKeyX0x1B : args.KeyX0x1B;
+                    break;
             }
+
+            // Set the normal key based on the new KeyX value
+            NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + args.AESHardwareConstant, 87, 128);
         }
 
         /// <summary>
