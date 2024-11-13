@@ -283,7 +283,7 @@ namespace NDecrypt.Core
 
             // Create the ExeFS AES cipher for this partition
             int ctroffsetE = (int)(cart.MediaUnitSize() / 0x10);
-            byte[] exefsIVWithOffset = AddToByteArray(cart.ExeFSIV(index), ctroffsetE);
+            byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the decryption
@@ -369,7 +369,7 @@ namespace NDecrypt.Core
 
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize()) / 0x10;
-                byte[] exefsIVWithOffsetForHeader = AddToByteArray(cart.ExeFSIV(index), (int)ctroffset);
+                byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), (int)ctroffset);
                 var firstCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
                 var secondCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
 
@@ -643,7 +643,7 @@ namespace NDecrypt.Core
 
             // Create the ExeFS AES cipher for this partition
             int ctroffsetE = (int)(cart.MediaUnitSize() / 0x10);
-            byte[] exefsIVWithOffset = AddToByteArray(cart.ExeFSIV(index), ctroffsetE);
+            byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the encryption
@@ -729,7 +729,7 @@ namespace NDecrypt.Core
 
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize()) / 0x10;
-                byte[] exefsIVWithOffsetForHeader = AddToByteArray(cart.ExeFSIV(index), (int)ctroffset);
+                byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), (int)ctroffset);
                 var firstCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
                 var secondCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
 

@@ -9,7 +9,7 @@ using SabreTools.Models.N3DS;
 
 namespace NDecrypt.Core
 {
-    internal static class CommonOperations
+    public static class CommonOperations
     {
         #region AES
 
@@ -167,7 +167,7 @@ namespace NDecrypt.Core
         /// <param name="input">Byte array to add to</param>
         /// <param name="add">Amount to add</param>
         /// <returns>Byte array representing the new value</returns>
-        public static byte[] AddToByteArray(byte[] input, int add)
+        public static byte[] Add(byte[] input, int add)
         {
             int len = input.Length;
             Array.Reverse(input);
@@ -191,6 +191,35 @@ namespace NDecrypt.Core
         }
 
         /// <summary>
+        /// Add two numbers represented by byte arrays
+        /// </summary>
+        /// <param name="left">Byte array to add to</param>
+        /// <param name="right">Amount to add</param>
+        /// <returns>Byte array representing the new value</returns>
+        public static byte[] Add(byte[] left, byte[] right)
+        {
+            int addBytes = Math.Min(left.Length, right.Length);
+            int outLength = Math.Max(left.Length, right.Length);
+
+            byte[] output = new byte[outLength];
+
+            int carry = 0;
+            for (int i = 0; i < addBytes; i++)
+            {
+                int addValue = left[i] + right[i] + carry;
+                output[i] = (byte)addValue;
+                carry = addValue > byte.MaxValue ? byte.MaxValue - addValue : 0;
+            }
+
+            if (outLength != addBytes && left.Length == outLength)
+                Array.Copy(left, addBytes, output, addBytes, outLength - addBytes);
+            else if (outLength != addBytes && right.Length == outLength)
+                Array.Copy(right, addBytes, output, addBytes, outLength - addBytes);
+
+            return output;
+        }
+
+        /// <summary>
         /// Perform a rotate left on a BigInteger
         /// </summary>
         /// <param name="val">BigInteger value to rotate</param>
@@ -200,6 +229,69 @@ namespace NDecrypt.Core
         public static BigInteger RotateLeft(BigInteger val, int r_bits, int max_bits)
         {
             return (val << r_bits % max_bits) & (BigInteger.Pow(2, max_bits) - 1) | ((val & (BigInteger.Pow(2, max_bits) - 1)) >> (max_bits - (r_bits % max_bits)));
+        }
+
+        /// <summary>
+        /// Perform a rotate left on a byte array
+        /// </summary>
+        /// <param name="val">Byte array value to rotate</param>
+        /// <param name="r_bits">Number of bits to rotate</param>
+        /// <returns>Rotated byte array value</returns>
+        public static byte[] RotateLeft(byte[] val, int r_bits)
+        {
+            // Shift by bytes
+            while (r_bits >= 8)
+            {
+                byte temp = val[0];
+                for (int i = 0; i < val.Length - 1; i++)
+                {
+                    val[i] = val[i + 1];
+                }
+
+                val[val.Length - 1] = temp;
+                r_bits -= 8;
+            }
+
+            // Shift by bits
+            while (r_bits-- > 0)
+            {
+                int carry = 0;
+                for (int i = 0; i < val.Length; i++)
+                {
+                    byte nextByte = (byte)((val[i] << 1) + carry);
+                    carry = (val[i] << 1) > byte.MaxValue ? byte.MaxValue - (val[i] << 1) : 0;
+                    val[i] = nextByte;
+                }
+
+                val[val.Length - 1] = (byte)(val[val.Length - 1] + carry);
+            }
+
+            return val;
+        }
+
+        /// <summary>
+        /// XOR two numbers represented by byte arrays
+        /// </summary>
+        /// <param name="left">Byte array to XOR to</param>
+        /// <param name="right">Amount to XOR</param>
+        /// <returns>Byte array representing the new value</returns>
+        public static byte[] Xor(byte[] left, byte[] right)
+        {
+            int xorBytes = Math.Min(left.Length, right.Length);
+            int outLength = Math.Max(left.Length, right.Length);
+
+            byte[] output = new byte[outLength];
+            for (int i = 0; i < xorBytes; i++)
+            {
+                output[i] = (byte)(left[i] ^ right[i]);
+            }
+
+            if (outLength != xorBytes && left.Length == outLength)
+                Array.Copy(left, xorBytes, output, xorBytes, outLength - xorBytes);
+            else if (outLength != xorBytes && right.Length == outLength)
+                Array.Copy(right, xorBytes, output, xorBytes, outLength - xorBytes);
+
+            return output;
         }
 
         #endregion
