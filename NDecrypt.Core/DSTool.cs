@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.Nitro;
 using NitroDeserializer = SabreTools.Serialization.Deserializers.Nitro;
@@ -667,10 +666,9 @@ namespace NDecrypt.Core
             Encrypt(ref _arg2[2], ref _arg2[1]);
             Encrypt(ref _arg2[1], ref _arg2[0]);
 
-            byte[] allBytes = BitConverter.GetBytes(_arg2[0])
-                .Concat(BitConverter.GetBytes(_arg2[1]))
-                .Concat(BitConverter.GetBytes(_arg2[2]))
-                .ToArray();
+            byte[] allBytes =[.. BitConverter.GetBytes(_arg2[0]),
+                .. BitConverter.GetBytes(_arg2[1]),
+                .. BitConverter.GetBytes(_arg2[2])];
 
             UpdateHashtable(allBytes);
         }

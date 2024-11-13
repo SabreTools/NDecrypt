@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -140,7 +139,10 @@ namespace NDecrypt.Core
         /// <returns>16-byte array representing the BigInteger</returns>
         private static byte[] TakeSixteen(BigInteger input)
         {
-            var arr = input.ToByteArray().Take(16).Reverse().ToArray();
+            var inputArr = input.ToByteArray();
+            var arr = new byte[16];
+            Array.Copy(inputArr, arr, Math.Min(inputArr.Length, 16));
+            Array.Reverse(arr);
 
             if (arr.Length < 16)
             {
@@ -168,9 +170,12 @@ namespace NDecrypt.Core
         public static byte[] AddToByteArray(byte[] input, int add)
         {
             int len = input.Length;
-            var bigint = new BigInteger(input.Reverse().ToArray());
+            Array.Reverse(input);
+            var bigint = new BigInteger(input);
+
             bigint += add;
-            var arr = bigint.ToByteArray().Reverse().ToArray();
+            var arr = bigint.ToByteArray();
+            Array.Reverse(arr);
 
             if (arr.Length < len)
             {

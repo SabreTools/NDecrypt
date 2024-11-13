@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 using SabreTools.IO.Extensions;
 using SabreTools.IO.Readers;
@@ -117,8 +116,9 @@ namespace NDecrypt.Core
                         break;
 
                     var kvp = reader.KeyValuePair!.Value;
-                    byte[] value = StringToByteArray(kvp.Value).Reverse().ToArray();
-                    byte[] valueWithSign = value.Concat(signByte).ToArray();
+                    byte[] value = StringToByteArray(kvp.Value);
+                    Array.Reverse(value);
+                    byte[] valueWithSign = [.. value, .. signByte];
 
                     switch (kvp.Key)
                     {

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 using Org.BouncyCastle.Crypto;
 using SabreTools.Models.N3DS;
@@ -58,9 +57,16 @@ namespace NDecrypt.Core
 
             // Backup headers can't have a KeyY value set
             if (signature != null)
-                KeyY = new BigInteger(signature.Take(16).Reverse().ToArray());
+            {
+                byte[] signature16 = new byte[16];
+                Array.Copy(signature, signature16, 16);
+                Array.Reverse(signature16);
+                KeyY = new BigInteger(signature16);
+            }
             else
+            {
                 KeyY = new BigInteger(0);
+            }
 
             // Set the standard normal key values
             NormalKey = 0x00;
