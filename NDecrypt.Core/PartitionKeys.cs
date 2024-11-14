@@ -1,5 +1,4 @@
 using System;
-using System.Numerics;
 using Org.BouncyCastle.Crypto;
 using SabreTools.Models.N3DS;
 using static NDecrypt.Core.CommonOperations;
@@ -11,15 +10,15 @@ namespace NDecrypt.Core
     /// </summary>
     public class PartitionKeys
     {
-        public BigInteger KeyX { get; private set; }
+        public byte[]? KeyX { get; private set; }
 
-        public BigInteger KeyX2C { get; private set; }
+        public byte[]? KeyX2C { get; private set; }
 
-        public BigInteger KeyY { get; private set; }
+        public byte[]? KeyY { get; private set; }
 
-        public BigInteger NormalKey { get; private set; }
+        public byte[]? NormalKey { get; private set; }
 
-        public BigInteger NormalKey2C { get; private set; }
+        public byte[]? NormalKey2C { get; private set; }
 
         /// <summary>
         /// Decryption args to use while processing
@@ -52,32 +51,25 @@ namespace NDecrypt.Core
             _development = development;
 
             // Set the standard KeyX values
-            KeyX = 0;
+            KeyX = new byte[16];
             KeyX2C = development ? args.DevKeyX0x2C : args.KeyX0x2C;
 
             // Backup headers can't have a KeyY value set
             if (signature != null)
-            {
-                byte[] signature16 = new byte[16];
-                Array.Copy(signature, signature16, 16);
-                Array.Reverse(signature16);
-                KeyY = new BigInteger(signature16);
-            }
+                KeyY = TakeSixteen(signature);
             else
-            {
-                KeyY = new BigInteger(0);
-            }
+                KeyY = TakeSixteen(new byte[16]);
 
             // Set the standard normal key values
-            NormalKey = 0x00;
-            NormalKey2C = RotateLeft((RotateLeft(KeyX2C, 2, 128) ^ KeyY) + args.AESHardwareConstant, 87, 128);
+            NormalKey = new byte[16];
+            NormalKey2C = RotateLeft(Add(Xor(RotateLeft(KeyX2C!, 2), KeyY), args.AESHardwareConstant!), 87);
 
             // Special case for zero-key
             if (masks.HasFlag(BitMasks.FixedCryptoKey))
             {
                 Console.WriteLine("Encryption Method: Zero Key");
-                NormalKey = 0x00;
-                NormalKey2C = 0x00;
+                NormalKey = new byte[16];
+                NormalKey2C = new byte[16];
                 return;
             }
 
@@ -106,7 +98,7 @@ namespace NDecrypt.Core
             }
 
             // Set the normal key based on the new KeyX value
-            NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + args.AESHardwareConstant, 87, 128);
+            NormalKey = RotateLeft(Add(Xor(RotateLeft(KeyX!, 2), KeyY), args.AESHardwareConstant!), 87);
         }
 
         /// <summary>
@@ -117,13 +109,13 @@ namespace NDecrypt.Core
             // NormalKey has a constant value for zero-key
             if (masks.HasFlag(BitMasks.FixedCryptoKey))
             {
-                NormalKey = 0x00;
+                NormalKey = new byte[16];
                 return;
             }
 
             // Encrypting RomFS for partitions 1 and up always use Key0x2C
             KeyX = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
-            NormalKey = RotateLeft((RotateLeft(KeyX, 2, 128) ^ KeyY) + _decryptArgs.AESHardwareConstant, 87, 128);
+            NormalKey = RotateLeft(Add(Xor(RotateLeft(KeyX!, 2), KeyY!), _decryptArgs.AESHardwareConstant!), 87);
         }
     }
 }

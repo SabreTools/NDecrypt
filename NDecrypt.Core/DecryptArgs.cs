@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Numerics;
 using SabreTools.IO.Extensions;
 using SabreTools.IO.Readers;
 
@@ -22,29 +21,29 @@ namespace NDecrypt.Core
         /// <summary>
         /// AES Hardware Constant
         /// </summary>
-        public BigInteger AESHardwareConstant { get; private set; }
+        public byte[]? AESHardwareConstant { get; private set; }
 
         #region Retail Keys
 
         /// <summary>
         /// KeyX 0x18 (New 3DS 9.3)
         /// </summary>
-        public BigInteger KeyX0x18 { get; private set; }
+        public byte[]? KeyX0x18 { get; private set; }
 
         /// <summary>
         /// KeyX 0x1B (New 3DS 9.6)
         /// </summary>
-        public BigInteger KeyX0x1B { get; private set; }
+        public byte[]? KeyX0x1B { get; private set; }
 
         /// <summary>
         /// KeyX 0x25 (> 7.x)
         /// </summary>
-        public BigInteger KeyX0x25 { get; private set; }
+        public byte[]? KeyX0x25 { get; private set; }
 
         /// <summary>
         /// KeyX 0x2C (< 6.x)
         /// </summary>
-        public BigInteger KeyX0x2C { get; private set; }
+        public byte[]? KeyX0x2C { get; private set; }
 
         #endregion
 
@@ -53,22 +52,22 @@ namespace NDecrypt.Core
         /// <summary>
         /// Dev KeyX 0x18 (New 3DS 9.3)
         /// </summary>
-        public BigInteger DevKeyX0x18 { get; private set; }
+        public byte[]? DevKeyX0x18 { get; private set; }
 
         /// <summary>
         /// Dev KeyX 0x1B New 3DS 9.6)
         /// </summary>
-        public BigInteger DevKeyX0x1B { get; private set; }
+        public byte[]? DevKeyX0x1B { get; private set; }
 
         /// <summary>
         /// Dev KeyX 0x25 (> 7.x)
         /// </summary>
-        public BigInteger DevKeyX0x25 { get; private set; }
+        public byte[]? DevKeyX0x25 { get; private set; }
 
         /// <summary>
         /// Dev KeyX 0x2C (< 6.x)
         /// </summary>
-        public BigInteger DevKeyX0x2C { get; private set; }
+        public byte[]? DevKeyX0x2C { get; private set; }
 
         #endregion
 
@@ -103,10 +102,6 @@ namespace NDecrypt.Core
             try
             {
                 using var reader = new IniReader(keyfile);
-
-                // This is required to preserve sign for BigInteger
-                byte[] signByte = [0x00];
-
                 while (reader.ReadNextLine())
                 {
                     // Ignore comments in the file
@@ -117,28 +112,25 @@ namespace NDecrypt.Core
 
                     var kvp = reader.KeyValuePair!.Value;
                     byte[] value = StringToByteArray(kvp.Value);
-                    Array.Reverse(value);
-                    byte[] valueWithSign = [.. value, .. signByte];
-
                     switch (kvp.Key)
                     {
                         // Hardware constant
                         case "generator":
-                            AESHardwareConstant = new BigInteger(value);
+                            AESHardwareConstant = value;
                             break;
 
                         // Retail Keys
                         case "slot0x18KeyX":
-                            KeyX0x18 = new BigInteger(valueWithSign);
+                            KeyX0x18 = value;
                             break;
                         case "slot0x1BKeyX":
-                            KeyX0x1B = new BigInteger(valueWithSign);
+                            KeyX0x1B = value;
                             break;
                         case "slot0x25KeyX":
-                            KeyX0x25 = new BigInteger(valueWithSign);
+                            KeyX0x25 = value;
                             break;
                         case "slot0x2CKeyX":
-                            KeyX0x2C = new BigInteger(valueWithSign);
+                            KeyX0x2C = value;
                             break;
 
                         // Currently Unused KeyX
@@ -225,23 +217,29 @@ namespace NDecrypt.Core
             {
                 using Stream reader = File.Open(keyfile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-                // This is required to preserve sign for BigInteger
-                byte[] signByte = [0x00];
-
                 // Hardware constant
-                AESHardwareConstant = new BigInteger(reader.ReadBytes(16));
+                AESHardwareConstant = reader.ReadBytes(16);
+                Array.Reverse(AESHardwareConstant);
 
                 // Retail keys
-                KeyX0x18 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
-                KeyX0x1B = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
-                KeyX0x25 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
-                KeyX0x2C = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                KeyX0x18 = reader.ReadBytes(16);
+                Array.Reverse(KeyX0x18);
+                KeyX0x1B = reader.ReadBytes(16);
+                Array.Reverse(KeyX0x1B);
+                KeyX0x25 = reader.ReadBytes(16);
+                Array.Reverse(KeyX0x25);
+                KeyX0x2C = reader.ReadBytes(16);
+                Array.Reverse(KeyX0x2C);
 
                 // Development keys
-                DevKeyX0x18 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
-                DevKeyX0x1B = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
-                DevKeyX0x25 = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
-                DevKeyX0x2C = new BigInteger([.. reader.ReadBytes(16), .. signByte]);
+                DevKeyX0x18 = reader.ReadBytes(16);
+                Array.Reverse(DevKeyX0x18);
+                DevKeyX0x1B = reader.ReadBytes(16);
+                Array.Reverse(DevKeyX0x1B);
+                DevKeyX0x25 = reader.ReadBytes(16);
+                Array.Reverse(DevKeyX0x25);
+                DevKeyX0x2C = reader.ReadBytes(16);
+                Array.Reverse(DevKeyX0x2C);
             }
             catch
             {
