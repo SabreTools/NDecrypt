@@ -4,6 +4,7 @@ using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
 using SabreTools.Serialization.Wrappers;
 using static NDecrypt.Core.CommonOperations;
+using static SabreTools.Models.N3DS.Constants;
 
 namespace NDecrypt.Core
 {
@@ -123,10 +124,18 @@ namespace NDecrypt.Core
             // Iterate over all 8 NCCH partitions
             for (int p = 0; p < 8; p++)
             {
-                // Check the partition exists
-                if (cart.Partitions[p] == null)
+                var partition = cart.Partitions[p];
+                if (partition == null || partition.MagicID != NCCHMagicNumber)
                 {
                     Console.WriteLine($"Partition {p} Not found... Skipping...");
+                    continue;
+                }
+
+                // Check the partition has data
+                var partitionEntry = cart.PartitionsTable[p];
+                if (partitionEntry == null || partitionEntry.Length == 0)
+                {
+                    Console.WriteLine($"Partition {p} No data... Skipping...");
                     continue;
                 }
 
@@ -213,14 +222,14 @@ namespace NDecrypt.Core
             uint partitionOffset = cart.GetPartitionOffset(index);
             if (partitionOffset == 0 || partitionOffset > input.Length)
             {
-                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                Console.WriteLine($"Partition {index} No Data... Skipping...");
                 return false;
             }
 
             uint extHeaderSize = cart.GetExtendedHeaderSize(index);
             if (extHeaderSize == 0)
             {
-                Console.WriteLine($"Partition {index} RomFS: No Extended Header... Skipping...");
+                Console.WriteLine($"Partition {index} No Extended Header... Skipping...");
                 return false;
             }
 
@@ -228,7 +237,7 @@ namespace NDecrypt.Core
             input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
             output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
 
-            Console.WriteLine($"Partition {index} ExeFS: Decrypting: ExHeader");
+            Console.WriteLine($"Partition {index}: Decrypting - ExHeader");
 
             // Create the Plain AES cipher for this partition
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index));
@@ -289,7 +298,7 @@ namespace NDecrypt.Core
                 cipher,
                 input,
                 output,
-                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting: {s}"));
+                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting - {s}"));
 
             return true;
         }
@@ -315,7 +324,7 @@ namespace NDecrypt.Core
             input.Seek(exeFsOffset, SeekOrigin.Begin);
             output.Seek(exeFsOffset, SeekOrigin.Begin);
 
-            Console.WriteLine($"Partition {index} ExeFS: Decrypting: ExeFS Filename Table");
+            Console.WriteLine($"Partition {index} ExeFS: Decrypting - ExeFS Filename Table");
 
             // Create the ExeFS AES cipher for this partition
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, cart.ExeFSIV(index));
@@ -386,7 +395,7 @@ namespace NDecrypt.Core
                     secondCipher,
                     input,
                     output,
-                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting: {fileHeader.FileName}...{s}"));
+                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting - {fileHeader.FileName}...{s}"));
             }
         }
 
@@ -426,7 +435,7 @@ namespace NDecrypt.Core
                 cipher,
                 input,
                 output,
-                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Decrypting: {s}"));
+                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Decrypting - {s}"));
 
             return true;
         }
@@ -484,9 +493,18 @@ namespace NDecrypt.Core
             for (int p = 0; p < 8; p++)
             {
                 // Check the partition exists
-                if (cart.Partitions[p] == null)
+                var partition = cart.Partitions[p];
+                if (partition == null || partition.MagicID != NCCHMagicNumber)
                 {
                     Console.WriteLine($"Partition {p} Not found... Skipping...");
+                    continue;
+                }
+
+                // Check the partition has data
+                var partitionEntry = cart.PartitionsTable[p];
+                if (partitionEntry == null || partitionEntry.Length == 0)
+                {
+                    Console.WriteLine($"Partition {p} No data... Skipping...");
                     continue;
                 }
 
@@ -578,14 +596,14 @@ namespace NDecrypt.Core
             uint partitionOffset = cart.GetPartitionOffset(index);
             if (partitionOffset == 0 || partitionOffset > input.Length)
             {
-                Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
+                Console.WriteLine($"Partition {index} No Data... Skipping...");
                 return false;
             }
 
             uint extHeaderSize = cart.GetExtendedHeaderSize(index);
             if (extHeaderSize == 0)
             {
-                Console.WriteLine($"Partition {index} RomFS: No Extended Header... Skipping...");
+                Console.WriteLine($"Partition {index} No Extended Header... Skipping...");
                 return false;
             }
 
@@ -593,7 +611,7 @@ namespace NDecrypt.Core
             input.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
             output.Seek(partitionOffset + 0x200, SeekOrigin.Begin);
 
-            Console.WriteLine($"Partition {index} ExeFS: Encrypting: ExHeader");
+            Console.WriteLine($"Partition {index}: Encrypting - ExHeader");
 
             // Create the Plain AES cipher for this partition
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index));
@@ -659,7 +677,7 @@ namespace NDecrypt.Core
                 cipher,
                 input,
                 output,
-                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting: {s}"));
+                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting - {s}"));
 
             return true;
         }
@@ -685,7 +703,7 @@ namespace NDecrypt.Core
             input.Seek(exeFsOffset, SeekOrigin.Begin);
             output.Seek(exeFsOffset, SeekOrigin.Begin);
 
-            Console.WriteLine($"Partition {index} ExeFS: Encrypting: ExeFS Filename Table");
+            Console.WriteLine($"Partition {index} ExeFS: Encrypting - ExeFS Filename Table");
 
             // Create the ExeFS AES cipher for this partition
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, cart.ExeFSIV(index));
@@ -757,7 +775,7 @@ namespace NDecrypt.Core
                     secondCipher,
                     input,
                     output,
-                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting: {fileHeader.FileName}...{s}"));
+                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting - {fileHeader.FileName}...{s}"));
             }
         }
 
@@ -804,7 +822,7 @@ namespace NDecrypt.Core
                 cipher,
                 input,
                 output,
-                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Encrypting: {s}"));
+                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Encrypting - {s}"));
 
             return true;
         }
