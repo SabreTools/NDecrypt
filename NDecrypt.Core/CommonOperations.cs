@@ -157,11 +157,11 @@ namespace NDecrypt.Core
             byte[] output = new byte[outLength];
 
             uint carry = 0;
-            for (int i = 0; i < addBytes; i++)
+            for (int i = addBytes - 1; i >= 0; i--)
             {
-                uint addValue = (uint)(left[i] + right[i] + carry);
+                uint addValue = (uint)(left[i] + right[i]) + carry;
                 output[i] = (byte)addValue;
-                carry = addValue > byte.MaxValue ? byte.MaxValue - addValue : 0;
+                carry = addValue >> 8;
             }
 
             if (outLength != addBytes && left.Length == outLength)
@@ -180,34 +180,47 @@ namespace NDecrypt.Core
         /// <returns>Rotated byte array value</returns>
         public static byte[] RotateLeft(byte[] val, int r_bits)
         {
+            byte[] output = new byte[val.Length];
+            Array.Copy(val, output, output.Length);
+
             // Shift by bytes
             while (r_bits >= 8)
             {
-                byte temp = val[0];
-                for (int i = 0; i < val.Length - 1; i++)
+                byte temp = output[0];
+                for (int i = 0; i < output.Length - 1; i++)
                 {
-                    val[i] = val[i + 1];
+                    output[i] = output[i + 1];
                 }
 
-                val[val.Length - 1] = temp;
+                output[output.Length - 1] = temp;
                 r_bits -= 8;
             }
 
             // Shift by bits
-            while (r_bits-- > 0)
+            if (r_bits > 0)
             {
-                uint carry = 0;
-                for (int i = 0; i < val.Length; i++)
+                byte bitMask = (byte)(8 - r_bits), carry, wrap = 0;
+                for (int i = 0; i < output.Length; i++)
                 {
-                    byte nextByte = (byte)((val[i] << 1) + carry);
-                    carry = (uint)((val[i] << 1) > byte.MaxValue ? byte.MaxValue - (val[i] << 1) : 0);
-                    val[i] = nextByte;
+                    carry = (byte)((255 << bitMask & output[i]) >> bitMask);
+
+                    // Make sure the first byte carries to the end
+                    if (i == 0)
+                        wrap = carry;
+
+                    // Otherwise, move to the last byte
+                    else
+                        output[i - 1] |= carry;
+
+                    // Shift the current bits
+                    output[i] <<= r_bits;
                 }
 
-                val[val.Length - 1] = (byte)(val[val.Length - 1] + carry);
+                // Make sure the wrap happens
+                output[output.Length - 1] |= wrap;
             }
 
-            return val;
+            return output;
         }
 
         /// <summary>
