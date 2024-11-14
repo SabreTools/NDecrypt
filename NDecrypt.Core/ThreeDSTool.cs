@@ -282,8 +282,8 @@ namespace NDecrypt.Core
             output.Seek(exeFsOffset, SeekOrigin.Begin);
 
             // Create the ExeFS AES cipher for this partition
-            int ctroffsetE = (int)(cart.MediaUnitSize / 0x10);
-            byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
+            uint ctroffsetE = cart.MediaUnitSize / 0x10;
+            byte[] exefsIVWithOffset = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffsetE);
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C!, exefsIVWithOffset);
 
             // Setup and perform the decryption
@@ -373,7 +373,7 @@ namespace NDecrypt.Core
 
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize) / 0x10;
-                byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), (int)ctroffset);
+                byte[] exefsIVWithOffsetForHeader = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffset);
                 var firstCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey!, exefsIVWithOffsetForHeader);
                 var secondCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C!, exefsIVWithOffsetForHeader);
 
@@ -421,7 +421,7 @@ namespace NDecrypt.Core
             output.Seek(romFsOffset, SeekOrigin.Begin);
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey!, cart.RomFSIV(index));
+            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey!, FlipFirstHalf(cart.RomFSIV(index)));
 
             // Setup and perform the decryption
             PerformAESOperation(romFsSize,
@@ -649,8 +649,8 @@ namespace NDecrypt.Core
             output.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
 
             // Create the ExeFS AES cipher for this partition
-            int ctroffsetE = (int)(cart.MediaUnitSize / 0x10);
-            byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
+            uint ctroffsetE = cart.MediaUnitSize / 0x10;
+            byte[] exefsIVWithOffset = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffsetE);
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C!, exefsIVWithOffset);
 
             // Setup and perform the encryption
@@ -743,7 +743,7 @@ namespace NDecrypt.Core
 
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize) / 0x10;
-                byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), (int)ctroffset);
+                byte[] exefsIVWithOffsetForHeader = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffset);
                 var firstCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey!, exefsIVWithOffsetForHeader);
                 var secondCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C!, exefsIVWithOffsetForHeader);
 
@@ -798,7 +798,7 @@ namespace NDecrypt.Core
             }
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey!, cart.RomFSIV(index));
+            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey!, FlipFirstHalf(cart.RomFSIV(index)));
 
             // Setup and perform the decryption
             PerformAESOperation(romFsSize,
@@ -846,5 +846,18 @@ namespace NDecrypt.Core
         }
 
         #endregion
+
+        // TODO: REMOVE WHEN SERIALIZATION FIXED
+        private static byte[] FlipFirstHalf(byte[] data)
+        {
+            byte[] toFlip = new byte[8];
+            Array.Copy(data, toFlip, 8);
+            Array.Reverse(toFlip);
+
+            byte[] output = new byte[16];
+            Array.Copy(toFlip, output, 8);
+            Array.Copy(data, 8, output, 8, 8);
+            return output;
+        }
     }
 }

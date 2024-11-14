@@ -134,9 +134,10 @@ namespace NDecrypt.Core
         /// <param name="input">Byte array to add to</param>
         /// <param name="add">Amount to add</param>
         /// <returns>Byte array representing the new value</returns>
-        public static byte[] Add(byte[] input, int add)
+        public static byte[] Add(byte[] input, uint add)
         {
             byte[] addBytes = BitConverter.GetBytes(add);
+            Array.Reverse(addBytes);
             byte[] paddedBytes = new byte[16];
             Array.Copy(addBytes, 0, paddedBytes, 12, 4);
             return Add(input, paddedBytes);
@@ -155,10 +156,10 @@ namespace NDecrypt.Core
 
             byte[] output = new byte[outLength];
 
-            int carry = 0;
+            uint carry = 0;
             for (int i = 0; i < addBytes; i++)
             {
-                int addValue = left[i] + right[i] + carry;
+                uint addValue = (uint)(left[i] + right[i] + carry);
                 output[i] = (byte)addValue;
                 carry = addValue > byte.MaxValue ? byte.MaxValue - addValue : 0;
             }
@@ -195,11 +196,11 @@ namespace NDecrypt.Core
             // Shift by bits
             while (r_bits-- > 0)
             {
-                int carry = 0;
+                uint carry = 0;
                 for (int i = 0; i < val.Length; i++)
                 {
                     byte nextByte = (byte)((val[i] << 1) + carry);
-                    carry = (val[i] << 1) > byte.MaxValue ? byte.MaxValue - (val[i] << 1) : 0;
+                    carry = (uint)((val[i] << 1) > byte.MaxValue ? byte.MaxValue - (val[i] << 1) : 0);
                     val[i] = nextByte;
                 }
 
