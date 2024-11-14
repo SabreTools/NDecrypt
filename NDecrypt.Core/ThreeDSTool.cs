@@ -349,7 +349,7 @@ namespace NDecrypt.Core
             var exeFsHeader = cart.ExeFSHeaders[index];
             if (exeFsHeader?.FileHeaders == null)
             {
-                Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS header does not exist. Skipping...");
                 return;
             }
 
@@ -628,7 +628,7 @@ namespace NDecrypt.Core
             var exefsHeader = cart.ExeFSHeaders[index];
             if (exefsHeader == null)
             {
-                Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS header does not exist. Skipping...");
                 return false;
             }
 
@@ -719,12 +719,12 @@ namespace NDecrypt.Core
 
             // Get to the start of the files
             uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
-            var exeFsHeader = cart.ExeFSHeaders?[index];
 
             // If the header failed to read, log and return
+            var exeFsHeader = cart.ExeFSHeaders?[index];
             if (exeFsHeader?.FileHeaders == null)
             {
-                Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
+                Console.WriteLine($"Partition {index} ExeFS header does not exist. Skipping...");
                 return;
             }
 
