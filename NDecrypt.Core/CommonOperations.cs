@@ -19,7 +19,10 @@ namespace NDecrypt.Core
         /// <returns>Initialized AES cipher</returns>
         public static IBufferedCipher CreateAESDecryptionCipher(byte[] key, byte[] iv)
         {
-            var keyParam = new KeyParameter(TakeSixteen(key));
+            if (key.Length != 16)
+                throw new ArgumentOutOfRangeException(nameof(key));
+
+            var keyParam = new KeyParameter(key);
             var cipher = CipherUtilities.GetCipher("AES/CTR");
             cipher.Init(forEncryption: false, new ParametersWithIV(keyParam, iv));
             return cipher;
@@ -33,7 +36,10 @@ namespace NDecrypt.Core
         /// <returns>Initialized AES cipher</returns>
         public static IBufferedCipher CreateAESEncryptionCipher(byte[] key, byte[] iv)
         {
-            var keyParam = new KeyParameter(TakeSixteen(key));
+            if (key.Length != 16)
+                throw new ArgumentOutOfRangeException(nameof(key));
+
+            var keyParam = new KeyParameter(key);
             var cipher = CipherUtilities.GetCipher("AES/CTR");
             cipher.Init(forEncryption: true, new ParametersWithIV(keyParam, iv));
             return cipher;
@@ -116,18 +122,6 @@ namespace NDecrypt.Core
             }
 
             progress($"{blockCount + 1} / {blockCount + 1} MB... Done!\r\n");
-        }
-
-        /// <summary>
-        /// Pad an array to 16 bytes
-        /// </summary>
-        /// <param name="input">Byte array value to pad</param>
-        /// <returns>16-byte padded array</returns>
-        internal static byte[] TakeSixteen(byte[] input)
-        {
-            var arr = new byte[16];
-            Array.Copy(input, arr, Math.Min(input.Length, 16));
-            return arr;
         }
 
         #endregion

@@ -55,10 +55,7 @@ namespace NDecrypt.Core
             KeyX2C = development ? args.DevKeyX0x2C : args.KeyX0x2C;
 
             // Backup headers can't have a KeyY value set
-            if (signature != null)
-                KeyY = TakeSixteen(signature);
-            else
-                KeyY = TakeSixteen(new byte[16]);
+            KeyY = signature != null && signature.Length == 16 ? signature : new byte[16];
 
             // Set the standard normal key values
             NormalKey = new byte[16];
