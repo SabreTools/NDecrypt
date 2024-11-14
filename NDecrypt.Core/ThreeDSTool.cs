@@ -114,7 +114,7 @@ namespace NDecrypt.Core
         private void DecryptAllPartitions(N3DS cart, bool force, Stream input, Stream output)
         {
             // Check the partitions table
-            if (cart.Model.Header?.PartitionsTable == null || cart.Model.Partitions == null)
+            if (cart.PartitionsTable == null || cart.Partitions == null)
             {
                 Console.WriteLine("Invalid partitions table!");
                 return;
@@ -124,7 +124,7 @@ namespace NDecrypt.Core
             for (int p = 0; p < 8; p++)
             {
                 // Check the partition exists
-                if (cart.Model.Partitions[p] == null)
+                if (cart.Partitions[p] == null)
                 {
                     Console.WriteLine($"Partition {p} Not found... Skipping...");
                     continue;
@@ -187,16 +187,14 @@ namespace NDecrypt.Core
         private void SetDecryptionKeys(N3DS cart, int index)
         {
             // Get the partition
-            var partition = cart.Model.Partitions?[index];
-            if (partition == null)
+            var partition = cart.Partitions?[index];
+            if (partition?.Flags == null)
                 return;
 
             // Get partition-specific values
             byte[]? rsaSignature = partition.RSA2048Signature;
-
-            // Set the header to use based on mode
-            BitMasks masks = partition.Flags!.BitMasks;
-            CryptoMethod method = partition.Flags!.CryptoMethod;
+            BitMasks masks = cart.GetBitMasks(index);
+            CryptoMethod method = cart.GetCryptoMethod(index);
 
             // Get the partition keys
             KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
@@ -274,7 +272,7 @@ namespace NDecrypt.Core
             DecryptExeFSFilenameTable(cart, index, input, output);
 
             // For all but the original crypto method, process each of the files in the table
-            if (cart.Model.Partitions![index]!.Flags!.CryptoMethod != CryptoMethod.Original)
+            if (cart.GetCryptoMethod(index) != CryptoMethod.Original)
                 DecryptExeFSFileEntries(cart, index, input, output);
 
             // Seek to the ExeFS
@@ -283,7 +281,7 @@ namespace NDecrypt.Core
 
             // Create the ExeFS AES cipher for this partition
             uint ctroffsetE = cart.MediaUnitSize / 0x10;
-            byte[] exefsIVWithOffset = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffsetE);
+            byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the decryption
@@ -341,14 +339,14 @@ namespace NDecrypt.Core
         /// <param name="output">Stream representing the output</param>
         private void DecryptExeFSFileEntries(N3DS cart, int index, Stream input, Stream output)
         {
-            if (cart.Model.ExeFSHeaders == null || index < 0 || index > cart.Model.ExeFSHeaders.Length)
+            if (cart.ExeFSHeaders == null || index < 0 || index > cart.ExeFSHeaders.Length)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return;
             }
 
             // Get the ExeFS header
-            var exeFsHeader = cart.Model.ExeFSHeaders[index];
+            var exeFsHeader = cart.ExeFSHeaders[index];
             if (exeFsHeader?.FileHeaders == null)
             {
                 Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
@@ -373,7 +371,7 @@ namespace NDecrypt.Core
 
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize) / 0x10;
-                byte[] exefsIVWithOffsetForHeader = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffset);
+                byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), ctroffset);
                 var firstCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
                 var secondCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
 
@@ -421,7 +419,7 @@ namespace NDecrypt.Core
             output.Seek(romFsOffset, SeekOrigin.Begin);
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, FlipFirstHalf(cart.RomFSIV(index)));
+            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, cart.RomFSIV(index));
 
             // Setup and perform the decryption
             PerformAESOperation(romFsSize,
@@ -455,7 +453,7 @@ namespace NDecrypt.Core
             output.Seek(partitionOffset + 0x18F, SeekOrigin.Begin);
 
             // Write the new BitMasks flag
-            BitMasks flag = cart.Model.Partitions![index]!.Flags!.BitMasks;
+            BitMasks flag = cart.GetBitMasks(index);
             flag &= (BitMasks)((byte)(BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) ^ 0xFF);
             flag |= BitMasks.NoCrypto;
             output.Write((byte)flag);
@@ -476,7 +474,7 @@ namespace NDecrypt.Core
         private void EncryptAllPartitions(N3DS cart, bool force, Stream input, Stream output)
         {
             // Check the partitions table
-            if (cart.Model.Header?.PartitionsTable == null || cart.Model.Partitions == null)
+            if (cart.PartitionsTable == null || cart.Partitions == null)
             {
                 Console.WriteLine("Invalid partitions table!");
                 return;
@@ -486,7 +484,7 @@ namespace NDecrypt.Core
             for (int p = 0; p < 8; p++)
             {
                 // Check the partition exists
-                if (cart.Model.Partitions[p] == null)
+                if (cart.Partitions[p] == null)
                 {
                     Console.WriteLine($"Partition {p} Not found... Skipping...");
                     continue;
@@ -549,16 +547,18 @@ namespace NDecrypt.Core
         private void SetEncryptionKeys(N3DS cart, int index)
         {
             // Get the partition
-            var partition = cart.Model.Partitions?[index];
+            var partition = cart.Partitions?[index];
             if (partition == null)
+                return;
+
+            // Get the backup header
+            var backupHeader = cart.BackupHeader;
+            if (backupHeader?.Flags == null)
                 return;
 
             // Get partition-specific values
             byte[]? rsaSignature = partition.RSA2048Signature;
-
-            // Set the header to use based on mode
-            var backupHeader = cart.Model.CardInfoHeader!.InitialData!.BackupHeader;
-            BitMasks masks = backupHeader!.Flags!.BitMasks;
+            BitMasks masks = backupHeader.Flags.BitMasks;
             CryptoMethod method = backupHeader.Flags.CryptoMethod;
 
             // Get the partition keys
@@ -618,14 +618,14 @@ namespace NDecrypt.Core
         /// <param name="output">Stream representing the output</param>
         private bool EncryptExeFS(N3DS cart, int index, Stream input, Stream output)
         {
-            if (cart.Model.ExeFSHeaders == null || index < 0 || index > cart.Model.ExeFSHeaders.Length)
+            if (cart.ExeFSHeaders == null || index < 0 || index > cart.ExeFSHeaders.Length)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return false;
             }
 
             // Get the ExeFS header
-            var exefsHeader = cart.Model.ExeFSHeaders[index];
+            var exefsHeader = cart.ExeFSHeaders[index];
             if (exefsHeader == null)
             {
                 Console.WriteLine($"Partition {index} ExeFS header could not be read. Skipping...");
@@ -637,7 +637,7 @@ namespace NDecrypt.Core
             uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
 
             // For all but the original crypto method, process each of the files in the table
-            var backupHeader = cart.Model.CardInfoHeader!.InitialData!.BackupHeader;
+            var backupHeader = cart.BackupHeader;
             if (backupHeader!.Flags!.CryptoMethod != CryptoMethod.Original)
                 EncryptExeFSFileEntries(cart, index, input, output);
 
@@ -650,7 +650,7 @@ namespace NDecrypt.Core
 
             // Create the ExeFS AES cipher for this partition
             uint ctroffsetE = cart.MediaUnitSize / 0x10;
-            byte[] exefsIVWithOffset = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffsetE);
+            byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the encryption
@@ -719,8 +719,7 @@ namespace NDecrypt.Core
 
             // Get to the start of the files
             uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
-            input.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
-            var exeFsHeader = SabreTools.Serialization.Deserializers.N3DS.ParseExeFSHeader(input);
+            var exeFsHeader = cart.ExeFSHeaders?[index];
 
             // If the header failed to read, log and return
             if (exeFsHeader?.FileHeaders == null)
@@ -743,7 +742,7 @@ namespace NDecrypt.Core
 
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize) / 0x10;
-                byte[] exefsIVWithOffsetForHeader = Add(FlipFirstHalf(cart.ExeFSIV(index)), ctroffset);
+                byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), ctroffset);
                 var firstCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
                 var secondCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
 
@@ -793,12 +792,12 @@ namespace NDecrypt.Core
             // Force setting encryption keys for partitions 1 and above
             if (index > 0)
             {
-                var backupHeader = cart.Model.CardInfoHeader!.InitialData!.BackupHeader;
+                var backupHeader = cart.BackupHeader;
                 KeysMap[index].SetRomFSValues(backupHeader!.Flags!.BitMasks);
             }
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, FlipFirstHalf(cart.RomFSIV(index)));
+            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, cart.RomFSIV(index));
 
             // Setup and perform the decryption
             PerformAESOperation(romFsSize,
@@ -822,7 +821,9 @@ namespace NDecrypt.Core
             uint partitionOffset = cart.GetPartitionOffset(index);
 
             // Get the backup header
-            var backupHeader = cart.Model.CardInfoHeader!.InitialData!.BackupHeader;
+            var backupHeader = cart.BackupHeader;
+            if (backupHeader?.Flags == null)
+                return;
 
             // Seek to the CryptoMethod location
             output.Seek(partitionOffset + 0x18B, SeekOrigin.Begin);
@@ -830,7 +831,7 @@ namespace NDecrypt.Core
             // Write the new CryptoMethod
             // - For partitions 1 and up, set crypto-method to 0x00
             // - If partition 0, restore crypto-method from backup flags
-            byte cryptoMethod = index > 0 ? (byte)CryptoMethod.Original : (byte)backupHeader!.Flags!.CryptoMethod;
+            byte cryptoMethod = index > 0 ? (byte)CryptoMethod.Original : (byte)backupHeader.Flags.CryptoMethod;
             output.Write(cryptoMethod);
             output.Flush();
 
@@ -838,26 +839,13 @@ namespace NDecrypt.Core
             output.Seek(partitionOffset + 0x18F, SeekOrigin.Begin);
 
             // Write the new BitMasks flag
-            BitMasks flag = cart.Model.Partitions![index]!.Flags!.BitMasks;
+            BitMasks flag = cart.GetBitMasks(index);
             flag &= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator | BitMasks.NoCrypto) ^ (BitMasks)0xFF;
-            flag |= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & backupHeader!.Flags!.BitMasks;
+            flag |= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & backupHeader.Flags.BitMasks;
             output.Write((byte)flag);
             output.Flush();
         }
 
         #endregion
-
-        // TODO: REMOVE WHEN SERIALIZATION FIXED
-        private static byte[] FlipFirstHalf(byte[] data)
-        {
-            byte[] toFlip = new byte[8];
-            Array.Copy(data, toFlip, 8);
-            Array.Reverse(toFlip);
-
-            byte[] output = new byte[16];
-            Array.Copy(toFlip, output, 8);
-            Array.Copy(data, 8, output, 8, 8);
-            return output;
-        }
     }
 }
