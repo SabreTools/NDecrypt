@@ -21,29 +21,29 @@ namespace NDecrypt.Core
         /// <summary>
         /// AES Hardware Constant
         /// </summary>
-        public byte[]? AESHardwareConstant { get; private set; }
+        public byte[] AESHardwareConstant { get; private set; } = [];
 
         #region Retail Keys
 
         /// <summary>
         /// KeyX 0x18 (New 3DS 9.3)
         /// </summary>
-        public byte[]? KeyX0x18 { get; private set; }
+        public byte[] KeyX0x18 { get; private set; } = [];
 
         /// <summary>
         /// KeyX 0x1B (New 3DS 9.6)
         /// </summary>
-        public byte[]? KeyX0x1B { get; private set; }
+        public byte[] KeyX0x1B { get; private set; } = [];
 
         /// <summary>
         /// KeyX 0x25 (> 7.x)
         /// </summary>
-        public byte[]? KeyX0x25 { get; private set; }
+        public byte[] KeyX0x25 { get; private set; } = [];
 
         /// <summary>
         /// KeyX 0x2C (< 6.x)
         /// </summary>
-        public byte[]? KeyX0x2C { get; private set; }
+        public byte[] KeyX0x2C { get; private set; } = [];
 
         #endregion
 
@@ -52,22 +52,22 @@ namespace NDecrypt.Core
         /// <summary>
         /// Dev KeyX 0x18 (New 3DS 9.3)
         /// </summary>
-        public byte[]? DevKeyX0x18 { get; private set; }
+        public byte[] DevKeyX0x18 { get; private set; } = [];
 
         /// <summary>
         /// Dev KeyX 0x1B New 3DS 9.6)
         /// </summary>
-        public byte[]? DevKeyX0x1B { get; private set; }
+        public byte[] DevKeyX0x1B { get; private set; } = [];
 
         /// <summary>
         /// Dev KeyX 0x25 (> 7.x)
         /// </summary>
-        public byte[]? DevKeyX0x25 { get; private set; }
+        public byte[] DevKeyX0x25 { get; private set; } = [];
 
         /// <summary>
         /// Dev KeyX 0x2C (< 6.x)
         /// </summary>
-        public byte[]? DevKeyX0x2C { get; private set; }
+        public byte[] DevKeyX0x2C { get; private set; } = [];
 
         #endregion
 

@@ -10,15 +10,15 @@ namespace NDecrypt.Core
     /// </summary>
     public class PartitionKeys
     {
-        public byte[]? KeyX { get; private set; }
+        public byte[] KeyX { get; private set; }
 
-        public byte[]? KeyX2C { get; private set; }
+        public byte[] KeyX2C { get; }
 
-        public byte[]? KeyY { get; private set; }
+        public byte[] KeyY { get; }
 
-        public byte[]? NormalKey { get; private set; }
+        public byte[] NormalKey { get; private set; }
 
-        public byte[]? NormalKey2C { get; private set; }
+        public byte[] NormalKey2C { get; }
 
         /// <summary>
         /// Decryption args to use while processing
@@ -61,7 +61,11 @@ namespace NDecrypt.Core
 
             // Set the standard normal key values
             NormalKey = new byte[16];
-            NormalKey2C = RotateLeft(Add(Xor(RotateLeft(KeyX2C!, 2), KeyY), args.AESHardwareConstant!), 87);
+
+            NormalKey2C = RotateLeft(KeyX2C!, 2);
+            NormalKey2C = Xor(NormalKey2C, KeyY);
+            NormalKey2C = Add(NormalKey2C, args.AESHardwareConstant);
+            NormalKey2C = RotateLeft(NormalKey2C, 87);
 
             // Special case for zero-key
             if (masks.HasFlag(BitMasks.FixedCryptoKey))
@@ -97,7 +101,10 @@ namespace NDecrypt.Core
             }
 
             // Set the normal key based on the new KeyX value
-            NormalKey = RotateLeft(Add(Xor(RotateLeft(KeyX!, 2), KeyY), args.AESHardwareConstant!), 87);
+            NormalKey = RotateLeft(KeyX!, 2);
+            NormalKey = Xor(NormalKey, KeyY);
+            NormalKey = Add(NormalKey, args.AESHardwareConstant);
+            NormalKey = RotateLeft(NormalKey, 87);
         }
 
         /// <summary>
@@ -114,7 +121,11 @@ namespace NDecrypt.Core
 
             // Encrypting RomFS for partitions 1 and up always use Key0x2C
             KeyX = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
-            NormalKey = RotateLeft(Add(Xor(RotateLeft(KeyX!, 2), KeyY!), _decryptArgs.AESHardwareConstant!), 87);
+
+            NormalKey = RotateLeft(KeyX!, 2);
+            NormalKey = Xor(NormalKey, KeyY);
+            NormalKey = Add(NormalKey, _decryptArgs.AESHardwareConstant);
+            NormalKey = RotateLeft(NormalKey, 87);
         }
     }
 }
