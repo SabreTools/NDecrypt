@@ -9,7 +9,7 @@
         <Nullable>enable</Nullable>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <VersionPrefix>0.3.0</VersionPrefix>
+        <VersionPrefix>0.3.1</VersionPrefix>
 
         <!-- Package Properties -->
         <Authors>Matt Nadareski</Authors>
