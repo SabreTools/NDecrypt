@@ -389,8 +389,7 @@ namespace NDecrypt.Core
                 output.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
 
                 // Setup and perform the encryption
-                uint exeFsSize = cart.GetExeFSSize(index);
-                PerformAESOperation(exeFsSize,
+                PerformAESOperation(fileHeader.FileSize,
                     firstCipher,
                     secondCipher,
                     input,
@@ -650,10 +649,6 @@ namespace NDecrypt.Core
                 return false;
             }
 
-            // Get the ExeFS offset
-            uint exeFsHeaderOffset = cart.GetExeFSOffset(index);
-            uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
-
             // For all but the original crypto method, process each of the files in the table
             var backupHeader = cart.BackupHeader;
             if (backupHeader!.Flags!.CryptoMethod != CryptoMethod.Original)
@@ -661,6 +656,10 @@ namespace NDecrypt.Core
 
             // Encrypt the filename table
             EncryptExeFSFilenameTable(cart, index, input, output);
+
+            // Get the ExeFS offset
+            uint exeFsHeaderOffset = cart.GetExeFSOffset(index);
+            uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
 
             // Seek to the ExeFS
             input.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
@@ -769,8 +768,7 @@ namespace NDecrypt.Core
                 output.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
 
                 // Setup and perform the encryption
-                uint exeFsSize = cart.GetExeFSSize(index);
-                PerformAESOperation(exeFsSize,
+                PerformAESOperation(fileHeader.FileSize,
                     firstCipher,
                     secondCipher,
                     input,
