@@ -98,7 +98,6 @@ namespace NDecrypt
             // Create reusable tools
             _tools[FileType.NDS] = new DSTool();
             _tools[FileType.N3DS] = new ThreeDSTool(development, decryptArgs);
-            //_tools[FileType.N3DSCIA] = new CIATool(development, decryptArgs);
 
             for (int i = start; i < args.Length; i++)
             {
@@ -225,7 +224,6 @@ More than one path can be specified at a time.");
                 FileType.NDSi => _tools[FileType.NDS],
                 FileType.iQueDS => _tools[FileType.NDS],
                 FileType.N3DS => _tools[FileType.N3DS],
-                //FileType.N3DSCIA => _tools[FileType.N3DSCIA],
                 _ => null,
             };
         }
@@ -262,11 +260,6 @@ More than one path can be specified at a time.");
                 Console.WriteLine("File recognized as Nintendo 3DS");
                 return FileType.N3DS;
             }
-            // else if (filename.EndsWith(".cia", StringComparison.OrdinalIgnoreCase))
-            // {
-            //     Console.WriteLine("File recognized as Nintendo 3DS CIA [CAUTION: NOT WORKING CURRENTLY]");
-            //     return FileType.N3DSCIA;
-            // }
 
             Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
             return FileType.NULL;

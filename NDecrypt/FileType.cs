@@ -11,6 +11,5 @@ namespace NDecrypt
         iQueDS,
         N3DS,
         iQue3DS,
-        N3DSCIA,
     }
 }
