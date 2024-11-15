@@ -330,7 +330,9 @@ namespace NDecrypt.Core
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, cart.ExeFSIV(index));
 
             // Process the filename table
-            PerformAESOperation(cart.MediaUnitSize, cipher, input, output, null);
+            byte[] readBytes = input.ReadBytes((int)cart.MediaUnitSize);
+            byte[] processedBytes = cipher.ProcessBytes(readBytes);
+            output.Write(processedBytes);
 
 #if NET6_0_OR_GREATER
             // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
@@ -708,7 +710,9 @@ namespace NDecrypt.Core
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, cart.ExeFSIV(index));
 
             // Process the filename table
-            PerformAESOperation(cart.MediaUnitSize, cipher, input, output, null);
+            byte[] readBytes = input.ReadBytes((int)cart.MediaUnitSize);
+            byte[] processedBytes = cipher.ProcessBytes(readBytes);
+            output.Write(processedBytes);
 
 #if NET6_0_OR_GREATER
             // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
