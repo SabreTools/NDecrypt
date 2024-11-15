@@ -263,8 +263,8 @@ namespace NDecrypt.Core
         private bool DecryptExeFS(N3DS cart, int index, Stream input, Stream output)
         {
             // Validate the ExeFS
-            uint exeFsOffset = cart.GetExeFSOffset(index);
-            if (exeFsOffset == 0 || exeFsOffset > input.Length)
+            uint exeFsHeaderOffset = cart.GetExeFSOffset(index);
+            if (exeFsHeaderOffset == 0 || exeFsHeaderOffset > input.Length)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return false;
@@ -284,9 +284,12 @@ namespace NDecrypt.Core
             if (cart.GetCryptoMethod(index) != CryptoMethod.Original)
                 DecryptExeFSFileEntries(cart, index, input, output);
 
+            // Get the ExeFS files offset
+            uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
+
             // Seek to the ExeFS
-            input.Seek(exeFsOffset, SeekOrigin.Begin);
-            output.Seek(exeFsOffset, SeekOrigin.Begin);
+            input.Seek(exeFsFilesOffset, SeekOrigin.Begin);
+            output.Seek(exeFsFilesOffset, SeekOrigin.Begin);
 
             // Create the ExeFS AES cipher for this partition
             uint ctroffsetE = cart.MediaUnitSize / 0x10;
@@ -294,6 +297,7 @@ namespace NDecrypt.Core
             var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the decryption
+            exeFsSize -= cart.MediaUnitSize;
             PerformAESOperation(exeFsSize,
                 cipher,
                 input,
@@ -659,13 +663,13 @@ namespace NDecrypt.Core
             // Encrypt the filename table
             EncryptExeFSFilenameTable(cart, index, input, output);
 
-            // Get the ExeFS offset
+            // Get the ExeFS files offset
             uint exeFsHeaderOffset = cart.GetExeFSOffset(index);
             uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
 
             // Seek to the ExeFS
-            input.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
-            output.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
+            input.Seek(exeFsFilesOffset, SeekOrigin.Begin);
+            output.Seek(exeFsFilesOffset, SeekOrigin.Begin);
 
             // Create the ExeFS AES cipher for this partition
             uint ctroffsetE = cart.MediaUnitSize / 0x10;
@@ -673,7 +677,7 @@ namespace NDecrypt.Core
             var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the encryption
-            uint exeFsSize = cart.GetExeFSSize(index);
+            uint exeFsSize = cart.GetExeFSSize(index) - cart.MediaUnitSize;
             PerformAESOperation(exeFsSize,
                 cipher,
                 input,
