@@ -64,6 +64,9 @@ if [ $NO_BUILD = false ]; then
     echo "Restoring Nuget packages"
     dotnet restore
 
+    # Create Nuget Packages
+    dotnet pack NDecrypt.Core/NDecrypt.Core.csproj --output $BUILD_FOLDER
+
     # Build Program
     for FRAMEWORK in "${FRAMEWORKS[@]}"; do
         for RUNTIME in "${RUNTIMES[@]}"; do

@@ -55,6 +55,9 @@ if (!$NO_BUILD.IsPresent) {
     Write-Host "Restoring Nuget packages"
     dotnet restore
 
+    # Create Nuget Package
+    dotnet pack NDecrypt.Core\NDecrypt.Core.csproj --output $BUILD_FOLDER
+
     # Build Program
     foreach ($FRAMEWORK in $FRAMEWORKS) {
         foreach ($RUNTIME in $RUNTIMES) {
