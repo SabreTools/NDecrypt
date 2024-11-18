@@ -107,7 +107,7 @@ namespace NDecrypt.Core
                     // Ignore comments in the file
                     if (reader.RowType == IniRowType.Comment)
                         continue;
-                    if (reader.KeyValuePair == null || string.IsNullOrWhiteSpace(reader.KeyValuePair?.Key))
+                    if (reader.KeyValuePair == null || string.IsNullOrEmpty(reader.KeyValuePair?.Key))
                         break;
 
                     var kvp = reader.KeyValuePair!.Value;

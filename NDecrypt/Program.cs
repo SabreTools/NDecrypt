@@ -67,7 +67,7 @@ namespace NDecrypt
 
                     start++;
                     string tempPath = args[start];
-                    if (string.IsNullOrWhiteSpace(tempPath))
+                    if (string.IsNullOrEmpty(tempPath))
                         Console.WriteLine($"Invalid keyfile path: null or empty path found!");
 
                     tempPath = Path.GetFullPath(tempPath);
@@ -107,7 +107,7 @@ namespace NDecrypt
                 }
                 else if (Directory.Exists(args[i]))
                 {
-                    foreach (string file in Directory.EnumerateFiles(args[i], "*", SearchOption.AllDirectories))
+                    foreach (string file in Directory.GetFiles(args[i], "*", SearchOption.AllDirectories))
                     {
                         ProcessPath(file, encrypt, force, outputHashes);
                     }
@@ -158,7 +158,7 @@ namespace NDecrypt
         /// <param name="err">Additional error text to display, can be null to ignore</param>
         private static void DisplayHelp(string? err = null)
         {
-            if (!string.IsNullOrWhiteSpace(err))
+            if (!string.IsNullOrEmpty(err))
                 Console.WriteLine($"Error: {err}");
 
             Console.WriteLine(@"Usage: NDecrypt <operation> [flags] <path> ...

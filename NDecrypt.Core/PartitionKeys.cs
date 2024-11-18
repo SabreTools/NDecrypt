@@ -68,7 +68,11 @@ namespace NDecrypt.Core
             NormalKey2C = RotateLeft(NormalKey2C, 87);
 
             // Special case for zero-key
+#if NET20 || NET35
+            if ((masks & BitMasks.FixedCryptoKey) > 0)
+#else
             if (masks.HasFlag(BitMasks.FixedCryptoKey))
+#endif
             {
                 Console.WriteLine("Encryption Method: Zero Key");
                 NormalKey = new byte[16];
@@ -113,7 +117,11 @@ namespace NDecrypt.Core
         public void SetRomFSValues(BitMasks masks)
         {
             // NormalKey has a constant value for zero-key
+#if NET20 || NET35
+            if ((masks & BitMasks.FixedCryptoKey) > 0)
+#else
             if (masks.HasFlag(BitMasks.FixedCryptoKey))
+#endif
             {
                 NormalKey = new byte[16];
                 return;
