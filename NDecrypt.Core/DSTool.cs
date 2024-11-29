@@ -2,7 +2,7 @@
 using System.IO;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.Nitro;
-using NitroDeserializer = SabreTools.Serialization.Deserializers.Nitro;
+using SabreTools.Serialization.Wrappers;
 
 namespace NDecrypt.Core
 {
@@ -296,7 +296,7 @@ namespace NDecrypt.Core
                 using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                var cart = NitroDeserializer.DeserializeStream(reader);
+                var cart = Nitro.Create(reader);
                 if (cart == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
@@ -326,7 +326,7 @@ namespace NDecrypt.Core
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void EncryptSecureArea(Cart cart, bool force, Stream reader, Stream writer)
+        private void EncryptSecureArea(Nitro cart, bool force, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
             if (force)
@@ -349,7 +349,7 @@ namespace NDecrypt.Core
                 }
             }
 
-            EncryptARM9(cart.CommonHeader!, reader, writer);
+            EncryptARM9(cart.Model.CommonHeader!, reader, writer);
             Console.WriteLine("File has been encrypted");
         }
 
@@ -450,7 +450,7 @@ namespace NDecrypt.Core
                 using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                var cart = NitroDeserializer.DeserializeStream(reader);
+                var cart = Nitro.Create(reader);
                 if (cart == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
@@ -481,7 +481,7 @@ namespace NDecrypt.Core
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void DecryptSecureArea(Cart cart, bool force, Stream reader, Stream writer)
+        private void DecryptSecureArea(Nitro cart, bool force, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
             if (force)
@@ -504,7 +504,7 @@ namespace NDecrypt.Core
                 }
             }
 
-            DecryptARM9(cart.CommonHeader!, reader, writer);
+            DecryptARM9(cart.Model.CommonHeader!, reader, writer);
             Console.WriteLine("File has been decrypted");
         }
 
