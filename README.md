@@ -1,7 +1,6 @@
 # NDecrypt
 
-[![Build status](https://ci.appveyor.com/api/projects/status/cc1n298syn6r50mq?svg=true)](https://ci.appveyor.com/project/mnadareski/ndecrypt)
-[![Program Build](https://github.com/SabreTools/NDecrypt/actions/workflows/build_program.yml/badge.svg)](https://github.com/SabreTools/NDecrypt/actions/workflows/build_program.yml)
+[![Build and Test](https://github.com/SabreTools/NDecrypt/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SabreTools/NDecrypt/actions/workflows/build_and_test.yml)
 
 A simple tool for simple people.
 
