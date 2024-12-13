@@ -255,13 +255,14 @@ More than one path can be specified at a time.");
             }
             else if (filename.EndsWith(".3ds", StringComparison.OrdinalIgnoreCase)    // Standard carts
                 || filename.EndsWith(".3ds.dec", StringComparison.OrdinalIgnoreCase)  // Decrypted carts/images
-                || filename.EndsWith(".3ds.enc", StringComparison.OrdinalIgnoreCase)) // Encrypted carts/images
+                || filename.EndsWith(".3ds.enc", StringComparison.OrdinalIgnoreCase)  // Encrypted carts/images
+                || filename.EndsWith(".cci", StringComparison.OrdinalIgnoreCase))     // Development carts/images
             {
                 Console.WriteLine("File recognized as Nintendo 3DS");
                 return FileType.N3DS;
             }
 
-            Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds");
+            Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds, *.cci");
             return FileType.NULL;
         }
 
