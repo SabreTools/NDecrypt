@@ -16,7 +16,7 @@
         <!-- Package Properties -->
         <Authors>Matt Nadareski</Authors>
         <Description>Common code for all NDecrypt processors</Description>
-        <Copyright>Copyright (c) Matt Nadareski 2019-2024</Copyright>
+        <Copyright>Copyright (c) Matt Nadareski 2019-2025</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/SabreTools/</PackageProjectUrl>
         <RepositoryUrl>https://github.com/SabreTools/NDecrypt</RepositoryUrl>
