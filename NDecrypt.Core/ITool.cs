@@ -17,5 +17,12 @@
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <returns>True if the file could be decrypted, false otherwise</returns>
         bool DecryptFile(string filename, bool force);
+
+        /// <summary>
+        /// Attempts to get information on an input file
+        /// </summary>
+        /// <param name="filename">Name of the file get information on</param>
+        /// <returns>String representing the info, null on error</returns>
+        string? GetInformation(string filename);
     }
 }

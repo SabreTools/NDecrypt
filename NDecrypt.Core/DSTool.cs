@@ -585,6 +585,17 @@ namespace NDecrypt.Core
 
         #endregion
 
+        #region Info
+
+        /// <inheritdoc/>
+        public string? GetInformation(string filename)
+        {
+            // TODO: Get decryption status
+            return null;
+        }
+
+        #endregion
+
         #region Common
 
         /// <summary>

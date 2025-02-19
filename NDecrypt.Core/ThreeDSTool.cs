@@ -31,41 +31,7 @@ namespace NDecrypt.Core
             _decryptArgs = decryptArgs;
         }
 
-        /// <inheritdoc/>
-        public bool EncryptFile(string filename, bool force)
-        {
-            // Ensure the constants are all set
-            if (_decryptArgs.IsReady != true)
-            {
-                Console.WriteLine("Could not read keys. Please make sure the file exists and try again.");
-                return false;
-            }
-
-            try
-            {
-                // Open the read and write on the same file for inplace processing
-                using var input = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var output = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
-
-                // Deserialize the cart information
-                var cart = N3DS.Create(input);
-                if (cart?.Model == null)
-                {
-                    Console.WriteLine("Error: Not a 3DS cart image!");
-                    return false;
-                }
-
-                // Encrypt all 8 NCCH partitions
-                EncryptAllPartitions(cart, force, input, output);
-                return true;
-            }
-            catch
-            {
-                Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
-                Console.WriteLine("Please check that the file was a valid 3DS or New 3DS cart image and try again.");
-                return false;
-            }
-        }
+        #region Decrypt
 
         /// <inheritdoc/>
         public bool DecryptFile(string filename, bool force)
@@ -102,8 +68,6 @@ namespace NDecrypt.Core
                 return false;
             }
         }
-
-        #region Decrypt
 
         /// <summary>
         /// Decrypt all partitions in the partition table of an NCSD header
@@ -477,6 +441,42 @@ namespace NDecrypt.Core
         #endregion
 
         #region Encrypt
+
+        /// <inheritdoc/>
+        public bool EncryptFile(string filename, bool force)
+        {
+            // Ensure the constants are all set
+            if (_decryptArgs.IsReady != true)
+            {
+                Console.WriteLine("Could not read keys. Please make sure the file exists and try again.");
+                return false;
+            }
+
+            try
+            {
+                // Open the read and write on the same file for inplace processing
+                using var input = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var output = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+
+                // Deserialize the cart information
+                var cart = N3DS.Create(input);
+                if (cart?.Model == null)
+                {
+                    Console.WriteLine("Error: Not a 3DS cart image!");
+                    return false;
+                }
+
+                // Encrypt all 8 NCCH partitions
+                EncryptAllPartitions(cart, force, input, output);
+                return true;
+            }
+            catch
+            {
+                Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
+                Console.WriteLine("Please check that the file was a valid 3DS or New 3DS cart image and try again.");
+                return false;
+            }
+        }
 
         /// <summary>
         /// Encrypt all partitions in the partition table of an NCSD header
@@ -868,6 +868,17 @@ namespace NDecrypt.Core
             flag |= (BitMasks.FixedCryptoKey | BitMasks.NewKeyYGenerator) & backupHeader.Flags.BitMasks;
             output.Write((byte)flag);
             output.Flush();
+        }
+
+        #endregion
+    
+        #region Info
+
+        /// <inheritdoc/>
+        public string? GetInformation(string filename)
+        {
+            // TODO: Get decryption status
+            return null;
         }
 
         #endregion

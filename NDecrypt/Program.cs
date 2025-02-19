@@ -152,7 +152,10 @@ namespace NDecrypt
             }
             else if (feature == Feature.Info)
             {
-                Console.WriteLine("Feature 'INFO' is not implemented");
+                string? infoString = tool.GetInformation(path);
+                infoString ??= "There was a problem getting file information!";
+
+                Console.WriteLine(infoString);
                 return;
             }
 
