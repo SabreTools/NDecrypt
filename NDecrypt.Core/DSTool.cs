@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.Nitro;
 using SabreTools.Serialization.Wrappers;
@@ -590,8 +591,37 @@ namespace NDecrypt.Core
         /// <inheritdoc/>
         public string? GetInformation(string filename)
         {
-            // TODO: Get decryption status
-            return null;
+            try
+            {
+                // Open the file for reading
+                using var input = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                // Deserialize the cart information
+                var cart = Nitro.Create(input);
+                if (cart?.Model == null)
+                    return "Error: Not a DS or DSi Rom!";
+
+                // Get a string builder for the status
+                var sb = new StringBuilder();
+                sb.Append("Secure Area: ");
+
+                // Get the encryption status
+                bool? decrypted = CheckIfDecrypted(input);
+                if (decrypted == null)
+                    sb.Append("Empty");
+                else if (decrypted == true)
+                    sb.Append("Decrypted");
+                else
+                    sb.Append("English");
+
+                // Return the status for the secure area
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return null;
+            }
         }
 
         #endregion

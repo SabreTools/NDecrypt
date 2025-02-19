@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.N3DS;
 using SabreTools.Serialization.Wrappers;
@@ -871,14 +872,40 @@ namespace NDecrypt.Core
         }
 
         #endregion
-    
+
         #region Info
 
         /// <inheritdoc/>
         public string? GetInformation(string filename)
         {
-            // TODO: Get decryption status
-            return null;
+            try
+            {
+                // Open the file for reading
+                using var input = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                // Deserialize the cart information
+                var cart = N3DS.Create(input);
+                if (cart?.Model == null)
+                    return "Error: Not a 3DS cart image!";
+
+                // Get a string builder for the status
+                var sb = new StringBuilder();
+
+                // Iterate over all 8 NCCH partitions
+                for (int p = 0; p < 8; p++)
+                {
+                    bool decrypted = cart.PossiblyDecrypted(p);
+                    sb.AppendLine($"Partition {p}: {(decrypted ? "Decrypted" : "Encrypted")}");
+                }
+
+                // Return the status for all partitions
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return null;
+            }
         }
 
         #endregion
