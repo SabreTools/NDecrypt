@@ -20,14 +20,14 @@ namespace NDecrypt
                 return;
             }
 
-            bool encrypt;
+            Feature feature;
             if (args[0] == "decrypt" || args[0] == "d")
             {
-                encrypt = false;
+                feature = Feature.Decrypt;
             }
             else if (args[0] == "encrypt" || args[0] == "e")
             {
-                encrypt = true;
+                feature = Feature.Encrypt;
             }
             else
             {
@@ -103,13 +103,13 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
-                    ProcessPath(args[i], encrypt, force, outputHashes);
+                    ProcessPath(args[i], feature, force, outputHashes);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.GetFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ProcessPath(file, encrypt, force, outputHashes);
+                        ProcessPath(file, feature, force, outputHashes);
                     }
                 }
                 else
@@ -123,10 +123,10 @@ namespace NDecrypt
         /// Process a single file path
         /// </summary>
         /// <param name="path">File path to process</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
+        /// <param name="feature">Indicates what should be done to the file</param>
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="outputHashes">Indicates if hashes should be output after a successful operation</param>
-        private static void ProcessPath(string path, bool encrypt, bool force, bool outputHashes)
+        private static void ProcessPath(string path, Feature feature, bool force, bool outputHashes)
         {
             // Attempt to derive the tool for the path
             var tool = DeriveTool(path);
@@ -136,12 +136,12 @@ namespace NDecrypt
             Console.WriteLine($"Processing {path}");
 
             // Encrypt or decrypt the file as requested
-            if (encrypt && !tool.EncryptFile(path, force))
+            if (feature == Feature.Encrypt && !tool.EncryptFile(path, force))
             {
                 Console.WriteLine("Encryption failed!");
                 return;
             }
-            else if (!encrypt && !tool.DecryptFile(path, force))
+            else if (feature == Feature.Decrypt && !tool.DecryptFile(path, force))
             {
                 Console.WriteLine("Decryption failed!");
                 return;
