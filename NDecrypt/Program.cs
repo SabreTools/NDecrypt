@@ -29,6 +29,10 @@ namespace NDecrypt
             {
                 feature = Feature.Encrypt;
             }
+            else if (args[0] == "info" || args[0] == "i")
+            {
+                feature = Feature.Info;
+            }
             else
             {
                 DisplayHelp($"Invalid operation: {args[0]}");
@@ -146,6 +150,11 @@ namespace NDecrypt
                 Console.WriteLine("Decryption failed!");
                 return;
             }
+            else if (feature == Feature.Info)
+            {
+                Console.WriteLine("Feature 'INFO' is not implemented");
+                return;
+            }
 
             // Output the file hashes, if expected
             if (outputHashes)
@@ -166,6 +175,7 @@ namespace NDecrypt
 Possible values for <operation>:
 e, encrypt - Encrypt the input files
 d, decrypt - Decrypt the input files
+i, info    - Output file information
 
 Possible values for [flags] (one or more can be used):
 -a, --aes-keys        Enable using aes_keys.txt instead of keys.bin
