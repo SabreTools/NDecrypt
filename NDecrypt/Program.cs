@@ -156,7 +156,6 @@ namespace NDecrypt
                 infoString ??= "There was a problem getting file information!";
 
                 Console.WriteLine(infoString);
-                return;
             }
 
             // Output the file hashes, if expected
