@@ -612,7 +612,7 @@ namespace NDecrypt.Core
                 else if (decrypted == true)
                     sb.Append("Decrypted");
                 else
-                    sb.Append("English");
+                    sb.Append("Encrypted");
 
                 // Return the status for the secure area
                 return sb.ToString();
