@@ -615,6 +615,7 @@ namespace NDecrypt.Core
                     sb.Append("Encrypted");
 
                 // Return the status for the secure area
+                sb.Append(Environment.NewLine);
                 return sb.ToString();
             }
             catch (Exception ex)
