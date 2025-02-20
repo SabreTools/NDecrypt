@@ -895,7 +895,7 @@ namespace NDecrypt.Core
                 for (int p = 0; p < 8; p++)
                 {
                     bool decrypted = cart.PossiblyDecrypted(p);
-                    sb.AppendLine($"Partition {p}: {(decrypted ? "Decrypted" : "Encrypted")}");
+                    sb.AppendLine($"\tPartition {p}: {(decrypted ? "Decrypted" : "Encrypted")}");
                 }
 
                 // Return the status for all partitions

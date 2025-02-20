@@ -603,7 +603,7 @@ namespace NDecrypt.Core
 
                 // Get a string builder for the status
                 var sb = new StringBuilder();
-                sb.Append("Secure Area: ");
+                sb.Append("\tSecure Area: ");
 
                 // Get the encryption status
                 bool? decrypted = CheckIfDecrypted(input);
