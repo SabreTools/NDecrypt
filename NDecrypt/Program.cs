@@ -43,6 +43,7 @@ namespace NDecrypt
                 force = false,
                 outputHashes = false,
                 useAesKeysTxt = false;
+            string? config = null;
             string? keyfile = null;
             int start = 1;
             for (; start < args.Length; start++)
@@ -79,11 +80,32 @@ namespace NDecrypt
                     else
                         keyfile = tempPath;
                 }
+
+                // TODO: This is not hooked up nor documented. Fix that.
+                else if (args[start] == "-c" || args[start] == "--config")
+                {
+                    if (start == args.Length - 1)
+                        Console.WriteLine("Invalid config path: no additional arguments found!");
+
+                    start++;
+                    string tempPath = args[start];
+                    if (string.IsNullOrEmpty(tempPath))
+                        Console.WriteLine($"Invalid config path: null or empty path found!");
+
+                    tempPath = Path.GetFullPath(tempPath);
+                    if (!File.Exists(tempPath))
+                        Console.WriteLine($"Invalid config path: file {tempPath} not found!");
+                    else
+                        config = tempPath;
+                }
                 else
                 {
                     break;
                 }
             }
+
+            // Derive the config path based on the runtime folder if not already set
+            config = DeriveConfigFile(config);
 
             // Derive the keyfile path based on the runtime folder if not already set
             keyfile = DeriveKeyFile(keyfile, useAesKeysTxt);
@@ -190,6 +212,31 @@ More than one path can be specified at a time.");
         }
 
         /// <summary>
+        /// Derive the full path to the config file, if possible
+        /// </summary>
+        private static string? DeriveConfigFile(string? config)
+        {
+            // If a path is passed in
+            if (!string.IsNullOrEmpty(config))
+            {
+                config = Path.GetFullPath(config);
+                if (File.Exists(config))
+                    return config;
+            }
+
+            // Derive the keyfile path based on the runtime folder if not already set
+            // TODO: Search in other directories by default
+            using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
+            string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
+
+            // Use the proper default name
+            config = Path.Combine(applicationDirectory, "config.json");
+
+            // Only return the path if the file exists
+            return File.Exists(config) ? config : null;
+        }
+
+        /// <summary>
         /// Derive the full path to the keyfile, if possible
         /// </summary>
         private static string? DeriveKeyFile(string? keyfile, bool useAesKeysTxt)
@@ -203,6 +250,7 @@ More than one path can be specified at a time.");
             }
 
             // Derive the keyfile path based on the runtime folder if not already set
+            // TODO: Search in other directories by default
             using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
             string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
 

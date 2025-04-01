@@ -1,7 +1,7 @@
 using System.IO;
 using Newtonsoft.Json;
 
-namespace NDecrypt
+namespace NDecrypt.Core
 {
     internal class Configuration
     {

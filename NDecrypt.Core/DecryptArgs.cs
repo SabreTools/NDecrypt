@@ -5,6 +5,7 @@ using SabreTools.IO.Readers;
 
 namespace NDecrypt.Core
 {
+    // TODO: Add test validation that keys are correct; similar to rom-properties
     public class DecryptArgs
     {
         #region Common Fields
@@ -19,10 +20,14 @@ namespace NDecrypt.Core
         #region DS-Specific Fields
 
         /// <summary>
+        /// Blowfish Table
+        /// </summary>
+        public byte[] NitroEncryptionData { get; private set; } = [];
+
+        /// <summary>
         /// Encryption data taken from woodsec
         /// </summary>
-        public readonly byte[] NitroEncryptionData =
-        [
+        private static readonly byte[] _nitroEncryptionData = [
             0x99,0xD5,0x20,0x5F,0x57,0x44,0xF5,0xB9,0x6E,0x19,0xA4,0xD9,0x9E,0x6A,0x5A,0x94,
             0xD8,0xAE,0xF1,0xEB,0x41,0x75,0xE2,0x3A,0x93,0x82,0xD0,0x32,0x33,0xEE,0x31,0xD5,
             0xCC,0x57,0x61,0x9A,0x37,0x06,0xA2,0x1B,0x79,0x39,0x72,0xF5,0x55,0xAE,0xF6,0xBE,
@@ -349,9 +354,18 @@ namespace NDecrypt.Core
         /// Setup all of the necessary constants
         /// </summary>
         /// <param name="keyfile">Path to the keyfile</param>
+        public DecryptArgs(string? config) => InitConfigJson(config);
+
+        /// <summary>
+        /// Setup all of the necessary constants
+        /// </summary>
+        /// <param name="keyfile">Path to the keyfile</param>
         /// <param name="useAesKeysTxt">Indicates if the keyfile format is aeskeys.txt</param>
         public DecryptArgs(string? keyfile, bool useAesKeysTxt)
         {
+            // Set the default DS values
+            NitroEncryptionData = _nitroEncryptionData;
+
             // Read the proper keyfile format
             if (useAesKeysTxt)
                 InitAesKeysTxt(keyfile);
@@ -473,6 +487,41 @@ namespace NDecrypt.Core
         }
 
         /// <summary>
+        /// Setup all of the necessary constants from config.json
+        /// </summary>
+        /// <param name="config">Path to config.json</param>
+        private void InitConfigJson(string? config)
+        {
+            if (config == null || !File.Exists(config))
+            {
+                IsReady = false;
+                return;
+            }
+
+            // Try to read the configuration file
+            var configObj = Configuration.Create(config);
+            if (configObj == null)
+            {
+                IsReady = false;
+                return;
+            }
+
+            // Set the fields from the configuration
+            NitroEncryptionData = StringToByteArray(configObj.NitroEncryptionData);
+            AESHardwareConstant = StringToByteArray(configObj.AESHardwareConstant);
+            KeyX0x18 = StringToByteArray(configObj.KeyX0x18);
+            KeyX0x1B = StringToByteArray(configObj.KeyX0x1B);
+            KeyX0x25 = StringToByteArray(configObj.KeyX0x25);
+            KeyX0x2C = StringToByteArray(configObj.KeyX0x2C);
+            DevKeyX0x18 = StringToByteArray(configObj.DevKeyX0x18);
+            DevKeyX0x1B = StringToByteArray(configObj.DevKeyX0x1B);
+            DevKeyX0x25 = StringToByteArray(configObj.DevKeyX0x25);
+            DevKeyX0x2C = StringToByteArray(configObj.DevKeyX0x2C);
+
+            IsReady = true;
+        }
+
+        /// <summary>
         /// Setup all of the necessary constants from keys.bin
         /// </summary>
         /// <param name="keyfile">Path to keys.bin</param>
@@ -523,8 +572,12 @@ namespace NDecrypt.Core
         }
 
         // https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa
-        private static byte[] StringToByteArray(string hex)
+        private static byte[] StringToByteArray(string? hex)
         {
+            // Handle null values
+            if (hex == null)
+                return [];
+
             int NumberChars = hex.Length;
             byte[] bytes = new byte[NumberChars / 2];
             for (int i = 0; i < NumberChars; i += 2)
