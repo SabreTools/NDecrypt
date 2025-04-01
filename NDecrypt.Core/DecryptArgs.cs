@@ -6,7 +6,6 @@ using SabreTools.Matching;
 
 namespace NDecrypt.Core
 {
-    // TODO: Add test validation that keys are correct; similar to rom-properties
     public class DecryptArgs
     {
         #region Common Fields
