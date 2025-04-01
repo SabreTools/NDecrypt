@@ -47,8 +47,7 @@ namespace NDecrypt
             int start = 1;
             for (; start < args.Length; start++)
             {
-                if (args[start] == "-a" || args[start] == "--aes-keys"
-                    || args[start] == "-c" || args[start] == "--citra")
+                if (args[start] == "-a" || args[start] == "--aes-keys")
                 {
                     useAesKeysTxt = true;
                 }
