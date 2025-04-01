@@ -67,7 +67,7 @@ The last 4 are only required if you use the `-dev` flag. Once again, don't ask f
 
 *If you choose to use the `-a` option, you can instead provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome.
 
-*If you choose to use the `-c` option, you can instead provide your personally filled out `config.json` file in the same folder as NDecrypt and that can be used instead. This does not have the same limitations as the `-a` option, but is not used or created by any other program at the moment. See [the sample config](https://github.com/SabreTools/NDecrypt/blob/master/NDecrypt/config-default.json) that I've nicely generated for you. You're welcome. Again.
+*If you choose to use the `-c` option, you can instead provide your personally filled out `config.json` file in the same folder as NDecrypt and that can be used instead. This does not have the same limitations as the `-a` option, but is not used or created by any other program at the moment. See [the sample config](https://github.com/SabreTools/NDecrypt/blob/master/config-default.json) that I've nicely generated for you. You're welcome. Again.
 
 ## But does it work?
 
