@@ -24,18 +24,17 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
 
 ## So how do I use this?
 
-    NDecrypt.exe <operation> [flags] <path> ...
-
     Possible values for <operation>:
     e, encrypt - Encrypt the input files
     d, decrypt - Decrypt the input files
+    i, info    - Output file information
 
     Possible values for [flags] (one or more can be used):
-    -c, --citra           - Enable using aes_keys.txt instead of keys.bin
-    -dev, --development   - Enable using development keys, if available
-    -f, --force           - Force operation by avoiding sanity checks
-    -h, --hash            - Output size and hashes to a companion file
-    -k, --keyfile <path>  - Path to keys.bin or aes_keys.txt
+    -a, --aes-keys        Enable using aes_keys.txt instead of keys.bin
+    -dev, --development   Enable using development keys, if available
+    -f, --force           Force operation by avoiding sanity checks
+    -h, --hash            Output size and hashes to a companion file
+    -k, --keyfile <path>  Path to keys.bin or aes_keys.txt
 
     <path> can be any file or folder that contains uncompressed items.
     More than one path can be specified at a time.
