@@ -325,6 +325,11 @@ namespace NDecrypt.Core
                 return;
             }
 
+            // Reread the decrypted ExeFS header
+            uint exeFsHeaderOffset = cart.GetExeFSOffset(index);
+            input.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
+            cart.ExeFSHeaders[index] = SabreTools.Serialization.Deserializers.N3DS.ParseExeFSHeader(input);
+
             // Get the ExeFS header
             var exeFsHeader = cart.ExeFSHeaders[index];
             if (exeFsHeader?.FileHeaders == null)
@@ -333,8 +338,7 @@ namespace NDecrypt.Core
                 return;
             }
 
-            // Get the ExeFS offset
-            uint exeFsHeaderOffset = cart.GetExeFSOffset(index);
+            // Get the ExeFS files offset
             uint exeFsFilesOffset = exeFsHeaderOffset + cart.MediaUnitSize;
 
             // Loop through and process all headers
