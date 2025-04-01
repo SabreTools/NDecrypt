@@ -40,9 +40,12 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
     <path> can be any file or folder that contains uncompressed items.
     More than one path can be specified at a time.
 
-**Note:** This overwrites the input files, so make backups if you're working on your original, personal dumps.
+### Notes on Running
 
-**Note:** Mixed folders or inputs are also accepted, you can decrypt or encrypt multiple files, regardless of their type. This being said, you can only do encrypt OR decrypt at one time.
+- This overwrites the input files, so make backups if you're working on your original, personal dumps.
+- Mixed folders or inputs are also accepted, you can decrypt or encrypt multiple files, regardless of their type. This being said, you can only do encrypt OR decrypt at one time.
+- Required files will automatically be searched for in the application runtime directory as well as `%HOME%/.config/ndecrypt`.
+- If found, `config.json` will take priority over both `keys.bin` and `aes_keys.txt`, even if `-a` and/or `-k` are defined. You've been warned.
 
 ## I feel like something is missing...
 

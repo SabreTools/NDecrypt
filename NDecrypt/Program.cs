@@ -227,16 +227,8 @@ More than one path can be specified at a time.");
                     return config;
             }
 
-            // Derive the keyfile path based on the runtime folder if not already set
-            // TODO: Search in other directories by default
-            using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
-            string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
-
-            // Use the proper default name
-            config = Path.Combine(applicationDirectory, "config.json");
-
-            // Only return the path if the file exists
-            return File.Exists(config) ? config : null;
+            // Derive the keyfile path, if possible
+            return GetFileLocation("config.json");
         }
 
         /// <summary>
@@ -252,19 +244,8 @@ More than one path can be specified at a time.");
                     return keyfile;
             }
 
-            // Derive the keyfile path based on the runtime folder if not already set
-            // TODO: Search in other directories by default
-            using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
-            string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
-
-            // Use the proper default name for the type
-            if (useAesKeysTxt)
-                keyfile = Path.Combine(applicationDirectory, "aes_keys.txt");
-            else
-                keyfile = Path.Combine(applicationDirectory, "keys.bin");
-
-            // Only return the path if the file exists
-            return File.Exists(keyfile) ? keyfile : null;
+            // Derive the keyfile path, if possible
+            return GetFileLocation(useAesKeysTxt ? "aes_keys.txt" : "keys.bin");
         }
 
         /// <summary>
@@ -326,6 +307,49 @@ More than one path can be specified at a time.");
 
             Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds, *.cci");
             return FileType.NULL;
+        }
+
+        /// <summary>
+        /// Search for a file in local and config directories
+        /// </summary>
+        /// <param name="filename">Filename to check in local and config directories</param>
+        /// <returns>The full path to the file if found, null otherwise</returns>
+        /// <remarks>
+        /// This method looks in the following locations:
+        /// - %HOME%/.config/ndecrypt
+        /// - Assembly location directory
+        /// - Process runtime directory
+        /// </remarks>
+        private static string? GetFileLocation(string filename)
+        {
+            // User home directory
+#if NET20 || NET35
+            string homeDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+            homeDir = Path.Combine(Path.Combine(homeDir, ".config"), "ndecrypt");
+#else
+            string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            homeDir = Path.Combine(homeDir, ".config", "ndecrypt");
+#endif
+            if (File.Exists(Path.Combine(homeDir, filename)))
+                return Path.Combine(homeDir, filename);
+
+            // Local directory
+#if NET20 || NET35 || NET40 || NET452
+            string runtimeDir =  Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+#else
+            string runtimeDir = AppContext.BaseDirectory;
+#endif
+            if (File.Exists(Path.Combine(runtimeDir, filename)))
+                return Path.Combine(runtimeDir, filename);
+
+            // Process directory
+            using var processModule = System.Diagnostics.Process.GetCurrentProcess().MainModule;
+            string applicationDirectory = Path.GetDirectoryName(processModule?.FileName) ?? string.Empty;
+            if (File.Exists(Path.Combine(applicationDirectory, filename)))
+                return Path.Combine(applicationDirectory, filename);
+
+            // No file was found
+            return null;
         }
 
         /// <summary>
