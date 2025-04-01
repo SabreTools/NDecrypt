@@ -345,6 +345,21 @@ namespace NDecrypt.Core
         #region Internal Test Values
 
         /// <summary>
+        /// Expected hash for NitroEncryptionData
+        /// </summary>
+        private static readonly byte[] ExpectedNitroSha512Hash =
+        [
+            0x1A, 0xD6, 0x40, 0x21, 0xFC, 0x3D, 0x1A, 0x9A,
+            0x9B, 0xC0, 0x88, 0x8E, 0x2E, 0x68, 0xDE, 0x4E,
+            0x8A, 0x60, 0x6B, 0x86, 0x63, 0x22, 0xD2, 0xC7,
+            0xC6, 0xD7, 0xD6, 0xCE, 0x65, 0xF5, 0xBA, 0xA7,
+            0xEA, 0x69, 0x63, 0x7E, 0xC9, 0xE4, 0x57, 0x7B,
+            0x01, 0xFD, 0xCE, 0xC2, 0x26, 0x3B, 0xD9, 0x0D,
+            0x84, 0x57, 0xC2, 0x00, 0xB8, 0x56, 0x9F, 0xE5,
+            0x56, 0xDA, 0x8D, 0xDE, 0x84, 0xB8, 0x8E, 0xE4,
+        ];
+
+        /// <summary>
         /// Initial value for key validation tests
         /// </summary>
         private static readonly byte[] TestIV =
@@ -726,6 +741,15 @@ namespace NDecrypt.Core
         private void ValidateKeys()
         {
             Console.WriteLine("DEBUG: Validating provided keys");
+
+            // NitroEncryptionData
+            if (NitroEncryptionData.Length > 0)
+            {
+                using var hasher = System.Security.Cryptography.SHA512.Create();
+                byte[] actual = hasher.ComputeHash(NitroEncryptionData);
+                bool match = Extensions.EqualsExactly(ExpectedNitroSha512Hash, actual);
+                Console.WriteLine($"NitroEncryptionData match: {match}");
+            }
 
             // KeyX0x18
             if (KeyX0x18.Length > 0)
