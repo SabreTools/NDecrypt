@@ -494,7 +494,11 @@ namespace NDecrypt.Core
         /// Setup all of the necessary constants
         /// </summary>
         /// <param name="keyfile">Path to the keyfile</param>
-        public DecryptArgs(string? config) => InitConfigJson(config);
+        public DecryptArgs(string? config)
+        {
+            InitConfigJson(config);
+            ValidateKeys();
+        }
 
         /// <summary>
         /// Setup all of the necessary constants

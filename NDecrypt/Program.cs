@@ -106,6 +106,7 @@ namespace NDecrypt
 
             // Derive the config path based on the runtime folder if not already set
             config = DeriveConfigFile(config);
+            var configDecryptArgs = new DecryptArgs(config);
 
             // Derive the keyfile path based on the runtime folder if not already set
             keyfile = DeriveKeyFile(keyfile, useAesKeysTxt);
