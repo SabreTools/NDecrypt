@@ -14,7 +14,7 @@ This is a code port of 3 different programs:
 
 ## No really, what is this?
 
-This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle. The only caveat right now is that you need a `config.json`, `keys.bin`, or `aes_keys.txt` file for your personally obtained encryption keys.
+This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle. The only caveat is that you need a `config.json`, `keys.bin`, or `aes_keys.txt` file for your personally obtained encryption keys.
 
 ## Where do I find it?
 
