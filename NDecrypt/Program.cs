@@ -80,8 +80,6 @@ namespace NDecrypt
                     else
                         keyfile = tempPath;
                 }
-
-                // TODO: This is not hooked up nor documented. Fix that.
                 else if (args[start] == "-c" || args[start] == "--config")
                 {
                     if (start == args.Length - 1)
@@ -106,7 +104,6 @@ namespace NDecrypt
 
             // Derive the config path based on the runtime folder if not already set
             config = DeriveConfigFile(config);
-            var configDecryptArgs = new DecryptArgs(config);
 
             // Derive the keyfile path based on the runtime folder if not already set
             keyfile = DeriveKeyFile(keyfile, useAesKeysTxt);
@@ -119,7 +116,11 @@ namespace NDecrypt
             }
 
             // Initialize the decrypt args, if possible
-            var decryptArgs = new DecryptArgs(keyfile, useAesKeysTxt);
+            DecryptArgs decryptArgs;
+            if (config != null)
+                decryptArgs = new DecryptArgs(config);
+            else
+                decryptArgs = new DecryptArgs(keyfile, useAesKeysTxt);
 
             // Create reusable tools
             _tools[FileType.NDS] = new DSTool(decryptArgs);
