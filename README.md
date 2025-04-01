@@ -14,7 +14,7 @@ This is a code port of 3 different programs:
 
 ## No really, what is this?
 
-This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle. The only caveat right now is that you need a `keys.bin` or `aes_keys.txt` file for your personally obtained encryption keys.
+This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle. The only caveat right now is that you need a `config.json`, `keys.bin`, or `aes_keys.txt` file for your personally obtained encryption keys.
 
 ## Where do I find it?
 
@@ -63,6 +63,8 @@ You (possibly*) are! In fact, you may be asking, "Hey, what was that `keys.bin` 
 The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And yes, I'll fix this being required across the board at some point.
 
 *If you choose to use the `-a` option, you can instead provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome.
+
+*If you choose to use the `-c` option, you can instead provide your personally filled out `config.json` file in the same folder as NDecrypt and that can be used instead. This does not have the same limitations as the `-a` option, but is not used or created by any other program at the moment. See [the sample config](https://github.com/SabreTools/NDecrypt/blob/master/NDecrypt/config-default.json) that I've nicely generated for you. You're welcome. Again.
 
 ## But does it work?
 
