@@ -100,7 +100,7 @@ namespace NDecrypt
             var decryptArgs = new DecryptArgs(keyfile, useAesKeysTxt);
 
             // Create reusable tools
-            _tools[FileType.NDS] = new DSTool();
+            _tools[FileType.NDS] = new DSTool(decryptArgs);
             _tools[FileType.N3DS] = new ThreeDSTool(development, decryptArgs);
 
             for (int i = start; i < args.Length; i++)
