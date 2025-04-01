@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+#if NET20 || NET35 || NET40 || NET452
+using System.Reflection;
+#endif
 using NDecrypt.Core;
 
 namespace NDecrypt
