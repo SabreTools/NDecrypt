@@ -35,6 +35,7 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
     -f, --force           Force operation by avoiding sanity checks
     -h, --hash            Output size and hashes to a companion file
     -k, --keyfile <path>  Path to keys.bin or aes_keys.txt
+    -c, --config <path>   Path to config.json
 
     <path> can be any file or folder that contains uncompressed items.
     More than one path can be specified at a time.
