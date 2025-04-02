@@ -748,7 +748,7 @@ namespace NDecrypt.Core
                 using var hasher = System.Security.Cryptography.SHA512.Create();
                 byte[] actual = hasher.ComputeHash(NitroEncryptionData);
                 bool match = Extensions.EqualsExactly(ExpectedNitroSha512Hash, actual);
-                Console.WriteLine($"NitroEncryptionData match: {match}");
+                Console.WriteLine($"DEBUG: NitroEncryptionData match: {match}");
             }
 
             // KeyX0x18
@@ -757,7 +757,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedKeyX0x18, actual);
-                Console.WriteLine($"KeyX0x18 match: {match}");
+                Console.WriteLine($"DEBUG: KeyX0x18 match: {match}");
             }
 
             // DevKeyX0x18
@@ -766,7 +766,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x18, actual);
-                Console.WriteLine($"DevKeyX0x18 match: {match}");
+                Console.WriteLine($"DEBUG: DevKeyX0x18 match: {match}");
             }
 
             // KeyX0x1B
@@ -775,7 +775,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedKeyX0x1B, actual);
-                Console.WriteLine($"KeyX0x1B match: {match}");
+                Console.WriteLine($"DEBUG: KeyX0x1B match: {match}");
             }
 
             // DevKeyX0x1B
@@ -784,7 +784,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x1B, actual);
-                Console.WriteLine($"DevKeyX0x1B match: {match}");
+                Console.WriteLine($"DEBUG: DevKeyX0x1B match: {match}");
             }
 
             // KeyX0x25
@@ -793,7 +793,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedKeyX0x25, actual);
-                Console.WriteLine($"KeyX0x25 match: {match}");
+                Console.WriteLine($"DEBUG: KeyX0x25 match: {match}");
             }
 
             // DevKeyX0x25
@@ -802,7 +802,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x25, actual);
-                Console.WriteLine($"DevKeyX0x25 match: {match}");
+                Console.WriteLine($"DEBUG: DevKeyX0x25 match: {match}");
             }
 
             // KeyX0x2C
@@ -811,7 +811,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedKeyX0x2C, actual);
-                Console.WriteLine($"KeyX0x2C match: {match}");
+                Console.WriteLine($"DEBUG: KeyX0x2C match: {match}");
             }
 
             // DevKeyX0x2C
@@ -820,7 +820,7 @@ namespace NDecrypt.Core
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x2C, actual);
-                Console.WriteLine($"DevKeyX0x2C match: {match}");
+                Console.WriteLine($"DEBUG: DevKeyX0x2C match: {match}");
             }
         }
 
