@@ -420,6 +420,38 @@ namespace NDecrypt.Core
                 return true;
             }
 
+            // Strange, unlicenced values that can't determine decryption state
+            else if ((firstValue == 0xE1D830D8 && secondValue == 0xE3530000) // Aquela Ball (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xDC002A02 && secondValue == 0x2900E612)   // Bahlz (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE1A03BA3 && secondValue == 0xE2011CFF)   // Battle Ship (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE3A01001 && secondValue == 0xE1A02001)   // Breakout!! DS (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE793200C && secondValue == 0xE4812004)   // Bubble Fusion (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE583C0DC && secondValue == 0x0A00000B)   // Carre Rouge (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0x0202453C && secondValue == 0x02060164)   // ChainReaction (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xEBFFF218 && secondValue == 0xE31000FF)   // Collection (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0x4A6CD003 && secondValue == 0x425B2301)   // DiggerDS (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE3A00001 && secondValue == 0xEBFFFF8C)   // Double Skill (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0x21043701 && secondValue == 0x45BA448C)   // DSChess (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE59D0010 && secondValue == 0xE0833000)   // Hexa-Virus (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE5C3A006 && secondValue == 0xE5C39007)   // Invasion (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE1D920F4 && secondValue == 0xE06A3000)   // JoggleDS (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE59F32EC && secondValue == 0xE5DD7011)   // London Underground (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE08A3503 && secondValue == 0xE1D3C4B8)   // NumberMinds (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE1A0C001 && secondValue == 0xE0031001)   // Paddle Battle (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE1A03005 && secondValue == 0xE88D0180)   // Pop the Balls (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE8BD4030 && secondValue == 0xE12FFF1E)   // Solitaire DS (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE0A88006 && secondValue == 0xE1A00003)   // Squash DS (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE51F3478 && secondValue == 0xEB004A02)   // Super Snake DS (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0x1C200052 && secondValue == 0xFD12F013)   // Tales of Dagur (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0x601F491E && secondValue == 0x041B880B)   // Tetris & Touch (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE1A03843 && secondValue == 0xE0000293)   // Tic Tac Toe (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0xE3530000 && secondValue == 0x13A03003)   // Warrior Training (World) (Unl) (Datel Games n' Music)
+                || (firstValue == 0x02054A80 && secondValue == 0x02054B80))  // Zi (World) (Unl) (Datel Games n' Music)
+            {
+                Console.WriteLine("Unlicensed invalid value found. Unknown if encrypted or decrypted.");
+                return null;
+            }
+
             // Standard decryption values
             return firstValue == 0xE7FFDEFF && secondValue == 0xE7FFDEFF;
         }
