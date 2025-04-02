@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using SabreTools.IO.Extensions;
 using SabreTools.Models.Nitro;
-using SabreTools.Serialization.Wrappers;
+using SabreTools.Serialization.Deserializers;
 
 namespace NDecrypt.Core
 {
@@ -38,8 +38,8 @@ namespace NDecrypt.Core
                 using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                var cart = Nitro.Create(reader);
-                if (cart == null)
+                var commonHeader = Nitro.ParseCommonHeader(reader);
+                if (commonHeader == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
@@ -50,7 +50,7 @@ namespace NDecrypt.Core
                 _arg2 = new uint[3];
 
                 // Encrypt the secure area
-                EncryptSecureArea(cart, force, reader, writer);
+                EncryptSecureArea(commonHeader, force, reader, writer);
                 return true;
             }
             catch
@@ -64,11 +64,11 @@ namespace NDecrypt.Core
         /// <summary>
         /// Encrypt secure area in the DS/DSi file
         /// </summary>s
-        /// <param name="cart">Cart representing the DS file</param>
+        /// <param name="commonHeader">CommonHeader representing the DS file header</param>
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void EncryptSecureArea(Nitro cart, bool force, Stream reader, Stream writer)
+        private void EncryptSecureArea(CommonHeader commonHeader, bool force, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
             if (force)
@@ -91,7 +91,7 @@ namespace NDecrypt.Core
                 }
             }
 
-            EncryptARM9(cart.Model.CommonHeader!, reader, writer);
+            EncryptARM9(commonHeader, reader, writer);
             Console.WriteLine("File has been encrypted");
         }
 
@@ -192,8 +192,8 @@ namespace NDecrypt.Core
                 using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                var cart = Nitro.Create(reader);
-                if (cart == null)
+                var commonHeader = Nitro.ParseCommonHeader(reader);
+                if (commonHeader == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
@@ -204,7 +204,7 @@ namespace NDecrypt.Core
                 _arg2 = new uint[3];
 
                 // Decrypt the secure area
-                DecryptSecureArea(cart, force, reader, writer);
+                DecryptSecureArea(commonHeader, force, reader, writer);
 
                 return true;
             }
@@ -219,11 +219,11 @@ namespace NDecrypt.Core
         /// <summary>
         /// Decrypt secure area in the DS/DSi file
         /// </summary>s
-        /// <param name="cart">Cart representing the DS file</param>
+        /// <param name="commonHeader">CommonHeader representing the DS file header</param>
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="reader">Stream representing the input</param>
         /// <param name="writer">Stream representing the output</param>
-        private void DecryptSecureArea(Nitro cart, bool force, Stream reader, Stream writer)
+        private void DecryptSecureArea(CommonHeader commonHeader, bool force, Stream reader, Stream writer)
         {
             // If we're forcing the operation, tell the user
             if (force)
@@ -246,7 +246,7 @@ namespace NDecrypt.Core
                 }
             }
 
-            DecryptARM9(cart.Model.CommonHeader!, reader, writer);
+            DecryptARM9(commonHeader, reader, writer);
             Console.WriteLine("File has been decrypted");
         }
 
@@ -336,11 +336,6 @@ namespace NDecrypt.Core
             {
                 // Open the file for reading
                 using var input = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-
-                // Deserialize the cart information
-                var cart = Nitro.Create(input);
-                if (cart?.Model == null)
-                    return "Error: Not a DS or DSi Rom!";
 
                 // Get a string builder for the status
                 var sb = new StringBuilder();
