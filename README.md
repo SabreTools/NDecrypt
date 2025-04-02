@@ -66,9 +66,12 @@ You (possibly*) are! In fact, you may be asking, "Hey, what was that `keys.bin` 
 
 The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And no, this isn't related to whatever GodMode9 does; this is a custom format.
 
-*If you choose to use the `-a` option, you can instead provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome.
+### The notes nobody reads
 
-*If you choose to use the `-c` option, you can instead provide your personally filled out `config.json` file in the same folder as NDecrypt and that can be used instead. This does not have the same limitations as the `-a` option, but is not used or created by any other program at the moment. See [the sample config](https://github.com/SabreTools/NDecrypt/blob/master/config-default.json) that I've nicely generated for you. You're welcome. Again.
+- By default, you can provide your personally filled out `config.json` file in the same folder as NDecrypt and that can be used instead of `keys.bin`. This does not have the same limitations as the `-a` option, but is not used or created by any other program at the moment. See [the sample config](https://github.com/SabreTools/NDecrypt/blob/master/config-default.json) that I've nicely generated for you. You're welcome.
+  - When this becomes the only option, a blank config will be created on first-run. Don't be too hasty, it'll happen. Trust me. Until then, just create your own copy and try it out. You'll like it.
+- If you choose to use the `-a` option, you can provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead of `keys.bin`. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome. Again.
+- The `NitroEncryptionData` field is also known as the "Blowfish table" for Nintendo DS carts. It's stored in the same hex string format as the other keys. There's some complicated stuff about how it's used and where it's stored, but all you need to know is that it wasn't required for `keys.bin` and `aes_keys.txt` but will be for `config.json`.
 
 ## But does it work?
 
