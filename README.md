@@ -63,7 +63,7 @@ You (possibly*) are! In fact, you may be asking, "Hey, what was that `keys.bin` 
 | DevKeyX0x25 | **UNMAPPED** |
 | DevKeyX0x2C | **UNMAPPED** |
 
-The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And yes, I'll fix this being required across the board at some point.
+The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And no, this isn't related to whatever GodMode9 does; this is a custom format.
 
 *If you choose to use the `-a` option, you can instead provide your personally filled out `aes_keys.txt` file in the same folder as NDecrypt and that can be used instead. Please note that if you choose to use this file, you will not be able to use the `-dev` flag. If you forget and happen to use them together, NDecrypt will disable that flag for you. You're welcome.
 
