@@ -51,17 +51,18 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
 
 You (possibly*) are! In fact, you may be asking, "Hey, what was that `keys.bin` you mentioned??". I'm glad you asked. It's used only for Nintendo 3DS and New 3DS files. Since some people don't like reading code, you need the 9 16-bit keys in little endian format (most common extraction methods produce big endian, so keep that in mind). It's recommended that you fill with 0x00 if you don't have access to a particular value so it doesn't mess up the read. They need to be in the following order:
 
-| Name | `aes_keys.txt` Entry |
-| --- | --- |
-| Hardware constant | `generator` |
-| KeyX0x18 | `slot0x18KeyX` |
-| KeyX0x1B | `slot0x1BKeyX` |
-| KeyX0x25 | `slot0x25KeyX` |
-| KeyX0x2C | `slot0x2CKeyX` |
-| DevKeyX0x18 | **UNMAPPED** |
-| DevKeyX0x1B | **UNMAPPED** |
-| DevKeyX0x25 | **UNMAPPED** |
-| DevKeyX0x2C | **UNMAPPED** |
+| `config.json` | `aes_keys.txt` | rom-properties `keys.conf` |
+| --- | --- | --- |
+| `NitroEncryptionData` | **UNMAPPED** | **UNMAPPED** |
+| `AESHardwareConstant` | `generator` | `ctr-scrambler` |
+| `KeyX0x18` | `slot0x18KeyX` | `ctr-Slot0x18KeyX` |
+| `KeyX0x1B` | `slot0x1BKeyX` | `ctr-Slot0x1BKeyX` |
+| `KeyX0x25` | `slot0x25KeyX` | `ctr-Slot0x25KeyX` |
+| `KeyX0x2C` | `slot0x2CKeyX` | `ctr-Slot0x2CKeyX` |
+| `DevKeyX0x18` | **UNMAPPED** | `ctr-dev-Slot0x18KeyX` |
+| `DevKeyX0x1B` | **UNMAPPED** | `ctr-dev-Slot0x1BKeyX` |
+| `DevKeyX0x25` | **UNMAPPED** | `ctr-dev-Slot0x25KeyX` |
+| `DevKeyX0x2C` | **UNMAPPED** | `ctr-dev-Slot0x2CKeyX` |
 
 The last 4 are only required if you use the `-dev` flag. Once again, don't ask for these, please. If you're missing a required key, then things won't work. Don't blame me, blame society. Or something. And no, this isn't related to whatever GodMode9 does; this is a custom format.
 
