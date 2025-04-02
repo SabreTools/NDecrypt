@@ -14,7 +14,7 @@ This is a code port of 3 different programs:
 
 ## No really, what is this?
 
-This tool allows you to encrypt and decrypt your personally dumped NDS and N3DS roms with minimal hassle.
+This tool allows you to encrypt and decrypt your personally dumped Nintendo DS, 3DS, and New 3DS cart images with minimal hassle.
 
 ## Where do I find it?
 
