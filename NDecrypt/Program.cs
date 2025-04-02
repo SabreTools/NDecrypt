@@ -55,7 +55,7 @@ namespace NDecrypt
                 {
                     useAesKeysTxt = true;
                 }
-                else if (args[start] == "-dev" || args[start] == "--development")
+                else if (args[start] == "-d" || args[start] == "--development")
                 {
                     development = true;
                 }
@@ -206,12 +206,12 @@ d, decrypt - Decrypt the input files
 i, info    - Output file information
 
 Possible values for [flags] (one or more can be used):
+-c, --config <path>   Path to config.json
 -a, --aes-keys        Enable using aes_keys.txt instead of keys.bin
--dev, --development   Enable using development keys, if available
+-k, --keyfile <path>  Path to keys.bin or aes_keys.txt
+-d, --development     Enable using development keys, if available
 -f, --force           Force operation by avoiding sanity checks
 -h, --hash            Output size and hashes to a companion file
--k, --keyfile <path>  Path to keys.bin or aes_keys.txt
--c, --config <path>   Path to config.json
 
 <path> can be any file or folder that contains uncompressed items.
 More than one path can be specified at a time.");
