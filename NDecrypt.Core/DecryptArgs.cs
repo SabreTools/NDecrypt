@@ -737,18 +737,18 @@ namespace NDecrypt.Core
         /// Validate that all keys provided are going to be valid
         /// </summary>
         /// <remarks>Does not know what the keys are, just the result</remarks>
-        /// TODO: Do something with these results?
         private void ValidateKeys()
         {
-            Console.WriteLine("DEBUG: Validating provided keys");
-
             // NitroEncryptionData
             if (NitroEncryptionData.Length > 0)
             {
                 using var hasher = System.Security.Cryptography.SHA512.Create();
                 byte[] actual = hasher.ComputeHash(NitroEncryptionData);
-                bool match = Extensions.EqualsExactly(ExpectedNitroSha512Hash, actual);
-                Console.WriteLine($"DEBUG: NitroEncryptionData match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedNitroSha512Hash, actual))
+                {
+                    Console.WriteLine($"NitroEncryptionData invalid value, disabling...");
+                    NitroEncryptionData = [];
+                }
             }
 
             // KeyX0x18
@@ -756,8 +756,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedKeyX0x18, actual);
-                Console.WriteLine($"DEBUG: KeyX0x18 match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedKeyX0x18, actual))
+                {
+                    Console.WriteLine($"KeyX0x18 invalid value, disabling...");
+                    KeyX0x18 = [];
+                }
             }
 
             // DevKeyX0x18
@@ -765,8 +768,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x18, actual);
-                Console.WriteLine($"DEBUG: DevKeyX0x18 match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x18, actual))
+                {
+                    Console.WriteLine($"DevKeyX0x18 invalid value, disabling...");
+                    DevKeyX0x18 = [];
+                }
             }
 
             // KeyX0x1B
@@ -774,8 +780,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedKeyX0x1B, actual);
-                Console.WriteLine($"DEBUG: KeyX0x1B match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedKeyX0x1B, actual))
+                {
+                    Console.WriteLine($"KeyX0x1B invalid value, disabling...");
+                    KeyX0x1B = [];
+                }
             }
 
             // DevKeyX0x1B
@@ -783,8 +792,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x1B, actual);
-                Console.WriteLine($"DEBUG: DevKeyX0x1B match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x1B, actual))
+                {
+                    Console.WriteLine($"DevKeyX0x1B invalid value, disabling...");
+                    DevKeyX0x1B = [];
+                }
             }
 
             // KeyX0x25
@@ -792,8 +804,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedKeyX0x25, actual);
-                Console.WriteLine($"DEBUG: KeyX0x25 match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedKeyX0x25, actual))
+                {
+                    Console.WriteLine($"KeyX0x25 invalid value, disabling...");
+                    KeyX0x25 = [];
+                }
             }
 
             // DevKeyX0x25
@@ -801,8 +816,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x25, actual);
-                Console.WriteLine($"DEBUG: DevKeyX0x25 match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x25, actual))
+                {
+                    Console.WriteLine($"DevKeyX0x25 invalid value, disabling...");
+                    DevKeyX0x25 = [];
+                }
             }
 
             // KeyX0x2C
@@ -810,8 +828,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedKeyX0x2C, actual);
-                Console.WriteLine($"DEBUG: KeyX0x2C match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedKeyX0x2C, actual))
+                {
+                    Console.WriteLine($"KeyX0x2C invalid value, disabling...");
+                    KeyX0x2C = [];
+                }
             }
 
             // DevKeyX0x2C
@@ -819,8 +840,11 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                bool match = Extensions.EqualsExactly(ExpectedDevKeyX0x2C, actual);
-                Console.WriteLine($"DEBUG: DevKeyX0x2C match: {match}");
+                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x2C, actual))
+                {
+                    Console.WriteLine($"DevKeyX0x2C invalid value, disabling...");
+                    DevKeyX0x2C = [];
+                }
             }
         }
 
