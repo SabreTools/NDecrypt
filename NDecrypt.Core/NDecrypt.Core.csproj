@@ -11,7 +11,7 @@
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <VersionPrefix>0.3.1</VersionPrefix>
+        <VersionPrefix>0.3.2</VersionPrefix>
 
         <!-- Package Properties -->
         <Authors>Matt Nadareski</Authors>
