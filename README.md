@@ -55,18 +55,18 @@ There are 3 major files that you can use to give NDecrypt that extra _oomph_ of 
 
 This convenient table gives an overview of the 3 supported types, the keys that they provide, as well as an even more convenient map to a well-known external tool's configuration format.
 
-| `keys.bin` order | `config.json` | `aes_keys.txt` | rom-properties `keys.conf` |
+| `config.json` | `keys.bin` order | `aes_keys.txt` | rom-properties `keys.conf` |
 | --- | --- | --- | --- |
-| **N/A** | `NitroEncryptionData` | **UNMAPPED** | **UNMAPPED** |
-| 1 | `AESHardwareConstant` | `generator` | `ctr-scrambler` |
-| 2 | `KeyX0x18` | `slot0x18KeyX` | `ctr-Slot0x18KeyX` |
-| 3 | `KeyX0x1B` | `slot0x1BKeyX` | `ctr-Slot0x1BKeyX` |
-| 4 | `KeyX0x25` | `slot0x25KeyX` | `ctr-Slot0x25KeyX` |
-| 5 | `KeyX0x2C` | `slot0x2CKeyX` | `ctr-Slot0x2CKeyX` |
-| 6 | `DevKeyX0x18` | **UNMAPPED** | `ctr-dev-Slot0x18KeyX` |
-| 7 | `DevKeyX0x1B` | **UNMAPPED** | `ctr-dev-Slot0x1BKeyX` |
-| 8 | `DevKeyX0x25` | **UNMAPPED** | `ctr-dev-Slot0x25KeyX` |
-| 9 | `DevKeyX0x2C` | **UNMAPPED** | `ctr-dev-Slot0x2CKeyX` |
+| `NitroEncryptionData` | **N/A** | **UNMAPPED** | **UNMAPPED** |
+| `AESHardwareConstant` | 1 | `generator` | `ctr-scrambler` |
+| `KeyX0x18` | 2 | `slot0x18KeyX` | `ctr-Slot0x18KeyX` |
+| `KeyX0x1B` | 3 | `slot0x1BKeyX` | `ctr-Slot0x1BKeyX` |
+| `KeyX0x25` | 4 | `slot0x25KeyX` | `ctr-Slot0x25KeyX` |
+| `KeyX0x2C` | 5 | `slot0x2CKeyX` | `ctr-Slot0x2CKeyX` |
+| `DevKeyX0x18` | 6 | **UNMAPPED** | `ctr-dev-Slot0x18KeyX` |
+| `DevKeyX0x1B` | 7 | **UNMAPPED** | `ctr-dev-Slot0x1BKeyX` |
+| `DevKeyX0x25` | 8 | **UNMAPPED** | `ctr-dev-Slot0x25KeyX` |
+| `DevKeyX0x2C` | 9 | **UNMAPPED** | `ctr-dev-Slot0x2CKeyX` |
 
 **Note:** `Dev*` keys are not required for the vast majority of normal operations. They're only used if the `-d` option is included. Working with your own retail carts will pretty much never require these, so don't drive yourself silly dealing with them.
 
