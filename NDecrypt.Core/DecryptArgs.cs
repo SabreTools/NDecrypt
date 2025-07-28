@@ -559,7 +559,7 @@ namespace NDecrypt.Core
                         break;
 
                     var kvp = reader.KeyValuePair!.Value;
-                    byte[] value = StringToByteArray(kvp.Value);
+                    byte[] value = kvp.Value.FromHexString() ?? [];
                     switch (kvp.Key)
                     {
                         // Hardware constant
@@ -669,16 +669,16 @@ namespace NDecrypt.Core
             }
 
             // Set the fields from the configuration
-            NitroEncryptionData = StringToByteArray(configObj.NitroEncryptionData);
-            AESHardwareConstant = StringToByteArray(configObj.AESHardwareConstant);
-            KeyX0x18 = StringToByteArray(configObj.KeyX0x18);
-            KeyX0x1B = StringToByteArray(configObj.KeyX0x1B);
-            KeyX0x25 = StringToByteArray(configObj.KeyX0x25);
-            KeyX0x2C = StringToByteArray(configObj.KeyX0x2C);
-            DevKeyX0x18 = StringToByteArray(configObj.DevKeyX0x18);
-            DevKeyX0x1B = StringToByteArray(configObj.DevKeyX0x1B);
-            DevKeyX0x25 = StringToByteArray(configObj.DevKeyX0x25);
-            DevKeyX0x2C = StringToByteArray(configObj.DevKeyX0x2C);
+            NitroEncryptionData = configObj.NitroEncryptionData.FromHexString() ?? [];
+            AESHardwareConstant = configObj.AESHardwareConstant.FromHexString() ?? [];
+            KeyX0x18 = configObj.KeyX0x18.FromHexString() ?? [];
+            KeyX0x1B = configObj.KeyX0x1B.FromHexString() ?? [];
+            KeyX0x25 = configObj.KeyX0x25.FromHexString() ?? [];
+            KeyX0x2C = configObj.KeyX0x2C.FromHexString() ?? [];
+            DevKeyX0x18 = configObj.DevKeyX0x18.FromHexString() ?? [];
+            DevKeyX0x1B = configObj.DevKeyX0x1B.FromHexString() ?? [];
+            DevKeyX0x25 = configObj.DevKeyX0x25.FromHexString() ?? [];
+            DevKeyX0x2C = configObj.DevKeyX0x2C.FromHexString() ?? [];
 
             IsReady = true;
         }
@@ -846,23 +846,6 @@ namespace NDecrypt.Core
                     DevKeyX0x2C = [];
                 }
             }
-        }
-
-        // https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa
-        private static byte[] StringToByteArray(string? hex)
-        {
-            // Handle null values
-            if (hex == null)
-                return [];
-
-            int NumberChars = hex.Length;
-            byte[] bytes = new byte[NumberChars / 2];
-            for (int i = 0; i < NumberChars; i += 2)
-            {
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            }
-
-            return bytes;
         }
     }
 }
