@@ -27,12 +27,12 @@ namespace NDecrypt
         /// <summary>
         /// Enable using development keys, if available
         /// </summary>
-        public bool Development { get; private set; }
+        public bool Development { get; private set; } = false;
 
         /// <summary>
         /// Force operation by avoiding sanity checks
         /// </summary>
-        public bool Force { get; private set; }
+        public bool Force { get; private set; } = false;
 
         /// <summary>
         /// Set of input paths to use for operations
@@ -42,7 +42,13 @@ namespace NDecrypt
         /// <summary>
         /// Output size and hashes to a companion file
         /// </summary>
-        public bool OutputHashes { get; private set; }
+        public bool OutputHashes { get; private set; } = false;
+
+        /// <summary>
+        /// Enable overwriting of the original file
+        /// </summary>
+        /// TODO: Change this to default false when hooked up
+        public bool Overwrite { get; private set; } = true;
 
         #endregion
 
@@ -136,6 +142,11 @@ namespace NDecrypt
                         options.Force = true;
                         break;
 
+                    case "-o":
+                    case "--overwrite":
+                        options.Overwrite = true;
+                        break;
+
                     default:
                         options.InputPaths.Add(arg);
                         break;
@@ -179,6 +190,7 @@ namespace NDecrypt
             Console.WriteLine("-d, --development        Enable using development keys, if available");
             Console.WriteLine("-f, --force              Force operation by avoiding sanity checks");
             Console.WriteLine("--hash                   Output size and hashes to a companion file");
+            // Console.WriteLine("-o, --overwrite          Overwrite input files instead of creating new ones"); // TODO: Print this when enabled
             Console.WriteLine();
             Console.WriteLine("<path> can be any file or folder that contains uncompressed items.");
             Console.WriteLine("More than one path can be specified at a time.");
