@@ -46,9 +46,15 @@ namespace NDecrypt.Core
 
             try
             {
-                // Open the read and write on the same file for inplace processing
-                using var reader = File.Open(input, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var writer = File.Open(input, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                // If the output is provided, copy the input file
+                if (output != null)
+                    File.Copy(input, output);
+                else
+                    output = input;
+
+                // Open the output file for processing
+                using var reader = File.Open(output, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var writer = File.Open(output, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
                 var cart = N3DS.Create(reader);
@@ -64,7 +70,7 @@ namespace NDecrypt.Core
             }
             catch
             {
-                Console.WriteLine($"An error has occurred. {input} may be corrupted if it was partially processed.");
+                Console.WriteLine($"An error has occurred. {output} may be corrupted if it was partially processed.");
                 Console.WriteLine("Please check that the file was a valid 3DS or New 3DS cart image and try again.");
                 return false;
             }
@@ -459,9 +465,15 @@ namespace NDecrypt.Core
 
             try
             {
-                // Open the read and write on the same file for inplace processing
-                using var reader = File.Open(input, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var writer = File.Open(input, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                // If the output is provided, copy the input file
+                if (output != null)
+                    File.Copy(input, output);
+                else
+                    output = input;
+
+                // Open the output file for processing
+                using var reader = File.Open(output, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var writer = File.Open(output, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
                 var cart = N3DS.Create(reader);
@@ -477,7 +489,7 @@ namespace NDecrypt.Core
             }
             catch
             {
-                Console.WriteLine($"An error has occurred. {input} may be corrupted if it was partially processed.");
+                Console.WriteLine($"An error has occurred. {output} may be corrupted if it was partially processed.");
                 Console.WriteLine("Please check that the file was a valid 3DS or New 3DS cart image and try again.");
                 return false;
             }
