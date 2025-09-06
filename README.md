@@ -49,9 +49,9 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
 
 ## I feel like something is missing
 
-There is 1 major file that you can use to give NDecrypt that extra _oomph_ of functionality that it really needs. That is, you can't do any encryption or decryption without it present. I can't give you the files and I can't generate them for you on the fly with the correct values. Keys are a thorny thing and I just do not want to deal with them. Values are validated, at least, but you'll only get yelled at on run if one of them is wrong. Don't worry, they're just disabled, not removed.
+There is a major file that you can use to give NDecrypt that extra _oomph_ of functionality that it really needs. That is, you can't do any encryption or decryption without it present. I can't give you the files and I can't generate them for you on the fly with the correct values. Keys are a thorny thing and I just do not want to deal with them. Values are validated, at least, but you'll only get yelled at on run if one of them is wrong. Don't worry, they're just disabled, not removed.
 
-This convenient table gives an overview of mappings between the current `config.json` type along with the 2 formerly-supported types, a completely unsupported but common type.
+This convenient table gives an overview of mappings between the current `config.json` type along with the 2 formerly-supported types and a completely unsupported but common type.
 
 | `config.json` | `keys.bin` order | `aes_keys.txt` | rom-properties `keys.conf` |
 | --- | --- | --- | --- |
