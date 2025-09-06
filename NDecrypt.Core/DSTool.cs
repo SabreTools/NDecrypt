@@ -2,20 +2,12 @@
 using System.IO;
 using System.Text;
 using SabreTools.IO.Extensions;
-using SabreTools.Models.Nitro;
-using SabreTools.Serialization.Deserializers;
+using SabreTools.Serialization.Wrappers;
 
 namespace NDecrypt.Core
 {
     public class DSTool : ITool
     {
-        #region Encryption process variables
-
-        private uint[] _cardHash = new uint[0x412];
-        private uint[] _arg2 = new uint[3];
-
-        #endregion
-
         /// <summary>
         /// Decryption args to use while processing
         /// </summary>
@@ -35,22 +27,31 @@ namespace NDecrypt.Core
             {
                 // Open the read and write on the same file for inplace processing
                 using var reader = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                var commonHeader = Nitro.ParseCommonHeader(reader);
-                if (commonHeader == null)
+                var nitro = Nitro.Create(reader);
+                if (nitro == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
                 }
 
-                // Reset state variables
-                _cardHash = new uint[0x412];
-                _arg2 = new uint[3];
+                // Ensure the secure area was read
+                if (nitro.SecureArea == null)
+                {
+                    Console.WriteLine("Error: Invalid secure area!");
+                    return false;
+                }
 
                 // Encrypt the secure area
-                EncryptSecureArea(commonHeader, force, reader, writer);
+                nitro.EncryptSecureArea(_decryptArgs.NitroEncryptionData, force);
+
+                // Write the encrypted secure area
+                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                writer.Seek(0x4000, SeekOrigin.Begin);
+                writer.Write(nitro.SecureArea);
+                writer.Flush();
+
                 return true;
             }
             catch
@@ -59,123 +60,6 @@ namespace NDecrypt.Core
                 Console.WriteLine("Please check that the file was a valid DS or DSi file and try again.");
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Encrypt secure area in the DS/DSi file
-        /// </summary>s
-        /// <param name="commonHeader">CommonHeader representing the DS file header</param>
-        /// <param name="force">Indicates if the operation should be forced</param>
-        /// <param name="reader">Stream representing the input</param>
-        /// <param name="writer">Stream representing the output</param>
-        private void EncryptSecureArea(CommonHeader commonHeader, bool force, Stream reader, Stream writer)
-        {
-            // If we're forcing the operation, tell the user
-            if (force)
-            {
-                Console.WriteLine("File is not verified due to force flag being set.");
-            }
-            // If we're not forcing the operation, check to see if we should be proceeding
-            else
-            {
-                bool? isDecrypted = CheckIfDecrypted(reader);
-                if (isDecrypted == null)
-                {
-                    Console.WriteLine("File has an empty secure area, cannot proceed");
-                    return;
-                }
-                else if (!isDecrypted.Value)
-                {
-                    Console.WriteLine("File is already encrypted");
-                    return;
-                }
-            }
-
-            EncryptARM9(commonHeader, reader, writer);
-            Console.WriteLine("File has been encrypted");
-        }
-
-        /// <summary>
-        /// Encrypt the secure ARM9 region of the file, if possible
-        /// </summary>
-        /// <param name="commonHeader">CommonHeader representing the DS header</param>
-        /// <param name="encrypt">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="reader">Stream representing the input</param>
-        /// <param name="writer">Stream representing the output</param>
-        private void EncryptARM9(CommonHeader commonHeader, Stream reader, Stream writer)
-        {
-            // Seek to the beginning of the secure area
-            reader.Seek(0x4000, SeekOrigin.Begin);
-            writer.Seek(0x4000, SeekOrigin.Begin);
-
-            // Grab the first two blocks
-            uint p0 = reader.ReadUInt32();
-            uint p1 = reader.ReadUInt32();
-
-            // Perform the initialization steps
-            Init1(commonHeader);
-            _arg2[1] <<= 1;
-            _arg2[2] >>= 1;
-            Init2();
-
-            // Ensure alignment
-            reader.Seek(0x4008, SeekOrigin.Begin);
-            writer.Seek(0x4008, SeekOrigin.Begin);
-
-            // Loop throgh the main encryption step
-            uint size = 0x800 - 8;
-            while (size > 0)
-            {
-                p0 = reader.ReadUInt32();
-                p1 = reader.ReadUInt32();
-
-                Encrypt(ref p1, ref p0);
-
-                writer.Write(p0);
-                writer.Write(p1);
-
-                size -= 8;
-            }
-
-            // Replace the header explicitly
-            reader.Seek(0x4000, SeekOrigin.Begin);
-            writer.Seek(0x4000, SeekOrigin.Begin);
-
-            p0 = reader.ReadUInt32();
-            p1 = reader.ReadUInt32();
-
-            if (p0 == 0xE7FFDEFF && p1 == 0xE7FFDEFF)
-            {
-                p0 = Constants.MAGIC30;
-                p1 = Constants.MAGIC34;
-            }
-
-            Encrypt(ref p1, ref p0);
-            Init1(commonHeader);
-            Encrypt(ref p1, ref p0);
-
-            writer.Write(p0);
-            writer.Write(p1);
-        }
-
-        /// <summary>
-        /// Perform an encryption step
-        /// </summary>
-        /// <param name="arg1">First unsigned value to use in encryption</param>
-        /// <param name="arg2">Second unsigned value to use in encryption</param>
-        private void Encrypt(ref uint arg1, ref uint arg2)
-        {
-            uint a = arg1;
-            uint b = arg2;
-            for (int i = 0; i < 16; i++)
-            {
-                uint c = _cardHash[i] ^ a;
-                a = b ^ Lookup(c);
-                b = c;
-            }
-
-            arg2 = a ^ _cardHash[16];
-            arg1 = b ^ _cardHash[17];
         }
 
         #endregion
@@ -189,22 +73,30 @@ namespace NDecrypt.Core
             {
                 // Open the read and write on the same file for inplace processing
                 using var reader = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
 
                 // Deserialize the cart information
-                var commonHeader = Nitro.ParseCommonHeader(reader);
-                if (commonHeader == null)
+                var nitro = Nitro.Create(reader);
+                if (nitro == null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
                 }
 
-                // Reset state variables
-                _cardHash = new uint[0x412];
-                _arg2 = new uint[3];
+                // Ensure the secure area was read
+                if (nitro.SecureArea == null)
+                {
+                    Console.WriteLine("Error: Invalid secure area!");
+                    return false;
+                }
 
                 // Decrypt the secure area
-                DecryptSecureArea(commonHeader, force, reader, writer);
+                nitro.DecryptSecureArea(_decryptArgs.NitroEncryptionData, force);
+
+                // Write the decrypted secure area
+                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                writer.Seek(0x4000, SeekOrigin.Begin);
+                writer.Write(nitro.SecureArea);
+                writer.Flush();
 
                 return true;
             }
@@ -214,115 +106,6 @@ namespace NDecrypt.Core
                 Console.WriteLine("Please check that the file was a valid DS or DSi file and try again.");
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Decrypt secure area in the DS/DSi file
-        /// </summary>s
-        /// <param name="commonHeader">CommonHeader representing the DS file header</param>
-        /// <param name="force">Indicates if the operation should be forced</param>
-        /// <param name="reader">Stream representing the input</param>
-        /// <param name="writer">Stream representing the output</param>
-        private void DecryptSecureArea(CommonHeader commonHeader, bool force, Stream reader, Stream writer)
-        {
-            // If we're forcing the operation, tell the user
-            if (force)
-            {
-                Console.WriteLine("File is not verified due to force flag being set.");
-            }
-            // If we're not forcing the operation, check to see if we should be proceeding
-            else
-            {
-                bool? isDecrypted = CheckIfDecrypted(reader);
-                if (isDecrypted == null)
-                {
-                    Console.WriteLine("File has an empty secure area, cannot proceed");
-                    return;
-                }
-                else if (isDecrypted.Value)
-                {
-                    Console.WriteLine("File is already decrypted");
-                    return;
-                }
-            }
-
-            DecryptARM9(commonHeader, reader, writer);
-            Console.WriteLine("File has been decrypted");
-        }
-
-        /// <summary>
-        /// Decrypt the secure ARM9 region of the file, if possible
-        /// </summary>
-        /// <param name="commonHeader">CommonHeader representing the DS header</param>
-        /// <param name="">Indicates if the file should be encrypted or decrypted</param>
-        /// <param name="reader">Stream representing the input</param>
-        /// <param name="writer">Stream representing the output</param>
-        private void DecryptARM9(CommonHeader commonHeader, Stream reader, Stream writer)
-        {
-            // Seek to the beginning of the secure area
-            reader.Seek(0x4000, SeekOrigin.Begin);
-            writer.Seek(0x4000, SeekOrigin.Begin);
-
-            // Grab the first two blocks
-            uint p0 = reader.ReadUInt32();
-            uint p1 = reader.ReadUInt32();
-
-            // Perform the initialization steps
-            Init1(commonHeader);
-            Decrypt(ref p1, ref p0);
-            _arg2[1] <<= 1;
-            _arg2[2] >>= 1;
-            Init2();
-
-            // Set the proper flags
-            Decrypt(ref p1, ref p0);
-            if (p0 == Constants.MAGIC30 && p1 == Constants.MAGIC34)
-            {
-                p0 = 0xE7FFDEFF;
-                p1 = 0xE7FFDEFF;
-            }
-
-            writer.Write(p0);
-            writer.Write(p1);
-
-            // Ensure alignment
-            reader.Seek(0x4008, SeekOrigin.Begin);
-            writer.Seek(0x4008, SeekOrigin.Begin);
-
-            // Loop throgh the main encryption step
-            uint size = 0x800 - 8;
-            while (size > 0)
-            {
-                p0 = reader.ReadUInt32();
-                p1 = reader.ReadUInt32();
-
-                Decrypt(ref p1, ref p0);
-
-                writer.Write(p0);
-                writer.Write(p1);
-
-                size -= 8;
-            }
-        }
-
-        /// <summary>
-        /// Perform a decryption step
-        /// </summary>
-        /// <param name="arg1">First unsigned value to use in decryption</param>
-        /// <param name="arg2">Second unsigned value to use in decryption</param>
-        private void Decrypt(ref uint arg1, ref uint arg2)
-        {
-            uint a = arg1;
-            uint b = arg2;
-            for (int i = 17; i > 1; i--)
-            {
-                uint c = _cardHash[i] ^ a;
-                a = b ^ Lookup(c);
-                b = c;
-            }
-
-            arg1 = b ^ _cardHash[0];
-            arg2 = a ^ _cardHash[1];
         }
 
         #endregion
@@ -360,10 +143,6 @@ namespace NDecrypt.Core
                 return null;
             }
         }
-
-        #endregion
-
-        #region Common
 
         /// <summary>
         /// Determine if the current file is already decrypted or not (or has an empty secure area)
@@ -454,87 +233,6 @@ namespace NDecrypt.Core
 
             // Standard decryption values
             return firstValue == 0xE7FFDEFF && secondValue == 0xE7FFDEFF;
-        }
-
-        /// <summary>
-        /// First common initialization step
-        /// </summary>
-        /// <param name="commonHeader">CommonHeader representing the DS file</param>
-        private void Init1(CommonHeader commonHeader)
-        {
-            Buffer.BlockCopy(_decryptArgs.NitroEncryptionData, 0, _cardHash, 0, 4 * (1024 + 18));
-            _arg2 = [commonHeader.GameCode, commonHeader.GameCode >> 1, commonHeader.GameCode << 1];
-            Init2();
-            Init2();
-        }
-
-        /// <summary>
-        /// Second common initialization step
-        /// </summary>
-        private void Init2()
-        {
-            Encrypt(ref _arg2[2], ref _arg2[1]);
-            Encrypt(ref _arg2[1], ref _arg2[0]);
-
-            byte[] allBytes =[.. BitConverter.GetBytes(_arg2[0]),
-                .. BitConverter.GetBytes(_arg2[1]),
-                .. BitConverter.GetBytes(_arg2[2])];
-
-            UpdateHashtable(allBytes);
-        }
-
-        /// <summary>
-        /// Lookup the value from the hashtable
-        /// </summary>
-        /// <param name="v">Value to lookup in the hashtable</param>
-        /// <returns>Processed value through the hashtable</returns>
-        private uint Lookup(uint v)
-        {
-            uint a = (v >> 24) & 0xFF;
-            uint b = (v >> 16) & 0xFF;
-            uint c = (v >> 8) & 0xFF;
-            uint d = (v >> 0) & 0xFF;
-
-            a = _cardHash[a + 18 + 0];
-            b = _cardHash[b + 18 + 256];
-            c = _cardHash[c + 18 + 512];
-            d = _cardHash[d + 18 + 768];
-
-            return d + (c ^ (b + a));
-        }
-
-        /// <summary>
-        /// Update the hashtable
-        /// </summary>
-        /// <param name="arg1">Value to update the hashtable with</param>
-        private void UpdateHashtable(byte[] arg1)
-        {
-            for (int j = 0; j < 18; j++)
-            {
-                uint r3 = 0;
-                for (int i = 0; i < 4; i++)
-                {
-                    r3 <<= 8;
-                    r3 |= arg1[(j * 4 + i) & 7];
-                }
-
-                _cardHash[j] ^= r3;
-            }
-
-            uint tmp1 = 0;
-            uint tmp2 = 0;
-            for (int i = 0; i < 18; i += 2)
-            {
-                Encrypt(ref tmp1, ref tmp2);
-                _cardHash[i + 0] = tmp1;
-                _cardHash[i + 1] = tmp2;
-            }
-            for (int i = 0; i < 0x400; i += 2)
-            {
-                Encrypt(ref tmp1, ref tmp2);
-                _cardHash[i + 18 + 0] = tmp1;
-                _cardHash[i + 18 + 1] = tmp2;
-            }
         }
 
         #endregion
