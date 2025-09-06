@@ -35,13 +35,13 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
-                    ProcessFile(args[i], options.Feature, options.Force, options.OutputHashes);
+                    ProcessFile(args[i], options);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.GetFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ProcessFile(file, options.Feature, options.Force, options.OutputHashes);
+                        ProcessFile(file, options);
                     }
                 }
                 else
@@ -55,10 +55,8 @@ namespace NDecrypt
         /// Process a single file path
         /// </summary>
         /// <param name="file">File path to process</param>
-        /// <param name="feature">Indicates what should be done to the file</param>
-        /// <param name="force">Indicates if the operation should be forced</param>
-        /// <param name="outputHashes">Indicates if hashes should be output after a successful operation</param>
-        private static void ProcessFile(string file, Feature feature, bool force, bool outputHashes)
+        /// <param name="options">Options indicating how to process the file</param>
+        private static void ProcessFile(string file, Options options)
         {
             // Attempt to derive the tool for the path
             var tool = DeriveTool(file);
@@ -73,17 +71,17 @@ namespace NDecrypt
             // - Maybe make overwriting an option and new file be default?
 
             // Encrypt or decrypt the file as requested
-            if (feature == Feature.Encrypt && !tool.EncryptFile(file, null, force))
+            if (options.Feature == Feature.Encrypt && !tool.EncryptFile(file, null, options.Force))
             {
                 Console.WriteLine("Encryption failed!");
                 return;
             }
-            else if (feature == Feature.Decrypt && !tool.DecryptFile(file, null, force))
+            else if (options.Feature == Feature.Decrypt && !tool.DecryptFile(file, null, options.Force))
             {
                 Console.WriteLine("Decryption failed!");
                 return;
             }
-            else if (feature == Feature.Info)
+            else if (options.Feature == Feature.Info)
             {
                 string? infoString = tool.GetInformation(file);
                 infoString ??= "There was a problem getting file information!";
@@ -92,7 +90,7 @@ namespace NDecrypt
             }
 
             // Output the file hashes, if expected
-            if (outputHashes)
+            if (options.OutputHashes)
                 WriteHashes(file);
         }
 
