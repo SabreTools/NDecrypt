@@ -35,13 +35,13 @@ namespace NDecrypt
             {
                 if (File.Exists(args[i]))
                 {
-                    ProcessPath(args[i], options.Feature, options.Force, options.OutputHashes);
+                    ProcessFile(args[i], options.Feature, options.Force, options.OutputHashes);
                 }
                 else if (Directory.Exists(args[i]))
                 {
                     foreach (string file in Directory.GetFiles(args[i], "*", SearchOption.AllDirectories))
                     {
-                        ProcessPath(file, options.Feature, options.Force, options.OutputHashes);
+                        ProcessFile(file, options.Feature, options.Force, options.OutputHashes);
                     }
                 }
                 else
@@ -54,18 +54,18 @@ namespace NDecrypt
         /// <summary>
         /// Process a single file path
         /// </summary>
-        /// <param name="path">File path to process</param>
+        /// <param name="file">File path to process</param>
         /// <param name="feature">Indicates what should be done to the file</param>
         /// <param name="force">Indicates if the operation should be forced</param>
         /// <param name="outputHashes">Indicates if hashes should be output after a successful operation</param>
-        private static void ProcessPath(string path, Feature feature, bool force, bool outputHashes)
+        private static void ProcessFile(string file, Feature feature, bool force, bool outputHashes)
         {
             // Attempt to derive the tool for the path
-            var tool = DeriveTool(path);
+            var tool = DeriveTool(file);
             if (tool == null)
                 return;
 
-            Console.WriteLine($"Processing {path}");
+            Console.WriteLine($"Processing {file}");
 
             // TODO: Determine how separate output files should be named
             // - Consider using something like `.enc` and `.dec` appended/replaced
@@ -73,19 +73,19 @@ namespace NDecrypt
             // - Maybe make overwriting an option and new file be default?
 
             // Encrypt or decrypt the file as requested
-            if (feature == Feature.Encrypt && !tool.EncryptFile(path, null, force))
+            if (feature == Feature.Encrypt && !tool.EncryptFile(file, null, force))
             {
                 Console.WriteLine("Encryption failed!");
                 return;
             }
-            else if (feature == Feature.Decrypt && !tool.DecryptFile(path, null, force))
+            else if (feature == Feature.Decrypt && !tool.DecryptFile(file, null, force))
             {
                 Console.WriteLine("Decryption failed!");
                 return;
             }
             else if (feature == Feature.Info)
             {
-                string? infoString = tool.GetInformation(path);
+                string? infoString = tool.GetInformation(file);
                 infoString ??= "There was a problem getting file information!";
 
                 Console.WriteLine(infoString);
@@ -93,7 +93,7 @@ namespace NDecrypt
 
             // Output the file hashes, if expected
             if (outputHashes)
-                WriteHashes(path);
+                WriteHashes(file);
         }
 
         /// <summary>
