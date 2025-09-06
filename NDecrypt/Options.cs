@@ -204,23 +204,6 @@ namespace NDecrypt
         }
 
         /// <summary>
-        /// Derive the full path to the keyfile, if possible
-        /// </summary>
-        private static string? DeriveKeyFile(string? keyfile, bool useAesKeysTxt)
-        {
-            // If a path is passed in
-            if (!string.IsNullOrEmpty(keyfile))
-            {
-                keyfile = Path.GetFullPath(keyfile);
-                if (File.Exists(keyfile))
-                    return keyfile;
-            }
-
-            // Derive the keyfile path, if possible
-            return GetFileLocation(useAesKeysTxt ? "aes_keys.txt" : "keys.bin");
-        }
-
-        /// <summary>
         /// Search for a file in local and config directories
         /// </summary>
         /// <param name="filename">Filename to check in local and config directories</param>
