@@ -32,12 +32,11 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
     i, info    - Output file information
 
     Possible values for [flags] (one or more can be used):
-    -c, --config <path>   Path to config.json
-    -a, --aes-keys        Enable using aes_keys.txt instead of keys.bin
-    -k, --keyfile <path>  Path to keys.bin or aes_keys.txt
-    -d, --development     Enable using development keys, if available
-    -f, --force           Force operation by avoiding sanity checks
-    -h, --hash            Output size and hashes to a companion file
+    -?, -h, --help           Display this help text and quit
+    -c, --config <path>      Path to config.json
+    -d, --development        Enable using development keys, if available
+    -f, --force              Force operation by avoiding sanity checks
+    --hash                   Output size and hashes to a companion file
 
     <path> can be any file or folder that contains uncompressed items.
     More than one path can be specified at a time.
@@ -47,13 +46,12 @@ For the latest WIP build here: [Rolling Release](https://github.com/SabreTools/N
 - Input files are overwritten, even if they are only partially processed. You should make backups of the files you're working on if you're worried about this.
 - Mixed folders or inputs are also accepted, you can decrypt or encrypt multiple files, regardless of their type. This being said, you can only do encrypt _OR_ decrypt at one time.
 - Required files will automatically be searched for in the application runtime directory as well as `%HOME%/.config/ndecrypt`, also known as `%USERPROFILE%\.config\ndecrypt` on Windows.
-- If found, `config.json` will take priority over both `keys.bin` and `aes_keys.txt`, even if `-a` and/or `-k` are defined. You've been warned.
 
 ## I feel like something is missing
 
-There are 3 major files that you can use to give NDecrypt that extra _oomph_ of functionality that it really needs. That is, you can't do any encryption or decryption without at least one of these present. I can't give you the files and I can't generate them for you on the fly with the correct values. Keys are a thorny thing and I just do not want to deal with them. Values are validated, at least, but you'll only get yelled at on run if one of them is wrong. Don't worry, they're just disabled, not removed.
+There is 1 major file that you can use to give NDecrypt that extra _oomph_ of functionality that it really needs. That is, you can't do any encryption or decryption without it present. I can't give you the files and I can't generate them for you on the fly with the correct values. Keys are a thorny thing and I just do not want to deal with them. Values are validated, at least, but you'll only get yelled at on run if one of them is wrong. Don't worry, they're just disabled, not removed.
 
-This convenient table gives an overview of the 3 supported types, the keys that they provide, as well as an even more convenient map to a well-known external tool's configuration format.
+This convenient table gives an overview of mappings between the current `config.json` type along with the 2 formerly-supported types, a completely unsupported but common type.
 
 | `config.json` | `keys.bin` order | `aes_keys.txt` | rom-properties `keys.conf` |
 | --- | --- | --- | --- |
@@ -70,27 +68,25 @@ This convenient table gives an overview of the 3 supported types, the keys that 
 
 **Note:** `Dev*` keys are not required for the vast majority of normal operations. They're only used if the `-d` option is included. Working with your own retail carts will pretty much never require these, so don't drive yourself silly dealing with them.
 
-**Note:** The `NitroEncryptionData` field is also known as the "Blowfish table" for Nintendo DS carts. It's stored in the same hex string format as the other keys. There's some complicated stuff about how it's used and where it's stored, but all you need to know is that it wasn't required for `keys.bin` and `aes_keys.txt` but will be for `config.json`.
+**Note:** The `NitroEncryptionData` field is also known as the "Blowfish table" for Nintendo DS carts. It's stored in the same hex string format as the other keys. There's some complicated stuff about how it's used and where it's stored, but all you need to know is that it is required.
 
-**Community Note:** If you would like to try out the new `config.json` format below and already have either `keys.bin` or `aes_keys.txt`, consider using [this helpful community-made script](https://gist.github.com/Dimensional/82f212a0b35bcf9caaa2bc9a70b3a92a) to make your life a bit easier.
+**Community Note:** If you have used previous versions of NDecrypt and already have either `keys.bin` or `aes_keys.txt`, consider using [this helpful community-made script](https://gist.github.com/Dimensional/82f212a0b35bcf9caaa2bc9a70b3a92a) to make your life a bit easier. It will convert them into the new `config.json` format that will be supported from here on out.
 
 ### `config.json`
 
 The up-and-coming, shiny, new, exciting, JSON-based format for storing the encryption keys that you need for Nintendo DS, 3DS, and New 3DS. This JSON file is not generated by anything, but maps pretty much one-to-one with the code inside of NDecrypt, making it super convenient to use. Keys provided need to be hex strings (e.g. `"AABBCCDD"`). Any keys that are left with `null` or `""` as the value will be ignored. See [the sample config](https://github.com/SabreTools/NDecrypt/blob/master/config-default.json) that I've nicely generated for you. You're welcome.
 
-This is used if it's found, even if you have a `keys.bin` file or if you're using the `-a` flag. It's intentionally very bullish about being used because this will be the singular format for keys in the future. I know I mentioned this above as well, but I also know users don't like reading.
-
 In the future, this file will be automatically generated on first run along with some cutesy little message telling you to fill it out when you get a chance. It's not doing it right now because I don't want to confuse users. Including those reading this. How meta.
 
-### `keys.bin`
+### `keys.bin` (Deprecated)
 
 This is the OG of NDecrypt key file formats. It's a weird, binary blob of a format that is composed of little-endian values (most common extraction methods produce big endian, so keep that in mind). It's only compatible wtih Nintendo 3DS and New 3DS keys and is incredibly inflexible in its layout. The little-endianness of it is a relic of how keys were handled in-code previously and I really can't fix it now. If you don't have a key, it needs to be filled with `0x00` bytes so it doesn't mess up the read. Yeah.
 
 Oddly, this gets confused with some similar format that GodMode9 works with, but it has nothing to do with it. If you try to use one of those files in place of this one, something will probably break. It wasn't intentional, I just didn't look ahead of time. See the table in the main part of this section for the order the keys need to be stored in.
 
-### `aes_keys.txt`
+### `aes_keys.txt` (Deprecated)
 
-This is an INI-based format that was super popular among 3DS emulators and probably still is. To use this over `keys.bin`, the `-a` flag has to be included or else it won't be found. Yes, even if `keys.bin` isn't even in the folder. Weird thing, I know, but just roll with it please. The one major downside to this is that development keys can't be defined in this format. If you forget this and use `-d` anyway, NDecrypt will disable that flag for you. You're welcome.
+This is an INI-based format that was super popular among 3DS emulators and probably still is. Weird thing, I know, but just roll with it please.
 
 ## But does it work?
 

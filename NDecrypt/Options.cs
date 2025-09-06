@@ -40,19 +40,9 @@ namespace NDecrypt
         public List<string> InputPaths { get; private set; } = [];
 
         /// <summary>
-        /// Path to keys.bin or aes_keys.txt
-        /// </summary>
-        public string? KeyfilePath { get; private set; }
-
-        /// <summary>
         /// Output size and hashes to a companion file
         /// </summary>
         public bool OutputHashes { get; private set; }
-
-        /// <summary>
-        /// Enable using aes_keys.txt instead of keys.bin
-        /// </summary>
-        public bool UseAesKeysTxt { get; private set; }
 
         #endregion
 
@@ -110,11 +100,6 @@ namespace NDecrypt
                     case "--help":
                         return null;
 
-                    case "-a":
-                    case "--aes-keys":
-                        options.UseAesKeysTxt = true;
-                        break;
-
                     case "-c":
                     case "--config":
                         if (index == args.Length - 1)
@@ -151,28 +136,6 @@ namespace NDecrypt
                         options.Force = true;
                         break;
 
-                    case "-k":
-                    case "--keyfile":
-                        if (index == args.Length - 1)
-                        {
-                            Console.WriteLine("Invalid keyfile path: no additional arguments found!");
-                            continue;
-                        }
-
-                        index++;
-                        options.KeyfilePath = args[index];
-                        if (string.IsNullOrEmpty(options.KeyfilePath))
-                            Console.WriteLine($"Invalid keyfile path: null or empty path found!");
-
-                        options.KeyfilePath = Path.GetFullPath(options.KeyfilePath);
-                        if (!File.Exists(options.KeyfilePath))
-                        {
-                            Console.WriteLine($"Invalid keyfile path: file {options.KeyfilePath} not found!");
-                            options.KeyfilePath = null;
-                        }
-
-                        break;
-
                     default:
                         options.InputPaths.Add(arg);
                         break;
@@ -189,16 +152,6 @@ namespace NDecrypt
             // Derive the config path based on the runtime folder if not already set
             options.ConfigPath = DeriveConfigFile(options.ConfigPath);
 
-            // Derive the keyfile path based on the runtime folder if not already set
-            options.KeyfilePath = DeriveKeyFile(options.KeyfilePath, options.UseAesKeysTxt);
-
-            // If we are using a Citra keyfile, there are no development keys
-            if (options.Development && options.UseAesKeysTxt)
-            {
-                Console.WriteLine("AES keyfiles don't contain development keys; disabling the option...");
-                options.Development = false;
-            }
-
             return options;
         }
 
@@ -211,7 +164,7 @@ namespace NDecrypt
             if (!string.IsNullOrEmpty(err))
                 Console.WriteLine($"Error: {err}");
 
-            Console.WriteLine("Protection Scanner");
+            Console.WriteLine("Cart Image Encrypt/Decrypt Tool");
             Console.WriteLine();
             Console.WriteLine("NDecrypt <operation> [options] <path> ...");
             Console.WriteLine();
@@ -223,8 +176,6 @@ namespace NDecrypt
             Console.WriteLine("Options:");
             Console.WriteLine("-?, -h, --help           Display this help text and quit");
             Console.WriteLine("-c, --config <path>      Path to config.json");
-            Console.WriteLine("-a, --aes-keys           Enable using aes_keys.txt instead of keys.bin");
-            Console.WriteLine("-k, --keyfile <path>     Path to keys.bin or aes_keys.txt");
             Console.WriteLine("-d, --development        Enable using development keys, if available");
             Console.WriteLine("-f, --force              Force operation by avoiding sanity checks");
             Console.WriteLine("--hash                   Output size and hashes to a companion file");

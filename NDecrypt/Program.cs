@@ -25,11 +25,7 @@ namespace NDecrypt
             }
 
             // Initialize the decrypt args, if possible
-            DecryptArgs decryptArgs;
-            if (options.ConfigPath != null)
-                decryptArgs = new DecryptArgs(options.ConfigPath);
-            else
-                decryptArgs = new DecryptArgs(options.KeyfilePath, options.UseAesKeysTxt);
+            var decryptArgs = new DecryptArgs(options.ConfigPath);;
 
             // Create reusable tools
             _tools[FileType.NDS] = new DSTool(decryptArgs);
