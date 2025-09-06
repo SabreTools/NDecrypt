@@ -24,7 +24,7 @@ namespace NDecrypt.Core
         /// <summary>
         /// Set of all partition keys
         /// </summary>
-        private readonly PartitionKeys[] KeysMap = new PartitionKeys[8];
+        private readonly PartitionKeys[] _keysMap = new PartitionKeys[8];
 
         public ThreeDSTool(bool development, DecryptArgs decryptArgs)
         {
@@ -177,7 +177,7 @@ namespace NDecrypt.Core
             CryptoMethod method = cart.GetCryptoMethod(index);
 
             // Get the partition keys
-            KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
+            _keysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace NDecrypt.Core
             Console.WriteLine($"Partition {index}: Decrypting - ExHeader");
 
             // Create the Plain AES cipher for this partition
-            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index));
+            var cipher = CreateAESDecryptionCipher(_keysMap[index].NormalKey2C, cart.PlainIV(index));
 
             // Process the extended header
             PerformAESOperation(Constants.CXTExtendedDataHeaderLength, cipher, reader, writer, null);
@@ -265,7 +265,7 @@ namespace NDecrypt.Core
             // Create the ExeFS AES cipher for this partition
             uint ctroffsetE = cart.MediaUnitSize / 0x10;
             byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
-            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
+            var cipher = CreateAESDecryptionCipher(_keysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the decryption
             exeFsSize -= cart.MediaUnitSize;
@@ -302,7 +302,7 @@ namespace NDecrypt.Core
             Console.WriteLine($"Partition {index} ExeFS: Decrypting - ExeFS Filename Table");
 
             // Create the ExeFS AES cipher for this partition
-            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, cart.ExeFSIV(index));
+            var cipher = CreateAESDecryptionCipher(_keysMap[index].NormalKey2C, cart.ExeFSIV(index));
 
             // Process the filename table
             byte[] readBytes = reader.ReadBytes((int)cart.MediaUnitSize);
@@ -362,8 +362,8 @@ namespace NDecrypt.Core
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize) / 0x10;
                 byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), ctroffset);
-                var firstCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
-                var secondCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
+                var firstCipher = CreateAESDecryptionCipher(_keysMap[index].NormalKey, exefsIVWithOffsetForHeader);
+                var secondCipher = CreateAESEncryptionCipher(_keysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
 
                 // Seek to the file entry
                 reader.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -408,7 +408,7 @@ namespace NDecrypt.Core
             writer.Seek(romFsOffset, SeekOrigin.Begin);
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey, cart.RomFSIV(index));
+            var cipher = CreateAESDecryptionCipher(_keysMap[index].NormalKey, cart.RomFSIV(index));
 
             // Setup and perform the decryption
             PerformAESOperation(romFsSize,
@@ -602,7 +602,7 @@ namespace NDecrypt.Core
             CryptoMethod method = backupHeader.Flags.CryptoMethod;
 
             // Get the partition keys
-            KeysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
+            _keysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
         }
 
         /// <summary>
@@ -636,7 +636,7 @@ namespace NDecrypt.Core
             Console.WriteLine($"Partition {index}: Encrypting - ExHeader");
 
             // Create the Plain AES cipher for this partition
-            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, cart.PlainIV(index));
+            var cipher = CreateAESEncryptionCipher(_keysMap[index].NormalKey2C, cart.PlainIV(index));
 
             // Process the extended header
             PerformAESOperation(Constants.CXTExtendedDataHeaderLength, cipher, reader, writer, null);
@@ -691,7 +691,7 @@ namespace NDecrypt.Core
             // Create the ExeFS AES cipher for this partition
             uint ctroffsetE = cart.MediaUnitSize / 0x10;
             byte[] exefsIVWithOffset = Add(cart.ExeFSIV(index), ctroffsetE);
-            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffset);
+            var cipher = CreateAESEncryptionCipher(_keysMap[index].NormalKey2C, exefsIVWithOffset);
 
             // Setup and perform the encryption
             uint exeFsSize = cart.GetExeFSSize(index) - cart.MediaUnitSize;
@@ -728,7 +728,7 @@ namespace NDecrypt.Core
             Console.WriteLine($"Partition {index} ExeFS: Encrypting - ExeFS Filename Table");
 
             // Create the ExeFS AES cipher for this partition
-            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey2C, cart.ExeFSIV(index));
+            var cipher = CreateAESEncryptionCipher(_keysMap[index].NormalKey2C, cart.ExeFSIV(index));
 
             // Process the filename table
             byte[] readBytes = reader.ReadBytes((int)cart.MediaUnitSize);
@@ -785,8 +785,8 @@ namespace NDecrypt.Core
                 // Create the ExeFS AES ciphers for this partition
                 uint ctroffset = (fileHeader.FileOffset + cart.MediaUnitSize) / 0x10;
                 byte[] exefsIVWithOffsetForHeader = Add(cart.ExeFSIV(index), ctroffset);
-                var firstCipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, exefsIVWithOffsetForHeader);
-                var secondCipher = CreateAESDecryptionCipher(KeysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
+                var firstCipher = CreateAESEncryptionCipher(_keysMap[index].NormalKey, exefsIVWithOffsetForHeader);
+                var secondCipher = CreateAESDecryptionCipher(_keysMap[index].NormalKey2C, exefsIVWithOffsetForHeader);
 
                 // Seek to the file entry
                 reader.Seek(exeFsFilesOffset + fileHeader.FileOffset, SeekOrigin.Begin);
@@ -834,11 +834,11 @@ namespace NDecrypt.Core
             if (index > 0)
             {
                 var backupHeader = cart.BackupHeader;
-                KeysMap[index].SetRomFSValues(backupHeader!.Flags!.BitMasks);
+                _keysMap[index].SetRomFSValues(backupHeader!.Flags!.BitMasks);
             }
 
             // Create the RomFS AES cipher for this partition
-            var cipher = CreateAESEncryptionCipher(KeysMap[index].NormalKey, cart.RomFSIV(index));
+            var cipher = CreateAESEncryptionCipher(_keysMap[index].NormalKey, cart.RomFSIV(index));
 
             // Setup and perform the decryption
             PerformAESOperation(romFsSize,
