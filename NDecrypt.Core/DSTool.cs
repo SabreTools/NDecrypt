@@ -21,12 +21,12 @@ namespace NDecrypt.Core
         #region Encrypt
 
         /// <inheritdoc/>
-        public bool EncryptFile(string filename, bool force)
+        public bool EncryptFile(string input, bool force)
         {
             try
             {
                 // Open the read and write on the same file for inplace processing
-                using var reader = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = File.Open(input, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
                 // Deserialize the cart information
                 var nitro = Nitro.Create(reader);
@@ -47,7 +47,7 @@ namespace NDecrypt.Core
                 nitro.EncryptSecureArea(_decryptArgs.NitroEncryptionData, force);
 
                 // Write the encrypted secure area
-                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                using var writer = File.Open(input, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
                 writer.Seek(0x4000, SeekOrigin.Begin);
                 writer.Write(nitro.SecureArea);
                 writer.Flush();
@@ -56,7 +56,7 @@ namespace NDecrypt.Core
             }
             catch
             {
-                Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
+                Console.WriteLine($"An error has occurred. {input} may be corrupted if it was partially processed.");
                 Console.WriteLine("Please check that the file was a valid DS or DSi file and try again.");
                 return false;
             }
@@ -67,12 +67,12 @@ namespace NDecrypt.Core
         #region Decrypt
 
         /// <inheritdoc/>
-        public bool DecryptFile(string filename, bool force)
+        public bool DecryptFile(string input, bool force)
         {
             try
             {
                 // Open the read and write on the same file for inplace processing
-                using var reader = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = File.Open(input, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
                 // Deserialize the cart information
                 var nitro = Nitro.Create(reader);
@@ -93,7 +93,7 @@ namespace NDecrypt.Core
                 nitro.DecryptSecureArea(_decryptArgs.NitroEncryptionData, force);
 
                 // Write the decrypted secure area
-                using var writer = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                using var writer = File.Open(input, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
                 writer.Seek(0x4000, SeekOrigin.Begin);
                 writer.Write(nitro.SecureArea);
                 writer.Flush();
@@ -102,7 +102,7 @@ namespace NDecrypt.Core
             }
             catch
             {
-                Console.WriteLine($"An error has occurred. {filename} may be corrupted if it was partially processed.");
+                Console.WriteLine($"An error has occurred. {input} may be corrupted if it was partially processed.");
                 Console.WriteLine("Please check that the file was a valid DS or DSi file and try again.");
                 return false;
             }
