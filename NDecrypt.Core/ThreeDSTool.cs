@@ -48,7 +48,7 @@ namespace NDecrypt.Core
             {
                 // If the output is provided, copy the input file
                 if (output != null)
-                    File.Copy(input, output);
+                    File.Copy(input, output, overwrite: true);
                 else
                     output = input;
 
@@ -467,7 +467,7 @@ namespace NDecrypt.Core
             {
                 // If the output is provided, copy the input file
                 if (output != null)
-                    File.Copy(input, output);
+                    File.Copy(input, output, overwrite: true);
                 else
                     output = input;
 
