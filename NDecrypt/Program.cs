@@ -25,7 +25,7 @@ namespace NDecrypt
             }
 
             // Initialize the decrypt args, if possible
-            var decryptArgs = new DecryptArgs(options.ConfigPath);;
+            var decryptArgs = new DecryptArgs(options.ConfigPath); ;
 
             // Create reusable tools
             _tools[FileType.NDS] = new DSTool(decryptArgs);
@@ -54,36 +54,36 @@ namespace NDecrypt
         /// <summary>
         /// Process a single file path
         /// </summary>
-        /// <param name="file">File path to process</param>
+        /// <param name="input">File path to process</param>
         /// <param name="options">Options indicating how to process the file</param>
-        private static void ProcessFile(string file, Options options)
+        private static void ProcessFile(string input, Options options)
         {
             // Attempt to derive the tool for the path
-            var tool = DeriveTool(file);
+            var tool = DeriveTool(input);
             if (tool == null)
                 return;
 
-            Console.WriteLine($"Processing {file}");
+            Console.WriteLine($"Processing {input}");
 
-            // TODO: Determine how separate output files should be named
-            // - Consider using something like `.enc` and `.dec` appended/replaced
-            // - Needs a new flag to enable not overwriting
-            // - Maybe make overwriting an option and new file be default?
+            // Derive the output filename, if required
+            string? output = null;
+            if (!options.Overwrite)
+                output = GetOutputFile(input, options);
 
             // Encrypt or decrypt the file as requested
-            if (options.Feature == Feature.Encrypt && !tool.EncryptFile(file, null, options.Force))
+            if (options.Feature == Feature.Encrypt && !tool.EncryptFile(input, output, options.Force))
             {
                 Console.WriteLine("Encryption failed!");
                 return;
             }
-            else if (options.Feature == Feature.Decrypt && !tool.DecryptFile(file, null, options.Force))
+            else if (options.Feature == Feature.Decrypt && !tool.DecryptFile(input, output, options.Force))
             {
                 Console.WriteLine("Decryption failed!");
                 return;
             }
             else if (options.Feature == Feature.Info)
             {
-                string? infoString = tool.GetInformation(file);
+                string? infoString = tool.GetInformation(input);
                 infoString ??= "There was a problem getting file information!";
 
                 Console.WriteLine(infoString);
@@ -91,7 +91,7 @@ namespace NDecrypt
 
             // Output the file hashes, if expected
             if (options.OutputHashes)
-                WriteHashes(file);
+                WriteHashes(input);
         }
 
         /// <summary>
@@ -153,6 +153,31 @@ namespace NDecrypt
 
             Console.WriteLine($"Unrecognized file format for {filename}. Expected *.nds, *.srl, *.dsi, *.3ds, *.cci");
             return FileType.NULL;
+        }
+
+        /// <summary>
+        /// Derive an output filename from the input, if possible
+        /// </summary>
+        /// <param name="filename">Name of the input file to derive from</param>
+        /// <param name="options">Options indicating how to process the file</param>
+        /// <returns>Output filename based on the input</returns>
+        private static string GetOutputFile(string filename, Options options)
+        {
+            // Empty filenames are passed back
+            if (filename.Length == 0)
+                return filename;
+
+            // TODO: Replace the suffix instead of just appending
+            // TODO: Ensure that the input and output aren't the same
+
+            // Append '.enc' or '.dec' based on the feature
+            if (options.Feature == Feature.Decrypt)
+                filename += ".dec";
+            else if (options.Feature == Feature.Encrypt)
+                filename += ".enc";
+
+            // Return the reformatted name
+            return filename;
         }
 
         /// <summary>
