@@ -21,7 +21,7 @@ namespace NDecrypt.Core
         #region Encrypt
 
         /// <inheritdoc/>
-        public bool EncryptFile(string input, bool force)
+        public bool EncryptFile(string input, string? output, bool force)
         {
             try
             {
@@ -67,7 +67,7 @@ namespace NDecrypt.Core
         #region Decrypt
 
         /// <inheritdoc/>
-        public bool DecryptFile(string input, bool force)
+        public bool DecryptFile(string input, string? output, bool force)
         {
             try
             {

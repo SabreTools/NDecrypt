@@ -67,13 +67,18 @@ namespace NDecrypt
 
             Console.WriteLine($"Processing {path}");
 
+            // TODO: Determine how separate output files should be named
+            // - Consider using something like `.enc` and `.dec` appended/replaced
+            // - Needs a new flag to enable not overwriting
+            // - Maybe make overwriting an option and new file be default?
+
             // Encrypt or decrypt the file as requested
-            if (feature == Feature.Encrypt && !tool.EncryptFile(path, force))
+            if (feature == Feature.Encrypt && !tool.EncryptFile(path, null, force))
             {
                 Console.WriteLine("Encryption failed!");
                 return;
             }
-            else if (feature == Feature.Decrypt && !tool.DecryptFile(path, force))
+            else if (feature == Feature.Decrypt && !tool.DecryptFile(path, null, force))
             {
                 Console.WriteLine("Decryption failed!");
                 return;

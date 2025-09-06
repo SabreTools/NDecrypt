@@ -35,7 +35,7 @@ namespace NDecrypt.Core
         #region Decrypt
 
         /// <inheritdoc/>
-        public bool DecryptFile(string input, bool force)
+        public bool DecryptFile(string input, string? output, bool force)
         {
             // Ensure the constants are all set
             if (_decryptArgs.IsReady != true)
@@ -448,7 +448,7 @@ namespace NDecrypt.Core
         #region Encrypt
 
         /// <inheritdoc/>
-        public bool EncryptFile(string input, bool force)
+        public bool EncryptFile(string input, string? output, bool force)
         {
             // Ensure the constants are all set
             if (_decryptArgs.IsReady != true)
