@@ -46,7 +46,7 @@ namespace NDecrypt
                 }
                 else
                 {
-                    Console.WriteLine($"{args[i]} is not a file or folder. Please check your spelling and formatting and try again.");
+                    Console.WriteLine($"{options.InputPaths[i]} is not a file or folder. Please check your spelling and formatting and try again.");
                 }
             }
         }
