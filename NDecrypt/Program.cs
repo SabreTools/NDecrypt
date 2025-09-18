@@ -33,13 +33,13 @@ namespace NDecrypt
 
             for (int i = 0; i < options.InputPaths.Count; i++)
             {
-                if (File.Exists(args[i]))
+                if (File.Exists(options.InputPaths[i]))
                 {
-                    ProcessFile(args[i], options);
+                    ProcessFile(options.InputPaths[i], options);
                 }
-                else if (Directory.Exists(args[i]))
+                else if (Directory.Exists(options.InputPaths[i]))
                 {
-                    foreach (string file in Directory.GetFiles(args[i], "*", SearchOption.AllDirectories))
+                    foreach (string file in Directory.GetFiles(options.InputPaths[i], "*", SearchOption.AllDirectories))
                     {
                         ProcessFile(file, options);
                     }
