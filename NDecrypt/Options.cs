@@ -139,7 +139,7 @@ namespace NDecrypt
                         break;
 
                     case "--hash":
-                        options.Force = true;
+                        options.OutputHashes = true;
                         break;
 
                     case "-o":
