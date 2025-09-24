@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using SabreTools.IO.Extensions;
-using SabreTools.Matching;
 
 namespace NDecrypt.Core
 {
@@ -284,7 +283,7 @@ namespace NDecrypt.Core
             {
                 using var hasher = System.Security.Cryptography.SHA512.Create();
                 byte[] actual = hasher.ComputeHash(NitroEncryptionData);
-                if (!Extensions.EqualsExactly(ExpectedNitroSha512Hash, actual))
+                if (!actual.EqualsExactly(ExpectedNitroSha512Hash))
                 {
                     Console.WriteLine($"NitroEncryptionData invalid value, disabling...");
                     NitroEncryptionData = [];
@@ -296,7 +295,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedKeyX0x18, actual))
+                if (!actual.EqualsExactly(ExpectedKeyX0x18))
                 {
                     Console.WriteLine($"KeyX0x18 invalid value, disabling...");
                     KeyX0x18 = [];
@@ -308,7 +307,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x18, actual))
+                if (!actual.EqualsExactly(ExpectedDevKeyX0x18))
                 {
                     Console.WriteLine($"DevKeyX0x18 invalid value, disabling...");
                     DevKeyX0x18 = [];
@@ -320,7 +319,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedKeyX0x1B, actual))
+                if (!actual.EqualsExactly(ExpectedKeyX0x1B))
                 {
                     Console.WriteLine($"KeyX0x1B invalid value, disabling...");
                     KeyX0x1B = [];
@@ -332,7 +331,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x1B, actual))
+                if (!actual.EqualsExactly(ExpectedDevKeyX0x1B))
                 {
                     Console.WriteLine($"DevKeyX0x1B invalid value, disabling...");
                     DevKeyX0x1B = [];
@@ -344,7 +343,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedKeyX0x25, actual))
+                if (!actual.EqualsExactly(ExpectedKeyX0x25))
                 {
                     Console.WriteLine($"KeyX0x25 invalid value, disabling...");
                     KeyX0x25 = [];
@@ -356,7 +355,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x25, actual))
+                if (!actual.EqualsExactly(ExpectedDevKeyX0x25))
                 {
                     Console.WriteLine($"DevKeyX0x25 invalid value, disabling...");
                     DevKeyX0x25 = [];
@@ -368,7 +367,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedKeyX0x2C, actual))
+                if (!actual.EqualsExactly(ExpectedKeyX0x2C))
                 {
                     Console.WriteLine($"KeyX0x2C invalid value, disabling...");
                     KeyX0x2C = [];
@@ -380,7 +379,7 @@ namespace NDecrypt.Core
             {
                 var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
-                if (!Extensions.EqualsExactly(ExpectedDevKeyX0x2C, actual))
+                if (!actual.EqualsExactly(ExpectedDevKeyX0x2C))
                 {
                     Console.WriteLine($"DevKeyX0x2C invalid value, disabling...");
                     DevKeyX0x2C = [];
