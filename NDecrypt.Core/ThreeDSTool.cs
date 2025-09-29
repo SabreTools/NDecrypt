@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using SabreTools.Data.Models.N3DS;
 using SabreTools.IO.Extensions;
-using SabreTools.Models.N3DS;
 using SabreTools.Serialization.Wrappers;
 using static NDecrypt.Core.CommonOperations;
-using static SabreTools.Models.N3DS.Constants;
+using static SabreTools.Data.Models.N3DS.Constants;
 
 namespace NDecrypt.Core
 {
@@ -334,7 +334,7 @@ namespace NDecrypt.Core
             // Reread the decrypted ExeFS header
             uint exeFsHeaderOffset = cart.GetExeFSOffset(index);
             reader.Seek(exeFsHeaderOffset, SeekOrigin.Begin);
-            cart.ExeFSHeaders[index] = SabreTools.Serialization.Deserializers.N3DS.ParseExeFSHeader(reader);
+            cart.ExeFSHeaders[index] = SabreTools.Serialization.Readers.N3DS.ParseExeFSHeader(reader);
 
             // Get the ExeFS header
             var exeFsHeader = cart.ExeFSHeaders[index];

@@ -1,6 +1,6 @@
 using System;
 using Org.BouncyCastle.Crypto;
-using SabreTools.Models.N3DS;
+using SabreTools.Data.Models.N3DS;
 using static NDecrypt.Core.CommonOperations;
 
 namespace NDecrypt.Core
