@@ -61,10 +61,10 @@ namespace NDecrypt.Core
             // Set the standard normal key values
             NormalKey = new byte[16];
 
-            NormalKey2C = RotateLeft(KeyX2C, 2);
-            NormalKey2C = Xor(NormalKey2C, KeyY);
-            NormalKey2C = Add(NormalKey2C, args.AESHardwareConstant);
-            NormalKey2C = RotateLeft(NormalKey2C, 87);
+            NormalKey2C = KeyX2C.RotateLeft(2);
+            NormalKey2C = NormalKey2C.Xor(KeyY);
+            NormalKey2C = NormalKey2C.Add(add: args.AESHardwareConstant);
+            NormalKey2C = NormalKey2C.RotateLeft(87);
 
             // Special case for zero-key
 #if NET20 || NET35
@@ -104,10 +104,10 @@ namespace NDecrypt.Core
             }
 
             // Set the normal key based on the new KeyX value
-            NormalKey = RotateLeft(KeyX, 2);
-            NormalKey = Xor(NormalKey, KeyY);
-            NormalKey = Add(NormalKey, args.AESHardwareConstant);
-            NormalKey = RotateLeft(NormalKey, 87);
+            NormalKey = KeyX.RotateLeft(2);
+            NormalKey = NormalKey.Xor(KeyY);
+            NormalKey = NormalKey.Add(args.AESHardwareConstant);
+            NormalKey = NormalKey.RotateLeft(87);
         }
 
         /// <summary>
@@ -129,10 +129,10 @@ namespace NDecrypt.Core
             // Encrypting RomFS for partitions 1 and up always use Key0x2C
             KeyX = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
 
-            NormalKey = RotateLeft(KeyX, 2);
-            NormalKey = Xor(NormalKey, KeyY);
-            NormalKey = Add(NormalKey, _decryptArgs.AESHardwareConstant);
-            NormalKey = RotateLeft(NormalKey, 87);
+            NormalKey = KeyX.RotateLeft(2);
+            NormalKey = NormalKey.Xor(KeyY);
+            NormalKey = NormalKey.Add(_decryptArgs.AESHardwareConstant);
+            NormalKey = NormalKey.RotateLeft(87);
         }
     }
 }

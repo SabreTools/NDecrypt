@@ -126,48 +126,74 @@ namespace NDecrypt.Core
 
         #endregion
 
+        // TODO: Remove when IO updated
         #region Byte Arrays
 
         /// <summary>
         /// Add an integer value to a number represented by a byte array
         /// </summary>
-        /// <param name="input">Byte array to add to</param>
+        /// <param name="self">Byte array to add to</param>
         /// <param name="add">Amount to add</param>
         /// <returns>Byte array representing the new value</returns>
-        public static byte[] Add(byte[] input, uint add)
+        /// <remarks>Assumes array values are in big-endian format</remarks>
+        public static byte[] Add(this byte[] self, uint add)
         {
+            // If nothing is being added, just return
+            if (add == 0)
+                return self;
+
+            // Get the big-endian representation of the value
             byte[] addBytes = BitConverter.GetBytes(add);
             Array.Reverse(addBytes);
+
+            // Pad the array out to 16 bytes
             byte[] paddedBytes = new byte[16];
             Array.Copy(addBytes, 0, paddedBytes, 12, 4);
-            return Add(input, paddedBytes);
+
+            // If the input is empty, just return the added value
+            if (self.Length == 0)
+                return paddedBytes;
+
+            return self.Add(paddedBytes);
         }
 
         /// <summary>
         /// Add two numbers represented by byte arrays
         /// </summary>
-        /// <param name="left">Byte array to add to</param>
-        /// <param name="right">Amount to add</param>
+        /// <param name="self">Byte array to add to</param>
+        /// <param name="add">Amount to add</param>
         /// <returns>Byte array representing the new value</returns>
-        public static byte[] Add(byte[] left, byte[] right)
+        /// <remarks>Assumes array values are in big-endian format</remarks>
+        public static byte[] Add(this byte[] self, byte[] add)
         {
-            int addBytes = Math.Min(left.Length, right.Length);
-            int outLength = Math.Max(left.Length, right.Length);
+            // If either input is empty
+            if (self.Length == 0 && add.Length == 0)
+                return [];
+            else if (self.Length > 0 && add.Length == 0)
+                return self;
+            else if (self.Length == 0 && add.Length > 0)
+                return add;
 
+            // Setup the output array
+            int outLength = Math.Max(self.Length, add.Length);
             byte[] output = new byte[outLength];
 
+            // Loop adding with carry
             uint carry = 0;
-            for (int i = addBytes - 1; i >= 0; i--)
+            for (int i = 0; i < outLength; i++)
             {
-                uint addValue = (uint)(left[i] + right[i]) + carry;
-                output[i] = (byte)addValue;
-                carry = addValue >> 8;
-            }
+                int selfIndex = self.Length - i - 1;
+                uint selfValue = selfIndex >= 0 ? self[selfIndex] : 0u;
 
-            if (outLength != addBytes && left.Length == outLength)
-                Array.Copy(left, addBytes, output, addBytes, outLength - addBytes);
-            else if (outLength != addBytes && right.Length == outLength)
-                Array.Copy(right, addBytes, output, addBytes, outLength - addBytes);
+                int addIndex = add.Length - i - 1;
+                uint addValue = addIndex >= 0 ? add[addIndex] : 0u;
+
+                uint next = selfValue + addValue + carry;
+                carry = next >> 8;
+
+                int outputIndex = output.Length - i - 1;
+                output[outputIndex] = (byte)(next & 0xFF);
+            }
 
             return output;
         }
@@ -175,16 +201,23 @@ namespace NDecrypt.Core
         /// <summary>
         /// Perform a rotate left on a byte array
         /// </summary>
-        /// <param name="val">Byte array value to rotate</param>
-        /// <param name="r_bits">Number of bits to rotate</param>
+        /// <param name="self">Byte array value to rotate</param>
+        /// <param name="numBits">Number of bits to rotate</param>
         /// <returns>Rotated byte array value</returns>
-        public static byte[] RotateLeft(byte[] val, int r_bits)
+        /// <remarks>Assumes array values are in big-endian format</remarks>
+        public static byte[] RotateLeft(this byte[] self, int numBits)
         {
-            byte[] output = new byte[val.Length];
-            Array.Copy(val, output, output.Length);
+            // If either input is empty
+            if (self.Length == 0)
+                return [];
+            else if (numBits == 0)
+                return self;
+
+            byte[] output = new byte[self.Length];
+            Array.Copy(self, output, output.Length);
 
             // Shift by bytes
-            while (r_bits >= 8)
+            while (numBits >= 8)
             {
                 byte temp = output[0];
                 for (int i = 0; i < output.Length - 1; i++)
@@ -193,13 +226,13 @@ namespace NDecrypt.Core
                 }
 
                 output[output.Length - 1] = temp;
-                r_bits -= 8;
+                numBits -= 8;
             }
 
             // Shift by bits
-            if (r_bits > 0)
+            if (numBits > 0)
             {
-                byte bitMask = (byte)(8 - r_bits), carry, wrap = 0;
+                byte bitMask = (byte)(8 - numBits), carry, wrap = 0;
                 for (int i = 0; i < output.Length; i++)
                 {
                     carry = (byte)((255 << bitMask & output[i]) >> bitMask);
@@ -213,7 +246,7 @@ namespace NDecrypt.Core
                         output[i - 1] |= carry;
 
                     // Shift the current bits
-                    output[i] <<= r_bits;
+                    output[i] <<= numBits;
                 }
 
                 // Make sure the wrap happens
@@ -226,24 +259,38 @@ namespace NDecrypt.Core
         /// <summary>
         /// XOR two numbers represented by byte arrays
         /// </summary>
-        /// <param name="left">Byte array to XOR to</param>
-        /// <param name="right">Amount to XOR</param>
+        /// <param name="self">Byte array to XOR to</param>
+        /// <param name="xor">Amount to XOR</param>
         /// <returns>Byte array representing the new value</returns>
-        public static byte[] Xor(byte[] left, byte[] right)
+        /// <remarks>Assumes array values are in big-endian format</remarks>
+        public static byte[] Xor(this byte[] self, byte[] xor)
         {
-            int xorBytes = Math.Min(left.Length, right.Length);
-            int outLength = Math.Max(left.Length, right.Length);
+            // If either input is empty
+            if (self.Length == 0 && xor.Length == 0)
+                return [];
+            else if (self.Length > 0 && xor.Length == 0)
+                return self;
+            else if (self.Length == 0 && xor.Length > 0)
+                return xor;
 
+            // Setup the output array
+            int outLength = Math.Max(self.Length, xor.Length);
             byte[] output = new byte[outLength];
-            for (int i = 0; i < xorBytes; i++)
-            {
-                output[i] = (byte)(left[i] ^ right[i]);
-            }
 
-            if (outLength != xorBytes && left.Length == outLength)
-                Array.Copy(left, xorBytes, output, xorBytes, outLength - xorBytes);
-            else if (outLength != xorBytes && right.Length == outLength)
-                Array.Copy(right, xorBytes, output, xorBytes, outLength - xorBytes);
+            // Loop XOR
+            for (int i = 0; i < outLength; i++)
+            {
+                int selfIndex = self.Length - i - 1;
+                uint selfValue = selfIndex >= 0 ? self[selfIndex] : 0u;
+
+                int xorIndex = xor.Length - i - 1;
+                uint xorValue = xorIndex >= 0 ? xor[xorIndex] : 0u;
+
+                uint next = selfValue ^ xorValue;
+
+                int outputIndex = output.Length - i - 1;
+                output[outputIndex] = (byte)(next & 0xFF);
+            }
 
             return output;
         }
