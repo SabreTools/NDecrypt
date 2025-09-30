@@ -1,6 +1,5 @@
 using System;
 using SabreTools.Data.Models.N3DS;
-using static NDecrypt.Core.CommonOperations;
 
 namespace NDecrypt.Core
 {
