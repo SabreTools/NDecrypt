@@ -1,5 +1,4 @@
 using System;
-using Org.BouncyCastle.Crypto;
 using SabreTools.Data.Models.N3DS;
 using static NDecrypt.Core.CommonOperations;
 
@@ -44,7 +43,7 @@ namespace NDecrypt.Core
             if (args.IsReady != true)
                 throw new InvalidOperationException($"{nameof(args)} must be initialized before use");
             if (signature != null && signature.Length < 16)
-                throw new DataLengthException($"{nameof(signature)} must be at least 16 bytes");
+                throw new ArgumentOutOfRangeException($"{nameof(signature)} must be at least 16 bytes");
 
             // Set fields for future use
             _decryptArgs = args;
