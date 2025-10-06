@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NDecrypt.Features;
 using SabreTools.CommandLine;
 using SabreTools.CommandLine.Features;
 

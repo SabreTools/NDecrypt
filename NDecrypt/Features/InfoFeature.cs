@@ -1,6 +1,6 @@
 using System;
 
-namespace NDecrypt
+namespace NDecrypt.Features
 {
     internal sealed class InfoFeature : BaseFeature
     {

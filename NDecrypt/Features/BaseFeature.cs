@@ -5,7 +5,7 @@ using NDecrypt.Core;
 using SabreTools.CommandLine;
 using SabreTools.CommandLine.Inputs;
 
-namespace NDecrypt
+namespace NDecrypt.Features
 {
     internal abstract class BaseFeature : Feature
     {
