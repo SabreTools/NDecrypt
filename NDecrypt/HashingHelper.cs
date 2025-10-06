@@ -27,7 +27,7 @@ namespace NDecrypt
                 + $"CRC-32: {(hashDict.ContainsKey(HashType.CRC32) ? hashDict[HashType.CRC32] : string.Empty)}\n"
                 + $"MD5: {(hashDict.ContainsKey(HashType.MD5) ? hashDict[HashType.MD5] : string.Empty)}\n"
                 + $"SHA-1: {(hashDict.ContainsKey(HashType.SHA1) ? hashDict[HashType.SHA1] : string.Empty)}\n"
-                + $"CSHA-256: {(hashDict.ContainsKey(HashType.SHA256) ? hashDict[HashType.SHA256] : string.Empty)}\n";
+                + $"SHA-256: {(hashDict.ContainsKey(HashType.SHA256) ? hashDict[HashType.SHA256] : string.Empty)}\n";
         }
     }
 }

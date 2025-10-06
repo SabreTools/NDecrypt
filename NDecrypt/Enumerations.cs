@@ -3,7 +3,7 @@ namespace NDecrypt
     /// <summary>
     /// Functionality to use from the program
     /// </summary>
-    internal enum Feature
+    internal enum FeatureFlag
     {
         NULL,
         Decrypt,

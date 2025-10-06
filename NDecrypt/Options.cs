@@ -17,7 +17,7 @@ namespace NDecrypt
         /// <summary>
         /// Feature to process input files with
         /// </summary>
-        public Feature Feature { get; private set; }
+        public FeatureFlag Feature { get; private set; }
 
         /// <summary>
         /// Path to config.json
@@ -77,17 +77,17 @@ namespace NDecrypt
 
                 case "d":
                 case "decrypt":
-                    options.Feature = Feature.Decrypt;
+                    options.Feature = FeatureFlag.Decrypt;
                     break;
 
                 case "e":
                 case "encrypt":
-                    options.Feature = Feature.Encrypt;
+                    options.Feature = FeatureFlag.Encrypt;
                     break;
 
                 case "i":
                 case "info":
-                    options.Feature = Feature.Info;
+                    options.Feature = FeatureFlag.Info;
                     break;
 
                 default:
@@ -190,7 +190,7 @@ namespace NDecrypt
             Console.WriteLine("-d, --development        Enable using development keys, if available");
             Console.WriteLine("-f, --force              Force operation by avoiding sanity checks");
             Console.WriteLine("--hash                   Output size and hashes to a companion file");
-            // Console.WriteLine("-o, --overwrite          Overwrite input files instead of creating new ones"); // TODO: Print this when enabled
+            // Console.WriteLine("-o, --overwrite          Overwrite input files instead of creating new ones");
             Console.WriteLine();
             Console.WriteLine("<path> can be any file or folder that contains uncompressed items.");
             Console.WriteLine("More than one path can be specified at a time.");
