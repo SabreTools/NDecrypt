@@ -10,6 +10,7 @@ namespace NDecrypt
     {
         public static void Main(string[] args)
         {
+            // Create the command set
             var commandSet = CreateCommands();
 
             // If we have no args, show the help and quit
