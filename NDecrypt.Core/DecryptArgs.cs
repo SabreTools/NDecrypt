@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using SabreTools.IO.Encryption;
 using SabreTools.IO.Extensions;
 
 namespace NDecrypt.Core
@@ -293,7 +294,7 @@ namespace NDecrypt.Core
             // KeyX0x18
             if (KeyX0x18.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x18, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x18))
                 {
@@ -305,7 +306,7 @@ namespace NDecrypt.Core
             // DevKeyX0x18
             if (DevKeyX0x18.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x18, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x18, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x18))
                 {
@@ -317,7 +318,7 @@ namespace NDecrypt.Core
             // KeyX0x1B
             if (KeyX0x1B.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x1B, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x1B))
                 {
@@ -329,7 +330,7 @@ namespace NDecrypt.Core
             // DevKeyX0x1B
             if (DevKeyX0x1B.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x1B, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x1B, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x1B))
                 {
@@ -341,7 +342,7 @@ namespace NDecrypt.Core
             // KeyX0x25
             if (KeyX0x25.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x25, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x25))
                 {
@@ -353,7 +354,7 @@ namespace NDecrypt.Core
             // DevKeyX0x25
             if (DevKeyX0x25.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x25, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x25, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x25))
                 {
@@ -365,7 +366,7 @@ namespace NDecrypt.Core
             // KeyX0x2C
             if (KeyX0x2C.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(KeyX0x2C, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x2C))
                 {
@@ -377,7 +378,7 @@ namespace NDecrypt.Core
             // DevKeyX0x2C
             if (DevKeyX0x2C.Length > 0)
             {
-                var cipher = CommonOperations.CreateAESEncryptionCipher(DevKeyX0x2C, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x2C, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x2C))
                 {
