@@ -125,7 +125,11 @@ namespace NDecrypt.Features
             // TODO: Ensure that the input and output aren't the same
 
             // If the extension does not include a leading period
+#if NETCOREAPP || NETSTANDARD2_0_OR_GREATER
+            if (!extension.StartsWith('.'))
+#else
             if (!extension.StartsWith("."))
+#endif
                 extension = $".{extension}";
 
             // Append the extension and return
@@ -158,7 +162,7 @@ namespace NDecrypt.Features
         /// </summary>
         /// <param name="filename">Filename to derive the type from</param>
         /// <returns>FileType value, if possible</returns>
-        private FileType DetermineFileType(string filename)
+        private static FileType DetermineFileType(string filename)
         {
             if (filename.EndsWith(".nds", StringComparison.OrdinalIgnoreCase)        // Standard carts
                 || filename.EndsWith(".nds.dec", StringComparison.OrdinalIgnoreCase) // Carts/images with secure area decrypted

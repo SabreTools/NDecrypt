@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+#if NETFRAMEWORK || NETSTANDARD2_0_OR_GREATER
 using SabreTools.IO.Extensions;
+#endif
 using SabreTools.Serialization.Wrappers;
 
 namespace NDecrypt.Core

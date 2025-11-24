@@ -24,10 +24,10 @@ namespace NDecrypt
 
             // Get the results
             return $"Size: {size}\n"
-                + $"CRC-32: {(hashDict.ContainsKey(HashType.CRC32) ? hashDict[HashType.CRC32] : string.Empty)}\n"
-                + $"MD5: {(hashDict.ContainsKey(HashType.MD5) ? hashDict[HashType.MD5] : string.Empty)}\n"
-                + $"SHA-1: {(hashDict.ContainsKey(HashType.SHA1) ? hashDict[HashType.SHA1] : string.Empty)}\n"
-                + $"SHA-256: {(hashDict.ContainsKey(HashType.SHA256) ? hashDict[HashType.SHA256] : string.Empty)}\n";
+                + $"CRC-32: {(hashDict.TryGetValue(HashType.CRC32, out string? value) ? value : string.Empty)}\n"
+                + $"MD5: {(hashDict.TryGetValue(HashType.MD5, out string? value1) ? value1 : string.Empty)}\n"
+                + $"SHA-1: {(hashDict.TryGetValue(HashType.SHA1, out string? value2) ? value2 : string.Empty)}\n"
+                + $"SHA-256: {(hashDict.TryGetValue(HashType.SHA256, out string? value3) ? value3 : string.Empty)}\n";
         }
     }
 }

@@ -273,7 +273,7 @@ namespace NDecrypt.Core
                 cipher,
                 reader,
                 writer,
-                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting - {s}"));
+                s => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting - {s}"));
 
             return true;
         }
@@ -375,7 +375,7 @@ namespace NDecrypt.Core
                     secondCipher,
                     reader,
                     writer,
-                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting - {fileHeader.FileName}...{s}"));
+                    s => Console.WriteLine($"\rPartition {index} ExeFS: Decrypting - {fileHeader.FileName}...{s}"));
             }
         }
 
@@ -415,7 +415,7 @@ namespace NDecrypt.Core
                 cipher,
                 reader,
                 writer,
-                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Decrypting - {s}"));
+                s => Console.WriteLine($"\rPartition {index} RomFS: Decrypting - {s}"));
 
             return true;
         }
@@ -699,7 +699,7 @@ namespace NDecrypt.Core
                 cipher,
                 reader,
                 writer,
-                (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting - {s}"));
+                s => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting - {s}"));
 
             return true;
         }
@@ -798,7 +798,7 @@ namespace NDecrypt.Core
                     secondCipher,
                     reader,
                     writer,
-                    (string s) => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting - {fileHeader.FileName}...{s}"));
+                    s => Console.WriteLine($"\rPartition {index} ExeFS: Encrypting - {fileHeader.FileName}...{s}"));
             }
         }
 
@@ -845,7 +845,7 @@ namespace NDecrypt.Core
                 cipher,
                 reader,
                 writer,
-                (string s) => Console.WriteLine($"\rPartition {index} RomFS: Encrypting - {s}"));
+                s => Console.WriteLine($"\rPartition {index} RomFS: Encrypting - {s}"));
 
             return true;
         }

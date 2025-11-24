@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/NDecrypt/bin/Debug/net9.0/NDecrypt.dll",
+            "program": "${workspaceFolder}/NDecrypt/bin/Debug/net10.0/NDecrypt.dll",
             "args": [],
             "cwd": "${workspaceFolder}/NDecrypt",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

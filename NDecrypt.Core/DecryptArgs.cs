@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using SabreTools.Hashing;
 using SabreTools.IO.Encryption;
 using SabreTools.IO.Extensions;
 
@@ -282,9 +283,8 @@ namespace NDecrypt.Core
             // NitroEncryptionData
             if (NitroEncryptionData.Length > 0)
             {
-                using var hasher = System.Security.Cryptography.SHA512.Create();
-                byte[] actual = hasher.ComputeHash(NitroEncryptionData);
-                if (!actual.EqualsExactly(ExpectedNitroSha512Hash))
+                byte[]? actual = HashTool.GetByteArrayHashArray(NitroEncryptionData, HashType.SHA512);
+                if (actual == null || !actual.EqualsExactly(ExpectedNitroSha512Hash))
                 {
                     Console.WriteLine($"NitroEncryptionData invalid value, disabling...");
                     NitroEncryptionData = [];
