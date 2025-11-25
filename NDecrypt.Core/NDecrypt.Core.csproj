@@ -23,24 +23,10 @@
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
-    <!-- Support All Frameworks -->
-    <PropertyGroup Condition="$(TargetFramework.StartsWith(`net2`)) OR $(TargetFramework.StartsWith(`net3`)) OR $(TargetFramework.StartsWith(`net4`))">
-        <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(TargetFramework.StartsWith(`netcoreapp`)) OR $(TargetFramework.StartsWith(`net5`))">
-        <RuntimeIdentifiers>win-x86;win-x64;win-arm64;linux-x64;linux-arm64;osx-x64</RuntimeIdentifiers>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(TargetFramework.StartsWith(`net6`)) OR $(TargetFramework.StartsWith(`net7`)) OR $(TargetFramework.StartsWith(`net8`)) OR $(TargetFramework.StartsWith(`net9`)) OR $(TargetFramework.StartsWith(`net10`))">
-        <RuntimeIdentifiers>win-x86;win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(RuntimeIdentifier.StartsWith(`osx-arm`))">
-        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="SabreTools.Hashing" Version="[1.6.0]" />
         <PackageReference Include="SabreTools.IO" Version="[1.9.0]" />
-        <PackageReference Include="SabreTools.Serialization" Version="[2.2.0]" />
+        <PackageReference Include="SabreTools.Serialization" Version="[2.2.1]" />
     </ItemGroup>
 
 </Project>
