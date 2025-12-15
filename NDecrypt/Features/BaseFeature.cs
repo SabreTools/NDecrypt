@@ -81,7 +81,7 @@ namespace NDecrypt.Features
         private void InitializeTools()
         {
 
-            var decryptArgs = new DecryptArgs(GetString(ConfigName));
+            var decryptArgs = new DecryptArgs(GetString(ConfigName, "config.json"));
             _tools[FileType.NDS] = new DSTool(decryptArgs);
             _tools[FileType.N3DS] = new ThreeDSTool(GetBoolean(DevelopmentName), decryptArgs);
         }
