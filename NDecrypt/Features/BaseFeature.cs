@@ -148,7 +148,7 @@ namespace NDecrypt.Features
 
             // Get the hash string from the file
             string? hashString = HashingHelper.GetInfo(filename);
-            if (hashString == null)
+            if (hashString is null)
                 return;
 
             // Open the output file and write the hashes

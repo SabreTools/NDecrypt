@@ -42,7 +42,7 @@ namespace NDecrypt.Core
             // Validate inputs
             if (args.IsReady != true)
                 throw new InvalidOperationException($"{nameof(args)} must be initialized before use");
-            if (signature != null && signature.Length < 16)
+            if (signature is not null && signature.Length < 16)
                 throw new ArgumentOutOfRangeException(nameof(signature), $"{nameof(signature)} must be at least 16 bytes");
 
             // Set fields for future use
@@ -55,7 +55,7 @@ namespace NDecrypt.Core
 
             // Backup headers can't have a KeyY value set
             KeyY = new byte[16];
-            if (signature != null)
+            if (signature is not null)
                 Array.Copy(signature, KeyY, 16);
 
             // Set the standard normal key values

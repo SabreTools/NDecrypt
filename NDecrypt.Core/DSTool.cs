@@ -28,7 +28,7 @@ namespace NDecrypt.Core
             try
             {
                 // If the output is provided, copy the input file
-                if (output != null)
+                if (output is not null)
                     File.Copy(input, output, overwrite: true);
                 else
                     output = input;
@@ -38,14 +38,14 @@ namespace NDecrypt.Core
 
                 // Deserialize the cart information
                 var nitro = Nitro.Create(reader);
-                if (nitro == null)
+                if (nitro is null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
                 }
 
                 // Ensure the secure area was read
-                if (nitro.SecureArea == null)
+                if (nitro.SecureArea is null)
                 {
                     Console.WriteLine("Error: Invalid secure area!");
                     return false;
@@ -80,7 +80,7 @@ namespace NDecrypt.Core
             try
             {
                 // If the output is provided, copy the input file
-                if (output != null)
+                if (output is not null)
                     File.Copy(input, output, overwrite: true);
                 else
                     output = input;
@@ -90,14 +90,14 @@ namespace NDecrypt.Core
 
                 // Deserialize the cart information
                 var nitro = Nitro.Create(reader);
-                if (nitro == null)
+                if (nitro is null)
                 {
                     Console.WriteLine("Error: Not a DS or DSi Rom!");
                     return false;
                 }
 
                 // Ensure the secure area was read
-                if (nitro.SecureArea == null)
+                if (nitro.SecureArea is null)
                 {
                     Console.WriteLine("Error: Invalid secure area!");
                     return false;
@@ -136,7 +136,7 @@ namespace NDecrypt.Core
 
                 // Deserialize the cart information
                 var cart = Nitro.Create(input);
-                if (cart?.Model == null)
+                if (cart?.Model is null)
                     return "Error: Not a DS/DSi cart image!";
 
                 // Get a string builder for the status
@@ -145,7 +145,7 @@ namespace NDecrypt.Core
 
                 // Get the encryption status
                 bool? decrypted = cart.CheckIfDecrypted(out _);
-                if (decrypted == null)
+                if (decrypted is null)
                     sb.Append("Empty");
                 else if (decrypted == true)
                     sb.Append("Decrypted");

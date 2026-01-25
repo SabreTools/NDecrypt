@@ -33,7 +33,7 @@ namespace NDecrypt.Features
         {
             // Attempt to derive the tool for the path
             var tool = DeriveTool(input);
-            if (tool == null)
+            if (tool is null)
                 return;
 
             // Derive the output filename, if required

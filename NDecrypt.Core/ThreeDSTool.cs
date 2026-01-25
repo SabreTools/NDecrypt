@@ -47,7 +47,7 @@ namespace NDecrypt.Core
             try
             {
                 // If the output is provided, copy the input file
-                if (output != null)
+                if (output is not null)
                     File.Copy(input, output, overwrite: true);
                 else
                     output = input;
@@ -58,7 +58,7 @@ namespace NDecrypt.Core
 
                 // Deserialize the cart information
                 var cart = N3DS.Create(reader);
-                if (cart?.Model == null)
+                if (cart?.Model is null)
                 {
                     Console.WriteLine("Error: Not a 3DS cart image!");
                     return false;
@@ -86,7 +86,7 @@ namespace NDecrypt.Core
         private void DecryptAllPartitions(N3DS cart, bool force, Stream reader, Stream writer)
         {
             // Check the partitions table
-            if (cart.PartitionsTable == null || cart.Partitions == null)
+            if (cart.PartitionsTable is null || cart.Partitions is null)
             {
                 Console.WriteLine("Invalid partitions table!");
                 return;
@@ -96,7 +96,7 @@ namespace NDecrypt.Core
             for (int p = 0; p < 8; p++)
             {
                 var partition = cart.Partitions[p];
-                if (partition == null || partition.MagicID != NCCHMagicNumber)
+                if (partition is null || partition.MagicID != NCCHMagicNumber)
                 {
                     Console.WriteLine($"Partition {p} Not found... Skipping...");
                     continue;
@@ -104,7 +104,7 @@ namespace NDecrypt.Core
 
                 // Check the partition has data
                 var partitionEntry = cart.PartitionsTable[p];
-                if (partitionEntry == null || partitionEntry.Length == 0)
+                if (partitionEntry is null || partitionEntry.Length == 0)
                 {
                     Console.WriteLine($"Partition {p} No data... Skipping...");
                     continue;
@@ -168,7 +168,7 @@ namespace NDecrypt.Core
         {
             // Get the partition
             var partition = cart.Partitions?[index];
-            if (partition?.Flags == null)
+            if (partition?.Flags is null)
                 return;
 
             // Get partition-specific values
@@ -325,7 +325,7 @@ namespace NDecrypt.Core
         /// <param name="writer">Stream representing the output</param>
         private void DecryptExeFSFileEntries(N3DS cart, int index, Stream reader, Stream writer)
         {
-            if (cart.ExeFSHeaders == null || index < 0 || index > cart.ExeFSHeaders.Length)
+            if (cart.ExeFSHeaders is null || index < 0 || index > cart.ExeFSHeaders.Length)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return;
@@ -338,7 +338,7 @@ namespace NDecrypt.Core
 
             // Get the ExeFS header
             var exeFsHeader = cart.ExeFSHeaders[index];
-            if (exeFsHeader?.FileHeaders == null)
+            if (exeFsHeader?.FileHeaders is null)
             {
                 Console.WriteLine($"Partition {index} ExeFS header does not exist. Skipping...");
                 return;
@@ -356,7 +356,7 @@ namespace NDecrypt.Core
 
                 // Get the file header
                 var fileHeader = exeFsHeader.FileHeaders[i];
-                if (fileHeader == null)
+                if (fileHeader is null)
                     continue;
 
                 // Create the ExeFS AES ciphers for this partition
@@ -466,7 +466,7 @@ namespace NDecrypt.Core
             try
             {
                 // If the output is provided, copy the input file
-                if (output != null)
+                if (output is not null)
                     File.Copy(input, output, overwrite: true);
                 else
                     output = input;
@@ -477,7 +477,7 @@ namespace NDecrypt.Core
 
                 // Deserialize the cart information
                 var cart = N3DS.Create(reader);
-                if (cart?.Model == null)
+                if (cart?.Model is null)
                 {
                     Console.WriteLine("Error: Not a 3DS cart image!");
                     return false;
@@ -505,7 +505,7 @@ namespace NDecrypt.Core
         private void EncryptAllPartitions(N3DS cart, bool force, Stream reader, Stream writer)
         {
             // Check the partitions table
-            if (cart.PartitionsTable == null || cart.Partitions == null)
+            if (cart.PartitionsTable is null || cart.Partitions is null)
             {
                 Console.WriteLine("Invalid partitions table!");
                 return;
@@ -516,7 +516,7 @@ namespace NDecrypt.Core
             {
                 // Check the partition exists
                 var partition = cart.Partitions[p];
-                if (partition == null || partition.MagicID != NCCHMagicNumber)
+                if (partition is null || partition.MagicID != NCCHMagicNumber)
                 {
                     Console.WriteLine($"Partition {p} Not found... Skipping...");
                     continue;
@@ -524,7 +524,7 @@ namespace NDecrypt.Core
 
                 // Check the partition has data
                 var partitionEntry = cart.PartitionsTable[p];
-                if (partitionEntry == null || partitionEntry.Length == 0)
+                if (partitionEntry is null || partitionEntry.Length == 0)
                 {
                     Console.WriteLine($"Partition {p} No data... Skipping...");
                     continue;
@@ -588,12 +588,12 @@ namespace NDecrypt.Core
         {
             // Get the partition
             var partition = cart.Partitions?[index];
-            if (partition == null)
+            if (partition is null)
                 return;
 
             // Get the backup header
             var backupHeader = cart.BackupHeader;
-            if (backupHeader?.Flags == null)
+            if (backupHeader?.Flags is null)
                 return;
 
             // Get partition-specific values
@@ -658,7 +658,7 @@ namespace NDecrypt.Core
         /// <param name="writer">Stream representing the output</param>
         private bool EncryptExeFS(N3DS cart, int index, Stream reader, Stream writer)
         {
-            if (cart.ExeFSHeaders == null || index < 0 || index > cart.ExeFSHeaders.Length)
+            if (cart.ExeFSHeaders is null || index < 0 || index > cart.ExeFSHeaders.Length)
             {
                 Console.WriteLine($"Partition {index} ExeFS: No Data... Skipping...");
                 return false;
@@ -666,7 +666,7 @@ namespace NDecrypt.Core
 
             // Get the ExeFS header
             var exefsHeader = cart.ExeFSHeaders[index];
-            if (exefsHeader == null)
+            if (exefsHeader is null)
             {
                 Console.WriteLine($"Partition {index} ExeFS header does not exist. Skipping...");
                 return false;
@@ -764,7 +764,7 @@ namespace NDecrypt.Core
 
             // If the header failed to read, log and return
             var exeFsHeader = cart.ExeFSHeaders?[index];
-            if (exeFsHeader?.FileHeaders == null)
+            if (exeFsHeader?.FileHeaders is null)
             {
                 Console.WriteLine($"Partition {index} ExeFS header does not exist. Skipping...");
                 return;
@@ -779,7 +779,7 @@ namespace NDecrypt.Core
 
                 // Get the file header
                 var fileHeader = exeFsHeader.FileHeaders[i];
-                if (fileHeader == null)
+                if (fileHeader is null)
                     continue;
 
                 // Create the ExeFS AES ciphers for this partition
@@ -863,7 +863,7 @@ namespace NDecrypt.Core
 
             // Get the backup header
             var backupHeader = cart.BackupHeader;
-            if (backupHeader?.Flags == null)
+            if (backupHeader?.Flags is null)
                 return;
 
             // Seek to the CryptoMethod location
@@ -901,7 +901,7 @@ namespace NDecrypt.Core
 
                 // Deserialize the cart information
                 var cart = N3DS.Create(input);
-                if (cart?.Model == null)
+                if (cart?.Model is null)
                     return "Error: Not a 3DS cart image!";
 
                 // Get a string builder for the status

@@ -14,7 +14,7 @@ namespace NDecrypt
             var commandSet = CreateCommands();
 
             // If we have no args, show the help and quit
-            if (args == null || args.Length == 0)
+            if (args is null || args.Length == 0)
             {
                 commandSet.OutputAllHelp();
                 return;
@@ -25,7 +25,7 @@ namespace NDecrypt
 
             // Get the associated feature
             var topLevel = commandSet.GetTopLevel(featureName);
-            if (topLevel == null || topLevel is not Feature feature)
+            if (topLevel is null || topLevel is not Feature feature)
             {
                 Console.WriteLine($"'{featureName}' is not valid feature flag");
                 commandSet.OutputFeatureHelp(featureName);

@@ -244,7 +244,7 @@ namespace NDecrypt.Core
         /// <param name="keyfile">Path to the keyfile</param>
         public DecryptArgs(string? config)
         {
-            if (config == null || !File.Exists(config))
+            if (config is null || !File.Exists(config))
             {
                 IsReady = false;
                 return;
@@ -252,7 +252,7 @@ namespace NDecrypt.Core
 
             // Try to read the configuration file
             var configObj = Configuration.Create(config);
-            if (configObj == null)
+            if (configObj is null)
             {
                 IsReady = false;
                 return;
@@ -284,7 +284,7 @@ namespace NDecrypt.Core
             if (NitroEncryptionData.Length > 0)
             {
                 byte[]? actual = HashTool.GetByteArrayHashArray(NitroEncryptionData, HashType.SHA512);
-                if (actual == null || !actual.EqualsExactly(ExpectedNitroSha512Hash))
+                if (actual is null || !actual.EqualsExactly(ExpectedNitroSha512Hash))
                 {
                     Console.WriteLine($"NitroEncryptionData invalid value, disabling...");
                     NitroEncryptionData = [];

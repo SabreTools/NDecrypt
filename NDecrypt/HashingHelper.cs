@@ -19,7 +19,7 @@ namespace NDecrypt
             // Get the file information, if possible
             HashType[] hashTypes = [HashType.CRC32, HashType.MD5, HashType.SHA1, HashType.SHA256];
             var hashDict = HashTool.GetFileHashesAndSize(input, hashTypes, out long size);
-            if (hashDict == null)
+            if (hashDict is null)
                 return null;
 
             // Get the results

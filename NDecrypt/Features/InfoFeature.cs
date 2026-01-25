@@ -27,7 +27,7 @@ namespace NDecrypt.Features
         {
             // Attempt to derive the tool for the path
             var tool = DeriveTool(input);
-            if (tool == null)
+            if (tool is null)
                 return;
 
             Console.WriteLine($"Processing {input}");
