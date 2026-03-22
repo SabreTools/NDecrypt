@@ -7,7 +7,7 @@ namespace NDecrypt.Core
     /// <summary>
     /// Set of all keys associated with a partition
     /// </summary>
-    public class PartitionKeys
+    internal class PartitionKeys
     {
         /// <summary>
         /// Primary AES-CTR encryption key
