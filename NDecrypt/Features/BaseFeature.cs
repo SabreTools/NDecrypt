@@ -103,7 +103,7 @@ namespace NDecrypt.Features
 
             // Create the 3DS tool
             bool development = GetBoolean(DevelopmentName);
-            var decryptArgs = new ThreeDSDecryptArgs
+            _tools[FileType.N3DS] = new ThreeDSTool(development)
             {
                 AESHardwareConstant = config.AESHardwareConstant.FromHexString() ?? [],
                 KeyX0x18 = config.KeyX0x18.FromHexString() ?? [],
@@ -115,7 +115,6 @@ namespace NDecrypt.Features
                 DevKeyX0x25 = config.DevKeyX0x25.FromHexString() ?? [],
                 DevKeyX0x2C = config.DevKeyX0x2C.FromHexString() ?? []
             };
-            _tools[FileType.N3DS] = new ThreeDSTool(development, decryptArgs);
         }
 
         /// <summary>
