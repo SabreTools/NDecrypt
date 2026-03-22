@@ -60,15 +60,8 @@ namespace NDecrypt.Core
             }
 
             // Set the standard normal key values
-            NormalKey = keyX.RotateLeft(2);
-            NormalKey = NormalKey.Xor(KeyY);
-            NormalKey = NormalKey.Add(hardwareConstant);
-            NormalKey = NormalKey.RotateLeft(87);
-
-            NormalKey2C = keyX0x2C.RotateLeft(2);
-            NormalKey2C = NormalKey2C.Xor(KeyY);
-            NormalKey2C = NormalKey2C.Add(hardwareConstant);
-            NormalKey2C = NormalKey2C.RotateLeft(87);
+            NormalKey = ProcessKey(keyX, KeyY, hardwareConstant);
+            NormalKey2C = ProcessKey(keyX0x2C, KeyY, hardwareConstant);
         }
 
         /// <summary>
@@ -91,10 +84,18 @@ namespace NDecrypt.Core
             }
 
             // Encrypting RomFS for partitions 1 and up always use Key0x2C
-            NormalKey = keyX0x2C.RotateLeft(2);
-            NormalKey = NormalKey.Xor(KeyY);
-            NormalKey = NormalKey.Add(hardwareConstant);
-            NormalKey = NormalKey.RotateLeft(87);
+            NormalKey = ProcessKey(keyX0x2C, KeyY, hardwareConstant);
+        }
+
+        /// <summary>
+        /// Process a key with the standard processing steps
+        /// </summary>
+        private static byte[] ProcessKey(byte[] keyBase, byte[] keyY, byte[] hardwareConstant)
+        {
+            byte[] processed = keyBase.RotateLeft(2);
+            processed = processed.Xor(keyY);
+            processed = processed.Add(hardwareConstant);
+            return processed.RotateLeft(87);
         }
     }
 }
