@@ -105,6 +105,10 @@ namespace NDecrypt.Features
                 FileType.NDSi => _tools[FileType.NDS],
                 FileType.iQueDS => _tools[FileType.NDS],
                 FileType.N3DS => _tools[FileType.N3DS],
+                FileType.iQue3DS => _tools[FileType.N3DS],
+
+                // Invalid cases
+                FileType.NULL => null,
                 _ => null,
             };
         }

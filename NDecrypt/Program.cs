@@ -6,7 +6,7 @@ using SabreTools.CommandLine.Features;
 
 namespace NDecrypt
 {
-    class Program
+    public class Program
     {
         public static void Main(string[] args)
         {

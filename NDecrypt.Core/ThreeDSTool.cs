@@ -214,7 +214,7 @@ namespace NDecrypt.Core
             var cipher = AESCTR.CreateDecryptionCipher(_keysMap[index].NormalKey2C, cart.PlainIV(index));
 
             // Process the extended header
-            AESCTR.PerformOperation(Constants.CXTExtendedDataHeaderLength, cipher, reader, writer, null);
+            AESCTR.PerformOperation(CXTExtendedDataHeaderLength, cipher, reader, writer, null);
 
 #if NET6_0_OR_GREATER
             // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer
@@ -639,7 +639,7 @@ namespace NDecrypt.Core
             var cipher = AESCTR.CreateEncryptionCipher(_keysMap[index].NormalKey2C, cart.PlainIV(index));
 
             // Process the extended header
-            AESCTR.PerformOperation(Constants.CXTExtendedDataHeaderLength, cipher, reader, writer, null);
+            AESCTR.PerformOperation(CXTExtendedDataHeaderLength, cipher, reader, writer, null);
 
 #if NET6_0_OR_GREATER
             // In .NET 6.0, this operation is not picked up by the reader, so we have to force it to reload its buffer

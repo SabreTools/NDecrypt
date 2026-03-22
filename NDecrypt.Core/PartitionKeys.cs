@@ -101,6 +101,11 @@ namespace NDecrypt.Core
                     Console.WriteLine("Encryption Method: Key 0x1B");
                     KeyX = development ? args.DevKeyX0x1B : args.KeyX0x1B;
                     break;
+
+                // This should never happen
+                default:
+                    Console.WriteLine("Encryption Method: UNSUPPORTED");
+                    break;
             }
 
             // Set the normal key based on the new KeyX value
