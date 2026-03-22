@@ -9,6 +9,7 @@ using static SabreTools.Data.Models.N3DS.Constants;
 
 namespace NDecrypt.Core
 {
+    // TODO: Strip this out when Serialization is updated
     public class ThreeDSProcessor : ICartProcessor
     {
         /// <summary>
