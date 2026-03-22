@@ -32,6 +32,40 @@ namespace NDecrypt.Core
             _decryptArgs = decryptArgs;
         }
 
+        #region Common
+
+        /// <summary>
+        /// Get KeyX value for a crypto method and development status combination
+        /// </summary>
+        private byte[] GetKeyXForCryptoMethod(CryptoMethod method)
+        {
+            switch (method)
+            {
+                case CryptoMethod.Original:
+                    Console.WriteLine("Encryption Method: Key 0x2C");
+                    return _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+
+                case CryptoMethod.Seven:
+                    Console.WriteLine("Encryption Method: Key 0x25");
+                    return _development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
+
+                case CryptoMethod.NineThree:
+                    Console.WriteLine("Encryption Method: Key 0x18");
+                    return _development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
+
+                case CryptoMethod.NineSix:
+                    Console.WriteLine("Encryption Method: Key 0x1B");
+                    return _development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
+
+                // This should never happen
+                default:
+                    Console.WriteLine("Encryption Method: UNSUPPORTED");
+                    return [];
+            }
+        }
+
+        #endregion
+
         #region Decrypt
 
         /// <inheritdoc/>
@@ -165,12 +199,15 @@ namespace NDecrypt.Core
                 return;
 
             // Get partition-specific values
-            byte[]? rsaSignature = partition.RSA2048Signature;
+            byte[]? signature = partition.RSA2048Signature;
             BitMasks masks = cart.GetBitMasks(index);
             CryptoMethod method = cart.GetCryptoMethod(index);
 
             // Get the partition keys
-            _keysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
+            byte[] hardwareConstant = _decryptArgs.AESHardwareConstant;
+            byte[] keyX = GetKeyXForCryptoMethod(method);
+            byte[] keyX0x2C = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+            _keysMap[index] = new PartitionKeys(signature, masks, hardwareConstant, keyX, keyX0x2C);
         }
 
         /// <summary>
@@ -583,12 +620,15 @@ namespace NDecrypt.Core
                 return;
 
             // Get partition-specific values
-            byte[]? rsaSignature = partition.RSA2048Signature;
+            byte[]? signature = partition.RSA2048Signature;
             BitMasks masks = backupHeader.Flags.BitMasks;
             CryptoMethod method = backupHeader.Flags.CryptoMethod;
 
             // Get the partition keys
-            _keysMap[index] = new PartitionKeys(_decryptArgs, rsaSignature, masks, method, _development);
+            byte[] hardwareConstant = _decryptArgs.AESHardwareConstant;
+            byte[] keyX = GetKeyXForCryptoMethod(method);
+            byte[] keyX0x2C = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
+            _keysMap[index] = new PartitionKeys(signature, masks, hardwareConstant, keyX, keyX0x2C);
         }
 
         /// <summary>
@@ -820,7 +860,9 @@ namespace NDecrypt.Core
             if (index > 0)
             {
                 var backupHeader = cart.BackupHeader;
-                _keysMap[index].SetRomFSValues(backupHeader!.Flags!.BitMasks);
+                _keysMap[index].SetRomFSValues(backupHeader.Flags.BitMasks,
+                    hardwareConstant: _decryptArgs.AESHardwareConstant,
+                    keyX0x2C: _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C);
             }
 
             // Create the RomFS AES cipher for this partition

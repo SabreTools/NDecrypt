@@ -9,60 +9,30 @@ namespace NDecrypt.Core
     /// </summary>
     public class PartitionKeys
     {
-        public byte[] KeyX { get; private set; }
-
-        public byte[] KeyX2C { get; }
-
-        public byte[] KeyY { get; }
-
         public byte[] NormalKey { get; private set; }
 
         public byte[] NormalKey2C { get; }
 
-        /// <summary>
-        /// Decryption args to use while processing
-        /// </summary>
-        private readonly ThreeDSDecryptArgs _decryptArgs;
-
-        /// <summary>
-        /// Indicates if development images are expected
-        /// </summary>
-        private readonly bool _development;
+        private readonly byte[] KeyY;
 
         /// <summary>
         /// Create a new set of keys for a given partition
         /// </summary>
-        /// <param name="args">Decryption args representing available keys</param>
         /// <param name="signature">RSA-2048 signature from the partition</param>
         /// <param name="masks">BitMasks from the partition or backup header</param>
-        /// <param name="method">CryptoMethod from the partition or backup header</param>
-        /// <param name="development">Determine if development keys are used</param>
-        public PartitionKeys(ThreeDSDecryptArgs args, byte[]? signature, BitMasks masks, CryptoMethod method, bool development)
+        /// <param name="hardwareConstant">AES hardware constant to use</param>
+        /// <param name="keyX">KeyX value to assign based on crypto method and development status</param>
+        /// <param name="KeyX2C">KeyX value to assign based on development status</param>
+        public PartitionKeys(byte[]? signature, BitMasks masks, byte[] hardwareConstant, byte[] keyX, byte[] keyX0x2C)
         {
             // Validate inputs
             if (signature is not null && signature.Length < 16)
                 throw new ArgumentOutOfRangeException(nameof(signature), $"{nameof(signature)} must be at least 16 bytes");
 
-            // Set fields for future use
-            _decryptArgs = args;
-            _development = development;
-
-            // Set the standard KeyX values
-            KeyX = new byte[16];
-            KeyX2C = development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
-
             // Backup headers can't have a KeyY value set
             KeyY = new byte[16];
             if (signature is not null)
                 Array.Copy(signature, KeyY, 16);
-
-            // Set the standard normal key values
-            NormalKey = new byte[16];
-
-            NormalKey2C = KeyX2C.RotateLeft(2);
-            NormalKey2C = NormalKey2C.Xor(KeyY);
-            NormalKey2C = NormalKey2C.Add(add: _decryptArgs.AESHardwareConstant);
-            NormalKey2C = NormalKey2C.RotateLeft(87);
 
             // Special case for zero-key
 #if NET20 || NET35
@@ -77,46 +47,22 @@ namespace NDecrypt.Core
                 return;
             }
 
-            // Set KeyX values based on crypto method
-            switch (method)
-            {
-                case CryptoMethod.Original:
-                    Console.WriteLine("Encryption Method: Key 0x2C");
-                    KeyX = development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
-                    break;
-
-                case CryptoMethod.Seven:
-                    Console.WriteLine("Encryption Method: Key 0x25");
-                    KeyX = development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
-                    break;
-
-                case CryptoMethod.NineThree:
-                    Console.WriteLine("Encryption Method: Key 0x18");
-                    KeyX = development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
-                    break;
-
-                case CryptoMethod.NineSix:
-                    Console.WriteLine("Encryption Method: Key 0x1B");
-                    KeyX = development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
-                    break;
-
-                // This should never happen
-                default:
-                    Console.WriteLine("Encryption Method: UNSUPPORTED");
-                    break;
-            }
-
-            // Set the normal key based on the new KeyX value
-            NormalKey = KeyX.RotateLeft(2);
+            // Set the standard normal key values
+            NormalKey = keyX.RotateLeft(2);
             NormalKey = NormalKey.Xor(KeyY);
-            NormalKey = NormalKey.Add(_decryptArgs.AESHardwareConstant);
+            NormalKey = NormalKey.Add(hardwareConstant);
             NormalKey = NormalKey.RotateLeft(87);
+
+            NormalKey2C = keyX0x2C.RotateLeft(2);
+            NormalKey2C = NormalKey2C.Xor(KeyY);
+            NormalKey2C = NormalKey2C.Add(hardwareConstant);
+            NormalKey2C = NormalKey2C.RotateLeft(87);
         }
 
         /// <summary>
         /// Set RomFS values based on the bit masks
         /// </summary>
-        public void SetRomFSValues(BitMasks masks)
+        public void SetRomFSValues(BitMasks masks, byte[] hardwareConstant, byte[] keyX0x2C)
         {
             // NormalKey has a constant value for zero-key
 #if NET20 || NET35
@@ -130,11 +76,9 @@ namespace NDecrypt.Core
             }
 
             // Encrypting RomFS for partitions 1 and up always use Key0x2C
-            KeyX = _development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
-
-            NormalKey = KeyX.RotateLeft(2);
+            NormalKey = keyX0x2C.RotateLeft(2);
             NormalKey = NormalKey.Xor(KeyY);
-            NormalKey = NormalKey.Add(_decryptArgs.AESHardwareConstant);
+            NormalKey = NormalKey.Add(hardwareConstant);
             NormalKey = NormalKey.RotateLeft(87);
         }
     }
