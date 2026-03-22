@@ -9,10 +9,22 @@ namespace NDecrypt.Core
     /// </summary>
     public class PartitionKeys
     {
+        /// <summary>
+        /// Primary AES-CTR encryption key
+        /// </summary>
+        /// <remarks>Used for both EXE-FS and ROM-FS</remarks>
         public byte[] NormalKey { get; private set; }
 
+        /// <summary>
+        /// Secondary AES-CTR encryption key
+        /// </summary>
+        /// <remarks>Used for only EXE-FS</remarks>
         public byte[] NormalKey2C { get; }
 
+        /// <summary>
+        /// First 16 bytes of the RSA-2048 signature
+        /// </summary>
+        /// <remarks>Used as an XOR value during key generation</remarks>
         private readonly byte[] KeyY;
 
         /// <summary>
@@ -22,7 +34,7 @@ namespace NDecrypt.Core
         /// <param name="masks">BitMasks from the partition or backup header</param>
         /// <param name="hardwareConstant">AES hardware constant to use</param>
         /// <param name="keyX">KeyX value to assign based on crypto method and development status</param>
-        /// <param name="KeyX2C">KeyX value to assign based on development status</param>
+        /// <param name="keyX0x2C">KeyX2C value to assign based on development status</param>
         public PartitionKeys(byte[]? signature, BitMasks masks, byte[] hardwareConstant, byte[] keyX, byte[] keyX0x2C)
         {
             // Validate inputs
@@ -62,6 +74,9 @@ namespace NDecrypt.Core
         /// <summary>
         /// Set RomFS values based on the bit masks
         /// </summary>
+        /// <param name="masks">BitMasks from the partition or backup header</param>
+        /// <param name="hardwareConstant">AES hardware constant to use</param>
+        /// <param name="keyX0x2C">KeyX2C value to assign based on development status</param>
         public void SetRomFSValues(BitMasks masks, byte[] hardwareConstant, byte[] keyX0x2C)
         {
             // NormalKey has a constant value for zero-key
