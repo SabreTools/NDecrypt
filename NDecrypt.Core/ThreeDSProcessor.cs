@@ -31,7 +31,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x18, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x18))
                     return;
@@ -54,7 +54,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x18, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x18))
                     return;
@@ -77,7 +77,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x1B, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x1B))
                     return;
@@ -100,7 +100,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x1B, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x1B))
                     return;
@@ -123,7 +123,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x25, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x25))
                     return;
@@ -146,7 +146,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x25, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x25))
                     return;
@@ -169,7 +169,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(KeyX0x2C, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedKeyX0x2C))
                     return;
@@ -192,7 +192,7 @@ namespace NDecrypt.Core
                     return;
 
                 // Validate the key data
-                var cipher = AESCTR.CreateEncryptionCipher(DevKeyX0x2C, TestIV);
+                var cipher = AESCTR.CreateEncryptionCipher(value, TestIV);
                 byte[] actual = cipher.ProcessBytes(TestPattern);
                 if (!actual.EqualsExactly(ExpectedDevKeyX0x2C))
                     return;
