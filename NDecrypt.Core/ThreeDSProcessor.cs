@@ -9,7 +9,7 @@ using static SabreTools.Data.Models.N3DS.Constants;
 
 namespace NDecrypt.Core
 {
-    public class ThreeDSTool : ITool
+    public class ThreeDSProcessor : ICartProcessor
     {
         /// <summary>
         /// AES Hardware Constant
@@ -359,7 +359,7 @@ namespace NDecrypt.Core
 
         #endregion
 
-        public ThreeDSTool(bool development)
+        public ThreeDSProcessor(bool development)
         {
             _development = development;
         }

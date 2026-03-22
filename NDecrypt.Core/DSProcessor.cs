@@ -7,7 +7,7 @@ using SabreTools.Serialization.Wrappers;
 
 namespace NDecrypt.Core
 {
-    public class DSTool : ITool
+    public class DSProcessor : ICartProcessor
     {
         #region Properties
 

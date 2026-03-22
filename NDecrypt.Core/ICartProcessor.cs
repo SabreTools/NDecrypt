@@ -1,6 +1,6 @@
 ﻿namespace NDecrypt.Core
 {
-    public interface ITool
+    public interface ICartProcessor
     {
         /// <summary>
         /// Attempts to encrypt an input file

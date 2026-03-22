@@ -32,7 +32,7 @@ namespace NDecrypt.Features
         /// <summary>
         /// Mapping of reusable tools
         /// </summary>
-        private readonly Dictionary<FileType, ITool?> _tools = [];
+        private readonly Dictionary<FileType, ICartProcessor?> _tools = [];
 
         protected BaseFeature(string name, string[] flags, string description, string? detailed = null)
             : base(name, flags, description, detailed)
@@ -96,14 +96,14 @@ namespace NDecrypt.Features
                 return;
 
             // Create the DS tool
-            _tools[FileType.NDS] = new DSTool
+            _tools[FileType.NDS] = new DSProcessor
             {
                 BlowfishTable = config.NitroEncryptionData.FromHexString() ?? [],
             };
 
             // Create the 3DS tool
             bool development = GetBoolean(DevelopmentName);
-            _tools[FileType.N3DS] = new ThreeDSTool(development)
+            _tools[FileType.N3DS] = new ThreeDSProcessor(development)
             {
                 AESHardwareConstant = config.AESHardwareConstant.FromHexString() ?? [],
                 KeyX0x18 = config.KeyX0x18.FromHexString() ?? [],
@@ -121,7 +121,7 @@ namespace NDecrypt.Features
         /// Derive the encryption tool to be used for the given file
         /// </summary>
         /// <param name="filename">Filename to derive the tool from</param>
-        protected ITool? DeriveTool(string filename)
+        protected ICartProcessor? DeriveTool(string filename)
         {
             if (!File.Exists(filename))
             {
