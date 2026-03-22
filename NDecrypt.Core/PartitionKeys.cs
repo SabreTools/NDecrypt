@@ -22,7 +22,7 @@ namespace NDecrypt.Core
         /// <summary>
         /// Decryption args to use while processing
         /// </summary>
-        private readonly DecryptArgs _decryptArgs;
+        private readonly ThreeDSDecryptArgs _decryptArgs;
 
         /// <summary>
         /// Indicates if development images are expected
@@ -37,11 +37,9 @@ namespace NDecrypt.Core
         /// <param name="masks">BitMasks from the partition or backup header</param>
         /// <param name="method">CryptoMethod from the partition or backup header</param>
         /// <param name="development">Determine if development keys are used</param>
-        public PartitionKeys(DecryptArgs args, byte[]? signature, BitMasks masks, CryptoMethod method, bool development)
+        public PartitionKeys(ThreeDSDecryptArgs args, byte[]? signature, BitMasks masks, CryptoMethod method, bool development)
         {
             // Validate inputs
-            if (args.IsReady != true)
-                throw new InvalidOperationException($"{nameof(args)} must be initialized before use");
             if (signature is not null && signature.Length < 16)
                 throw new ArgumentOutOfRangeException(nameof(signature), $"{nameof(signature)} must be at least 16 bytes");
 
@@ -51,7 +49,7 @@ namespace NDecrypt.Core
 
             // Set the standard KeyX values
             KeyX = new byte[16];
-            KeyX2C = development ? args.DevKeyX0x2C : args.KeyX0x2C;
+            KeyX2C = development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
 
             // Backup headers can't have a KeyY value set
             KeyY = new byte[16];
@@ -63,7 +61,7 @@ namespace NDecrypt.Core
 
             NormalKey2C = KeyX2C.RotateLeft(2);
             NormalKey2C = NormalKey2C.Xor(KeyY);
-            NormalKey2C = NormalKey2C.Add(add: args.AESHardwareConstant);
+            NormalKey2C = NormalKey2C.Add(add: _decryptArgs.AESHardwareConstant);
             NormalKey2C = NormalKey2C.RotateLeft(87);
 
             // Special case for zero-key
@@ -84,22 +82,22 @@ namespace NDecrypt.Core
             {
                 case CryptoMethod.Original:
                     Console.WriteLine("Encryption Method: Key 0x2C");
-                    KeyX = development ? args.DevKeyX0x2C : args.KeyX0x2C;
+                    KeyX = development ? _decryptArgs.DevKeyX0x2C : _decryptArgs.KeyX0x2C;
                     break;
 
                 case CryptoMethod.Seven:
                     Console.WriteLine("Encryption Method: Key 0x25");
-                    KeyX = development ? args.DevKeyX0x25 : args.KeyX0x25;
+                    KeyX = development ? _decryptArgs.DevKeyX0x25 : _decryptArgs.KeyX0x25;
                     break;
 
                 case CryptoMethod.NineThree:
                     Console.WriteLine("Encryption Method: Key 0x18");
-                    KeyX = development ? args.DevKeyX0x18 : args.KeyX0x18;
+                    KeyX = development ? _decryptArgs.DevKeyX0x18 : _decryptArgs.KeyX0x18;
                     break;
 
                 case CryptoMethod.NineSix:
                     Console.WriteLine("Encryption Method: Key 0x1B");
-                    KeyX = development ? args.DevKeyX0x1B : args.KeyX0x1B;
+                    KeyX = development ? _decryptArgs.DevKeyX0x1B : _decryptArgs.KeyX0x1B;
                     break;
 
                 // This should never happen
@@ -111,7 +109,7 @@ namespace NDecrypt.Core
             // Set the normal key based on the new KeyX value
             NormalKey = KeyX.RotateLeft(2);
             NormalKey = NormalKey.Xor(KeyY);
-            NormalKey = NormalKey.Add(args.AESHardwareConstant);
+            NormalKey = NormalKey.Add(_decryptArgs.AESHardwareConstant);
             NormalKey = NormalKey.RotateLeft(87);
         }
 

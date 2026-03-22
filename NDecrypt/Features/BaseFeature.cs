@@ -4,6 +4,7 @@ using System.IO;
 using NDecrypt.Core;
 using SabreTools.CommandLine;
 using SabreTools.CommandLine.Inputs;
+using SabreTools.IO.Extensions;
 
 namespace NDecrypt.Features
 {
@@ -31,7 +32,7 @@ namespace NDecrypt.Features
         /// <summary>
         /// Mapping of reusable tools
         /// </summary>
-        private readonly Dictionary<FileType, ITool> _tools = [];
+        private readonly Dictionary<FileType, ITool?> _tools = [];
 
         protected BaseFeature(string name, string[] flags, string description, string? detailed = null)
             : base(name, flags, description, detailed)
@@ -80,10 +81,41 @@ namespace NDecrypt.Features
         /// </summary>
         private void InitializeTools()
         {
+            // Set default values for tools
+            _tools[FileType.NDS] = null;
+            _tools[FileType.N3DS] = null;
 
-            var decryptArgs = new DecryptArgs(GetString(ConfigName, "config.json"));
-            _tools[FileType.NDS] = new DSTool(decryptArgs);
-            _tools[FileType.N3DS] = new ThreeDSTool(GetBoolean(DevelopmentName), decryptArgs);
+            // Check the configuration path
+            string? configPath = GetString(ConfigName, "config.json");
+            if (configPath is null || !File.Exists(configPath))
+                return;
+
+            // Try to read the configuration file
+            var config = Configuration.Create(configPath);
+            if (config is null)
+                return;
+
+            // Create the DS tool
+            _tools[FileType.NDS] = new DSTool
+            {
+                BlowfishTable = config.NitroEncryptionData.FromHexString() ?? [],
+            };
+
+            // Create the 3DS tool
+            bool development = GetBoolean(DevelopmentName);
+            var decryptArgs = new ThreeDSDecryptArgs
+            {
+                AESHardwareConstant = config.AESHardwareConstant.FromHexString() ?? [],
+                KeyX0x18 = config.KeyX0x18.FromHexString() ?? [],
+                KeyX0x1B = config.KeyX0x1B.FromHexString() ?? [],
+                KeyX0x25 = config.KeyX0x25.FromHexString() ?? [],
+                KeyX0x2C = config.KeyX0x2C.FromHexString() ?? [],
+                DevKeyX0x18 = config.DevKeyX0x18.FromHexString() ?? [],
+                DevKeyX0x1B = config.DevKeyX0x1B.FromHexString() ?? [],
+                DevKeyX0x25 = config.DevKeyX0x25.FromHexString() ?? [],
+                DevKeyX0x2C = config.DevKeyX0x2C.FromHexString() ?? []
+            };
+            _tools[FileType.N3DS] = new ThreeDSTool(development, decryptArgs);
         }
 
         /// <summary>

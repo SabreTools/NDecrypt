@@ -1,30 +1,71 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-#if NETFRAMEWORK || NETSTANDARD2_0_OR_GREATER
+using SabreTools.Hashing;
 using SabreTools.IO.Extensions;
-#endif
 using SabreTools.Serialization.Wrappers;
 
 namespace NDecrypt.Core
 {
     public class DSTool : ITool
     {
-        /// <summary>
-        /// Decryption args to use while processing
-        /// </summary>
-        private readonly DecryptArgs _decryptArgs;
+        #region Properties
 
-        public DSTool(DecryptArgs decryptArgs)
+        /// <summary>
+        /// Blowfish Table
+        /// </summary>
+        public byte[] BlowfishTable
         {
-            _decryptArgs = decryptArgs;
-        }
+            get;
+            set
+            {
+                // Ignore missing encryption data
+                if (value.Length == 0)
+                    return;
+
+                // Validate the blowfish table data
+                byte[]? actual = HashTool.GetByteArrayHashArray(value, HashType.SHA512);
+                if (actual is null || !actual.EqualsExactly(ExpectedNitroSha512Hash))
+                    return;
+
+                // Assign the validated value
+                field = value;
+            }
+        } = [];
+
+        #endregion
+
+        #region Internal Test Values
+
+        /// <summary>
+        /// Expected hash for NitroEncryptionData
+        /// </summary>
+        private static readonly byte[] ExpectedNitroSha512Hash =
+        [
+            0x1A, 0xD6, 0x40, 0x21, 0xFC, 0x3D, 0x1A, 0x9A,
+            0x9B, 0xC0, 0x88, 0x8E, 0x2E, 0x68, 0xDE, 0x4E,
+            0x8A, 0x60, 0x6B, 0x86, 0x63, 0x22, 0xD2, 0xC7,
+            0xC6, 0xD7, 0xD6, 0xCE, 0x65, 0xF5, 0xBA, 0xA7,
+            0xEA, 0x69, 0x63, 0x7E, 0xC9, 0xE4, 0x57, 0x7B,
+            0x01, 0xFD, 0xCE, 0xC2, 0x26, 0x3B, 0xD9, 0x0D,
+            0x84, 0x57, 0xC2, 0x00, 0xB8, 0x56, 0x9F, 0xE5,
+            0x56, 0xDA, 0x8D, 0xDE, 0x84, 0xB8, 0x8E, 0xE4,
+        ];
+
+        #endregion
 
         #region Encrypt
 
         /// <inheritdoc/>
         public bool EncryptFile(string input, string? output, bool force)
         {
+            // If the blowfish table is not set, do not process
+            if (BlowfishTable.Length == 0)
+            {
+                Console.WriteLine("Error: Nitro encryption data not provided!");
+                return false;
+            }
+
             try
             {
                 // If the output is provided, copy the input file
@@ -52,7 +93,7 @@ namespace NDecrypt.Core
                 }
 
                 // Encrypt the secure area
-                nitro.EncryptSecureArea(_decryptArgs.NitroEncryptionData, force);
+                nitro.EncryptSecureArea(BlowfishTable, force);
 
                 // Write the encrypted secure area
                 using var writer = File.Open(output, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
@@ -77,6 +118,13 @@ namespace NDecrypt.Core
         /// <inheritdoc/>
         public bool DecryptFile(string input, string? output, bool force)
         {
+            // If the blowfish table is not set, do not process
+            if (BlowfishTable.Length == 0)
+            {
+                Console.WriteLine("Error: Nitro encryption data not provided!");
+                return false;
+            }
+
             try
             {
                 // If the output is provided, copy the input file
@@ -104,7 +152,7 @@ namespace NDecrypt.Core
                 }
 
                 // Decrypt the secure area
-                nitro.DecryptSecureArea(_decryptArgs.NitroEncryptionData, force);
+                nitro.DecryptSecureArea(BlowfishTable, force);
 
                 // Write the decrypted secure area
                 using var writer = File.Open(output, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);

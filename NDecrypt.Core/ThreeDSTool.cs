@@ -14,7 +14,7 @@ namespace NDecrypt.Core
         /// <summary>
         /// Decryption args to use while processing
         /// </summary>
-        private readonly DecryptArgs _decryptArgs;
+        private readonly ThreeDSDecryptArgs _decryptArgs;
 
         /// <summary>
         /// Indicates if development images are expected
@@ -26,7 +26,7 @@ namespace NDecrypt.Core
         /// </summary>
         private readonly PartitionKeys[] _keysMap = new PartitionKeys[8];
 
-        public ThreeDSTool(bool development, DecryptArgs decryptArgs)
+        public ThreeDSTool(bool development, ThreeDSDecryptArgs decryptArgs)
         {
             _development = development;
             _decryptArgs = decryptArgs;
@@ -37,13 +37,6 @@ namespace NDecrypt.Core
         /// <inheritdoc/>
         public bool DecryptFile(string input, string? output, bool force)
         {
-            // Ensure the constants are all set
-            if (_decryptArgs.IsReady != true)
-            {
-                Console.WriteLine("Could not read keys. Please make sure the file exists and try again.");
-                return false;
-            }
-
             try
             {
                 // If the output is provided, copy the input file
@@ -456,13 +449,6 @@ namespace NDecrypt.Core
         /// <inheritdoc/>
         public bool EncryptFile(string input, string? output, bool force)
         {
-            // Ensure the constants are all set
-            if (_decryptArgs.IsReady != true)
-            {
-                Console.WriteLine("Could not read keys. Please make sure the file exists and try again.");
-                return false;
-            }
-
             try
             {
                 // If the output is provided, copy the input file
