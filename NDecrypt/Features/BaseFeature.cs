@@ -113,7 +113,7 @@ namespace NDecrypt.Features
                 DevKeyX0x18 = config.DevKeyX0x18.FromHexString() ?? [],
                 DevKeyX0x1B = config.DevKeyX0x1B.FromHexString() ?? [],
                 DevKeyX0x25 = config.DevKeyX0x25.FromHexString() ?? [],
-                DevKeyX0x2C = config.DevKeyX0x2C.FromHexString() ?? []
+                DevKeyX0x2C = config.DevKeyX0x2C.FromHexString() ?? [],
             };
         }
 
