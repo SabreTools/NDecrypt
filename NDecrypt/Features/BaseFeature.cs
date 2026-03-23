@@ -32,7 +32,7 @@ namespace NDecrypt.Features
         /// <summary>
         /// Mapping of reusable tools
         /// </summary>
-        private readonly Dictionary<FileType, ICartProcessor?> _tools = [];
+        private readonly Dictionary<FileType, ICartProcessor> _tools = [];
 
         protected BaseFeature(string name, string[] flags, string description, string? detailed = null)
             : base(name, flags, description, detailed)
@@ -82,8 +82,8 @@ namespace NDecrypt.Features
         private void InitializeTools()
         {
             // Set default values for tools
-            _tools[FileType.NDS] = null;
-            _tools[FileType.N3DS] = null;
+            _tools[FileType.NDS] = new DSProcessor();
+            _tools[FileType.N3DS] = new ThreeDSProcessor(development: false);
 
             // Check the configuration path
             string? configPath = GetString(ConfigName, "config.json");
