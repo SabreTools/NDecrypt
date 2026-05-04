@@ -87,13 +87,27 @@ namespace NDecrypt.Features
 
             // Check the configuration path
             string? configPath = GetString(ConfigName, "config.json");
-            if (configPath is null || !File.Exists(configPath))
+            if (configPath is null)
+            {
+                Console.WriteLine("Configuration path could not be determined, keys will not be read!");
                 return;
+            }
+
+            // Get the full configuration path
+            configPath = Path.GetFullPath(configPath);
+            if (!File.Exists(configPath))
+            {
+                Console.WriteLine($"Configuration path '{configPath}' does not exist, keys will not be read!");
+                return;
+            }
 
             // Try to read the configuration file
             var config = Configuration.Create(configPath);
             if (config is null)
+            {
+                Console.WriteLine($"Configuration path '{configPath}' is invalid, keys will not be read!");
                 return;
+            }
 
             // Create the DS tool
             _tools[FileType.NDS] = new DSProcessor
