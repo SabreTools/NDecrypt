@@ -4,7 +4,7 @@ using System.IO;
 using NDecrypt.Core;
 using SabreTools.CommandLine;
 using SabreTools.CommandLine.Inputs;
-using SabreTools.IO.Extensions;
+using SabreTools.Text.Extensions;
 
 namespace NDecrypt.Features
 {
@@ -83,7 +83,7 @@ namespace NDecrypt.Features
         {
             // Set default values for tools
             _tools[FileType.NDS] = new DSProcessor();
-            _tools[FileType.N3DS] = new ThreeDSProcessor(development: false);
+            _tools[FileType.N3DS] = new ThreeDSProcessor(new());
 
             // Check the configuration path
             string? configPath = GetString(ConfigName, "config.json");
@@ -117,8 +117,9 @@ namespace NDecrypt.Features
 
             // Create the 3DS tool
             bool development = GetBoolean(DevelopmentName);
-            _tools[FileType.N3DS] = new ThreeDSProcessor(development)
+            var encryptionSettings = new SabreTools.Security.Cryptography.N3DSEncryptionSettings
             {
+                Development = development,
                 AESHardwareConstant = config.AESHardwareConstant.FromHexString() ?? [],
                 KeyX0x18 = config.KeyX0x18.FromHexString() ?? [],
                 KeyX0x1B = config.KeyX0x1B.FromHexString() ?? [],
@@ -129,6 +130,7 @@ namespace NDecrypt.Features
                 DevKeyX0x25 = config.DevKeyX0x25.FromHexString() ?? [],
                 DevKeyX0x2C = config.DevKeyX0x2C.FromHexString() ?? [],
             };
+            _tools[FileType.N3DS] = new ThreeDSProcessor(encryptionSettings);
         }
 
         /// <summary>

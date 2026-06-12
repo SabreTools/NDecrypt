@@ -2,8 +2,9 @@
 using System.IO;
 using System.Text;
 using SabreTools.Hashing;
-using SabreTools.IO.Extensions;
-using SabreTools.Serialization.Wrappers;
+using SabreTools.Matching;
+using SabreTools.Numerics.Extensions;
+using SabreTools.Wrappers;
 
 namespace NDecrypt.Core
 {
