@@ -44,7 +44,7 @@
 
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <PackageReference Include="SabreTools.CommandLine" Version="[1.4.0]" />
+        <PackageReference Include="SabreTools.CommandLine" Version="1.5.0" />
     </ItemGroup>
 
 </Project>
