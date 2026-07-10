@@ -25,8 +25,8 @@
 
     <ItemGroup>
         <PackageReference Include="SabreTools.Hashing" Version="2.0.0" />
-        <PackageReference Include="SabreTools.IO" Version="2.1.0" />
-        <PackageReference Include="SabreTools.Serialization" Version="3.0.1" />
+        <PackageReference Include="SabreTools.IO" Version="2.2.0" />
+        <PackageReference Include="SabreTools.Serialization" Version="3.1.0" />
     </ItemGroup>
 
 </Project>
