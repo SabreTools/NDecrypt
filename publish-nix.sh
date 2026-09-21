@@ -13,7 +13,9 @@ USE_ALL=false
 INCLUDE_DEBUG=false
 NO_BUILD=false
 NO_ARCHIVE=false
-while getopts "udba" OPTION; do
+HAS_VERSION=false
+VERSION="NONE"
+while getopts "udbav:" OPTION; do
     case $OPTION in
     u)
         USE_ALL=true
@@ -26,6 +28,10 @@ while getopts "udba" OPTION; do
         ;;
     a)
         NO_ARCHIVE=true
+        ;;
+    v)
+        HAS_VERSION=true
+        VERSION=${OPTARG}
         ;;
     *)
         echo "Invalid option provided"
@@ -46,6 +52,7 @@ echo "  Use all frameworks (-u)               $USE_ALL"
 echo "  Include debug builds (-d)             $INCLUDE_DEBUG"
 echo "  No build (-b)                         $NO_BUILD"
 echo "  No archive (-a)                       $NO_ARCHIVE"
+echo "  Version (-v)                          $HAS_VERSION ($VERSION)"
 echo " "
 
 # Create the build matrix arrays
@@ -139,10 +146,18 @@ if [ $NO_ARCHIVE = false ]; then
             # Only include Debug if set
             if [ $INCLUDE_DEBUG = true ]; then
                 cd $BUILD_FOLDER/NDecrypt/bin/Debug/${FRAMEWORK}/${RUNTIME}/publish/
-                zip -r $BUILD_FOLDER/NDecrypt_${FRAMEWORK}_${RUNTIME}_debug.zip .
+                if [ $HAS_VERSION = true ]; then
+                    zip -r $BUILD_FOLDER/NDecrypt_${VERSION}_${FRAMEWORK}_${RUNTIME}_debug.zip .
+                else
+                    zip -r $BUILD_FOLDER/NDecrypt_${FRAMEWORK}_${RUNTIME}_debug.zip .
+                fi
             fi
             cd $BUILD_FOLDER/NDecrypt/bin/Release/${FRAMEWORK}/${RUNTIME}/publish/
-            zip -r $BUILD_FOLDER/NDecrypt_${FRAMEWORK}_${RUNTIME}_release.zip .
+            if [ $HAS_VERSION = true ]; then
+                zip -r $BUILD_FOLDER/NDecrypt_${VERSION}_${FRAMEWORK}_${RUNTIME}_release.zip .
+            else
+                zip -r $BUILD_FOLDER/NDecrypt_${FRAMEWORK}_${RUNTIME}_release.zip .
+            fi
         done
     done
 
