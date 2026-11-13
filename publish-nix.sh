@@ -108,25 +108,17 @@ if [ $NO_BUILD = false ]; then
 
             # Only .NET 5 and above can publish to a single file
             if [[ $(echo ${SINGLE_FILE_CAPABLE[@]} | fgrep -w $FRAMEWORK) ]]; then
-                # Only include Debug if set
-                if [ $INCLUDE_DEBUG = true ]; then
-                    dotnet publish NDecrypt/NDecrypt.csproj -f $FRAMEWORK -r $RUNTIME -c Debug --self-contained true --version-suffix $COMMIT -p:PublishSingleFile=true
-                fi
+                EXTRA_OPTS="-p:PublishSingleFile=true"
+            fi
 
-                # Only include Release if set
-                if [ $INCLUDE_RELEASE = true ]; then
-                    dotnet publish NDecrypt/NDecrypt.csproj -f $FRAMEWORK -r $RUNTIME -c Release --self-contained true --version-suffix $COMMIT -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false
-                fi
-            else
-                # Only include Debug if set
-                if [ $INCLUDE_DEBUG = true ]; then
-                    dotnet publish NDecrypt/NDecrypt.csproj -f $FRAMEWORK -r $RUNTIME -c Debug --self-contained true --version-suffix $COMMIT
-                fi
+            # Only include Debug if set
+            if [ $INCLUDE_DEBUG = true ]; then
+                dotnet publish NDecrypt/NDecrypt.csproj -f $FRAMEWORK -r $RUNTIME -c Debug --self-contained true --version-suffix $COMMIT $EXTRA_OPTS
+            fi
 
-                # Only include Release if set
-                if [ $INCLUDE_RELEASE = true ]; then
-                    dotnet publish NDecrypt/NDecrypt.csproj -f $FRAMEWORK -r $RUNTIME -c Release --self-contained true --version-suffix $COMMIT -p:DebugType=None -p:DebugSymbols=false
-                fi
+            # Only include Release if set
+            if [ $INCLUDE_RELEASE = true ]; then
+                dotnet publish NDecrypt/NDecrypt.csproj -f $FRAMEWORK -r $RUNTIME -c Release --self-contained true --version-suffix $COMMIT -p:DebugType=None -p:DebugSymbols=false $EXTRA_OPTS
             fi
         done
     done
@@ -134,6 +126,11 @@ fi
 
 # Only create archives if requested
 if [ $NO_ARCHIVE = false ]; then
+    # Only include a version if one exists
+    if [ $HAS_VERSION = true ]; then
+        VERSION_STRING="_$RUNTIME"
+    fi
+
     # Create Test archives
     for FRAMEWORK in "${FRAMEWORKS[@]}"; do
         for RUNTIME in "${RUNTIMES[@]}"; do
@@ -159,21 +156,13 @@ if [ $NO_ARCHIVE = false ]; then
             # Only include Debug if set
             if [ $INCLUDE_DEBUG = true ]; then
                 cd $BUILD_FOLDER/NDecrypt/bin/Debug/${FRAMEWORK}/${RUNTIME}/publish/
-                if [ $HAS_VERSION = true ]; then
-                    zip -r $BUILD_FOLDER/NDecrypt_${VERSION}_${FRAMEWORK}_${RUNTIME}_debug.zip .
-                else
-                    zip -r $BUILD_FOLDER/NDecrypt_${FRAMEWORK}_${RUNTIME}_debug.zip .
-                fi
+                zip -r $BUILD_FOLDER/NDecrypt${VERSION_STRING}_${FRAMEWORK}_${RUNTIME}_debug.zip .
             fi
 
             # Only include Release if set
             if [ $INCLUDE_RELEASE = true ]; then
                 cd $BUILD_FOLDER/NDecrypt/bin/Release/${FRAMEWORK}/${RUNTIME}/publish/
-                if [ $HAS_VERSION = true ]; then
-                    zip -r $BUILD_FOLDER/NDecrypt_${VERSION}_${FRAMEWORK}_${RUNTIME}_release.zip .
-                else
-                    zip -r $BUILD_FOLDER/NDecrypt_${FRAMEWORK}_${RUNTIME}_release.zip .
-                fi
+                zip -r $BUILD_FOLDER/NDecrypt${VERSION_STRING}_${FRAMEWORK}_${RUNTIME}_release.zip .
             fi
         done
     done
