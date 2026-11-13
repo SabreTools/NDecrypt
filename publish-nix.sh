@@ -15,7 +15,7 @@ INCLUDE_RELEASE=false
 NO_BUILD=false
 NO_ARCHIVE=false
 HAS_VERSION=false
-VERSION="NONE"
+BUILD_VERSION="NONE"
 while getopts "udrbav:" OPTION; do
     case $OPTION in
     u)
