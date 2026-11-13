@@ -113,7 +113,7 @@ if (!$NO_BUILD.IsPresent) {
 if (!$NO_ARCHIVE.IsPresent) {
     # Only include a version if one exists
     if ($BUILD_VERSION -ne $null) {
-        $VERSION_STRING = "_$RUNTIME"
+        $VERSION_STRING = "_$BUILD_VERSION"
     }
 
     # Create Program archives

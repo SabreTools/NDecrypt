@@ -35,7 +35,7 @@ while getopts "udrbav:" OPTION; do
         ;;
     v)
         HAS_VERSION=true
-        VERSION=${OPTARG}
+        BUILD_VERSION=${OPTARG}
         ;;
     *)
         echo "Invalid option provided"
@@ -57,7 +57,7 @@ echo "  Include debug builds (-d)             $INCLUDE_DEBUG"
 echo "  Include release builds (-r)           $INCLUDE_RELEASE"
 echo "  No build (-b)                         $NO_BUILD"
 echo "  No archive (-a)                       $NO_ARCHIVE"
-echo "  Version (-v)                          $HAS_VERSION ($VERSION)"
+echo "  Version (-v)                          $HAS_VERSION ($BUILD_VERSION)"
 echo " "
 
 # Create the build matrix arrays
@@ -128,7 +128,7 @@ fi
 if [ $NO_ARCHIVE = false ]; then
     # Only include a version if one exists
     if [ $HAS_VERSION = true ]; then
-        VERSION_STRING="_$RUNTIME"
+        VERSION_STRING="_$BUILD_VERSION"
     fi
 
     # Create Test archives
