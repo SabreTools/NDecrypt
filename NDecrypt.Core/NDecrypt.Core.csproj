@@ -23,6 +23,12 @@
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
+    <!-- Publishing Modifications -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <DebugSymbols>false</DebugSymbols>
+        <DebugType>None</DebugType>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="SabreTools.Hashing" Version="2.2.0" />
         <PackageReference Include="SabreTools.IO" Version="2.4.0" />
